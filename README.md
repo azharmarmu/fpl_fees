@@ -2,6 +2,9 @@
 
 Season 2 app for Farm Premier League: ground fees, CricHeroes eligibility, scorecards, trades, organizer finance.
 
+- Full requirements: [`REQUIREMENTS.md`](./REQUIREMENTS.md)
+- Completed status: [`STATUS.md`](./STATUS.md)
+
 ## Run (local mode — works today)
 
 ```bash
