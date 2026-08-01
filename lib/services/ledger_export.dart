@@ -30,11 +30,14 @@ class LedgerExport {
   }
 
   static String subscriptionsCsv(List<FplPlayer> players) {
-    final buf =
-        StringBuffer('id,name,team,subscriptionPaid,subscriptionPaidAt\n');
+    final buf = StringBuffer(
+      'id,name,team,subscriptionPaid,subscriptionAmount,subscriptionPaidAt,subscriptionValidUntil\n',
+    );
     for (final p in players.where((p) => p.subscriptionPaid)) {
       buf.writeln(
-        '${p.id},"${p.name}",${p.teamName},true,${p.subscriptionPaidAt?.toIso8601String() ?? ""}',
+        '${p.id},"${p.name}",${p.teamName},true,${p.subscriptionAmount},'
+        '${p.subscriptionPaidAt?.toIso8601String() ?? ""},'
+        '${p.subscriptionValidUntil?.toIso8601String() ?? ""}',
       );
     }
     return buf.toString();

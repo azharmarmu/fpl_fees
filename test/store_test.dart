@@ -131,6 +131,79 @@ void main() {
       expect(store.financeSummary().guestTotal, 250);
     });
 
+    test('per-week fee is stored on payment; defaults unchanged', () async {
+      await store.setWeekWeeklyFee(store.selectedWeekId, 100);
+      expect(store.feeForWeek(), 100);
+      expect(store.weeklyFee, kWeeklyFee);
+      final p = store.players.firstWhere(
+        (x) => !x.isLifetimeMember && !x.subscriptionPaid,
+      );
+      await store.setWeeklyPaid(p, true);
+      expect(store.payments.single.amount, 100);
+      expect(store.financeSummary().weeklyTotal, 100);
+    });
+
+    test('per-week guest fee is stored on guest payment', () async {
+      await store.setWeekFees(store.selectedWeekId, weekly: 50, guest: 150);
+      expect(store.guestFeeForWeek(), 150);
+      expect(store.guestFee, kGuestFee);
+      await store.addGuest(name: 'Guest Week', teamId: kTeamOx);
+      expect(store.guests.single.amount, 150);
+      expect(store.financeSummary().guestTotal, 150);
+    });
+
+    test('per-player subscription amount and period', () async {
+      final a = store.players.firstWhere(
+        (x) => !x.isLifetimeMember && !x.subscriptionPaid,
+      );
+      final b = store.players.firstWhere(
+        (x) =>
+            !x.isLifetimeMember &&
+            !x.subscriptionPaid &&
+            x.id != a.id,
+      );
+      await store.setSubscription(a, true, amount: 500);
+      await store.setSubscription(
+        b,
+        true,
+        amount: 300,
+        validUntil: DateTime(2026, 9, 30),
+      );
+      expect(store.playerById(a.id)!.subscriptionAmount, 500);
+      expect(store.playerById(a.id)!.subscriptionValidUntil, isNull);
+      expect(store.financeSummary().subscriptionTotal, 800);
+      expect(store.eligibilityFor(store.playerById(b.id)!).eligible, isTrue);
+
+      final expired = store.playerById(b.id)!.copyWith(
+        subscriptionValidUntil: DateTime(2026, 7, 1),
+      );
+      final i = store.players.indexWhere((p) => p.id == b.id);
+      store.players[i] = expired;
+      expect(store.eligibilityFor(expired).eligible, isFalse);
+      expect(expired.hasActiveSubscription, isFalse);
+    });
+
+    test('lowering default subscription does not rewrite paid amounts', () async {
+      final p = store.players.firstWhere(
+        (x) => !x.isLifetimeMember && !x.subscriptionPaid,
+      );
+      await store.setSubscription(p, true, amount: 750);
+      await store.setFeeAmounts(subscription: 500);
+      expect(store.subscriptionFee, 500);
+      expect(store.playerById(p.id)!.subscriptionAmount, 750);
+      expect(store.financeSummary().subscriptionTotal, 750);
+
+      final q = store.players.firstWhere(
+        (x) =>
+            !x.isLifetimeMember &&
+            !x.subscriptionPaid &&
+            x.id != p.id,
+      );
+      await store.setSubscription(q, true);
+      expect(store.playerById(q.id)!.subscriptionAmount, 500);
+      expect(store.financeSummary().subscriptionTotal, 1250);
+    });
+
     test('trade commission is 25%', () async {
       await store.setTradeOpen(true);
       final p = store.playerById('anas')!;
@@ -236,6 +309,47 @@ void main() {
         rawPhone: '9876500001',
       );
       expect(err, contains('already used'));
+    });
+
+    test('records lastUpdatedAt when player sets phone', () async {
+      final store = FplStore();
+      await store.init();
+      final p = store.players.firstWhere((x) => x.phone.isEmpty);
+      expect(p.lastUpdatedAt, isNull);
+      await store.updateOwnPhone(
+        playerId: p.id,
+        rawPhone: '9876543210',
+      );
+      expect(store.playerById(p.id)!.lastUpdatedAt, isNotNull);
+    });
+    test('player can edit phone after it was set', () async {
+      final store = FplStore();
+      await store.init();
+      final p = store.players.firstWhere((x) => x.phone.isEmpty);
+      await store.updateOwnPhone(
+        playerId: p.id,
+        rawPhone: '9876543210',
+        rawEmail: 'a@b.com',
+      );
+      final err = await store.updateOwnPhone(
+        playerId: p.id,
+        rawPhone: '9876543211',
+        rawEmail: 'new@b.com',
+      );
+      expect(err, isNull);
+      expect(store.playerById(p.id)!.phone, '9876543211');
+      expect(store.playerById(p.id)!.email, 'new@b.com');
+    });
+  });
+
+  group('player activity', () {
+    test('recordPlayerLogin sets lastLoginAt', () async {
+      final store = FplStore();
+      await store.init();
+      final p = store.players.first;
+      expect(p.lastLoginAt, isNull);
+      await store.recordPlayerLogin(p.id);
+      expect(store.playerById(p.id)!.lastLoginAt, isNotNull);
     });
   });
 }

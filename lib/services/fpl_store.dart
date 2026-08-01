@@ -433,6 +433,53 @@ class FplStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Effective weekly fee for a Sunday (per-week override or app default).
+  int feeForWeek([String? weekId]) {
+    final id = weekId ?? selectedWeekId;
+    try {
+      final w = weeks.firstWhere((w) => w.id == id);
+      return w.weeklyFee ?? weeklyFee;
+    } catch (_) {
+      return weeklyFee;
+    }
+  }
+
+  /// Effective guest fee for a Sunday (per-week override or app default).
+  int guestFeeForWeek([String? weekId]) {
+    final id = weekId ?? selectedWeekId;
+    try {
+      final w = weeks.firstWhere((w) => w.id == id);
+      return w.guestFee ?? guestFee;
+    } catch (_) {
+      return guestFee;
+    }
+  }
+
+  Future<void> setWeekFees(
+    String weekId, {
+    int? weekly,
+    int? guest,
+  }) async {
+    if (weekly != null && (weekly < 1 || weekly > 100000)) {
+      throw ArgumentError('Weekly fee must be between ₹1 and ₹100000');
+    }
+    if (guest != null && (guest < 1 || guest > 100000)) {
+      throw ArgumentError('Guest fee must be between ₹1 and ₹100000');
+    }
+    final i = weeks.indexWhere((w) => w.id == weekId);
+    if (i < 0) return;
+    weeks[i] = weeks[i].copyWith(
+      weeklyFee: weekly,
+      guestFee: guest,
+    );
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Convenience for callers that only set the weekly amount.
+  Future<void> setWeekWeeklyFee(String weekId, int amount) =>
+      setWeekFees(weekId, weekly: amount);
+
   Future<void> _persist() async {
     await _persistLocal();
     await _pushCloud();
@@ -470,7 +517,7 @@ class FplStore extends ChangeNotifier {
         reason: EligibilityReason.lifetime,
       );
     }
-    if (p.subscriptionPaid) {
+    if (p.hasActiveSubscription) {
       return const Eligibility(
         eligible: true,
         reason: EligibilityReason.subscription,
@@ -512,7 +559,7 @@ class FplStore extends ChangeNotifier {
   }
 
   Future<void> setWeeklyPaid(FplPlayer player, bool paid) async {
-    if (player.isLifetimeMember || player.subscriptionPaid) return;
+    if (player.isLifetimeMember || player.hasActiveSubscription) return;
     final weekId = selectedWeekId;
     final paymentId = '${weekId}_${player.id}';
 
@@ -524,7 +571,7 @@ class FplStore extends ChangeNotifier {
       added = WeeklyPayment(
         weekId: weekId,
         playerId: player.id,
-        amount: weeklyFee,
+        amount: feeForWeek(weekId),
         paidAt: DateTime.now(),
       );
       payments.add(added);
@@ -550,24 +597,42 @@ class FplStore extends ChangeNotifier {
     }
   }
 
-  Future<void> setSubscription(FplPlayer player, bool paid) async {
+  Future<void> setSubscription(
+    FplPlayer player,
+    bool paid, {
+    int? amount,
+    DateTime? validUntil,
+    bool clearValidUntil = false,
+  }) async {
     if (player.isLifetimeMember) return;
     final i = players.indexWhere((p) => p.id == player.id);
     if (i < 0) return;
 
     final removedPaymentIds = <String>[];
     if (paid) {
+      final amt = amount ?? subscriptionFee;
+      if (amt < 1 || amt > 100000) {
+        throw ArgumentError('Subscription must be between ₹1 and ₹100000');
+      }
       for (final p in payments.where((p) => p.playerId == player.id)) {
         removedPaymentIds.add(p.id);
       }
       payments.removeWhere((p) => p.playerId == player.id);
+      players[i] = player.copyWith(
+        subscriptionPaid: true,
+        subscriptionPaidAt: DateTime.now(),
+        subscriptionAmount: amt,
+        subscriptionValidUntil: validUntil,
+        clearSubscriptionValidUntil: clearValidUntil || validUntil == null,
+      );
+    } else {
+      players[i] = player.copyWith(
+        subscriptionPaid: false,
+        subscriptionAmount: 0,
+        clearSubscriptionDate: true,
+        clearSubscriptionValidUntil: true,
+      );
     }
-
-    players[i] = player.copyWith(
-      subscriptionPaid: paid,
-      subscriptionPaidAt: paid ? DateTime.now() : null,
-      clearSubscriptionDate: !paid,
-    );
 
     notifyListeners();
     await _persistLocal();
@@ -611,7 +676,7 @@ class FplStore extends ChangeNotifier {
         weekId: selectedWeekId,
         name: name.trim(),
         teamId: teamId,
-        amount: guestFee,
+        amount: guestFeeForWeek(selectedWeekId),
         paidAt: DateTime.now(),
       ),
     );
@@ -633,18 +698,66 @@ class FplStore extends ChangeNotifier {
   }) async {
     final i = players.indexWhere((p) => p.id == playerId);
     if (i < 0) return;
+
+    String? nextPhone = phone;
+    if (phone != null) {
+      final digits = phone.replaceAll(RegExp(r'\D'), '');
+      nextPhone = digits.length >= 10
+          ? digits.substring(digits.length - 10)
+          : digits;
+      if (nextPhone.isNotEmpty && nextPhone.length != 10) {
+        throw ArgumentError('Enter a valid 10-digit mobile number');
+      }
+      if (nextPhone.isNotEmpty) {
+        final taken = players.any(
+          (p) => p.id != playerId && p.normalizedPhone == nextPhone,
+        );
+        if (taken) {
+          throw ArgumentError('This number is already used by another player');
+        }
+      }
+    }
+
+    final nextEmail = email?.trim();
+    if (nextEmail != null &&
+        nextEmail.isNotEmpty &&
+        !_emailRe.hasMatch(nextEmail)) {
+      throw ArgumentError('Enter a valid email, or leave it blank');
+    }
+
     players[i] = players[i].copyWith(
-      phone: phone,
-      email: email,
+      phone: nextPhone,
+      email: nextEmail,
       cricheroesUsername: username,
     );
     await _persist();
     notifyListeners();
   }
 
+  /// Player opened / signed into the app.
+  Future<void> recordPlayerLogin(String playerId) async {
+    final i = players.indexWhere((p) => p.id == playerId);
+    if (i < 0) return;
+    final at = DateTime.now();
+    players[i] = players[i].copyWith(lastLoginAt: at);
+    await _persistLocal();
+    notifyListeners();
+
+    final sync = _cloud;
+    if (sync != null && !sync.isApplyingRemote) {
+      try {
+        await sync.pushPlayerLogin(playerId: playerId, lastLoginAt: at);
+        cloudError = null;
+      } catch (e) {
+        cloudError = '$e';
+        debugPrint('Player login cloud sync: $e');
+      }
+    }
+  }
+
   static final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  /// Player self-service: set phone (required) + optional email when phone missing.
+  /// Player self-service: add or edit mobile (required) + optional email.
   /// Returns null on success, or an error message.
   Future<String?> updateOwnPhone({
     required String playerId,
@@ -665,9 +778,6 @@ class FplStore extends ChangeNotifier {
 
     final i = players.indexWhere((p) => p.id == playerId);
     if (i < 0) return 'Player not found';
-    if (players[i].phone.trim().isNotEmpty) {
-      return 'Phone already set — ask admin to change it';
-    }
 
     // Avoid duplicate phones on the squad.
     final taken = players.any(
@@ -675,7 +785,12 @@ class FplStore extends ChangeNotifier {
     );
     if (taken) return 'This number is already used by another player';
 
-    players[i] = players[i].copyWith(phone: ten, email: email);
+    final at = DateTime.now();
+    players[i] = players[i].copyWith(
+      phone: ten,
+      email: email,
+      lastUpdatedAt: at,
+    );
     await _persistLocal();
     notifyListeners();
 
@@ -686,6 +801,7 @@ class FplStore extends ChangeNotifier {
           playerId: playerId,
           phone: ten,
           email: email,
+          lastUpdatedAt: at,
         );
         cloudError = null;
       } catch (e) {
@@ -743,8 +859,9 @@ class FplStore extends ChangeNotifier {
 
   FinanceSummary financeSummary() {
     final weekly = payments.fold<int>(0, (s, p) => s + p.amount);
-    final subs =
-        players.where((p) => p.subscriptionPaid).length * subscriptionFee;
+    final subs = players
+        .where((p) => p.subscriptionPaid)
+        .fold<int>(0, (s, p) => s + p.subscriptionAmount);
     final guestTotal = guests.fold<int>(0, (s, g) => s + g.amount);
     final tradeTotal = trades
         .where((t) => t.commissionCollected)

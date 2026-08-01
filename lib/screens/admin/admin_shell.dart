@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/models.dart';
 import '../../services/fpl_store.dart';
 import '../../services/io_bytes.dart';
 import '../../widgets/app_brand.dart';
@@ -369,7 +370,10 @@ class _MoreTab extends StatelessWidget {
             onChanged: (v) => store.setTradeOpen(v),
           ),
           ListTile(
-            title: const Text('Fee amounts', style: TextStyle(color: Colors.white)),
+            title: const Text(
+              'Default fee amounts',
+              style: TextStyle(color: Colors.white),
+            ),
             subtitle: Text(
               'Weekly ₹${store.weeklyFee} · Sub ₹${store.subscriptionFee} · Guest ₹${store.guestFee}',
               style: const TextStyle(color: Colors.white54),
@@ -501,6 +505,85 @@ class _ContactsScreenState extends State<_ContactsScreen> {
     );
   }
 
+  Future<void> _editContact(BuildContext context, FplPlayer p) async {
+    final phone = TextEditingController(text: p.phone);
+    final email = TextEditingController(text: p.email);
+    final user = TextEditingController(text: p.cricheroesUsername);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2E20),
+        title: Text(
+          'Edit contact · ${p.name}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: phone,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Mobile',
+                labelStyle: TextStyle(color: Colors.white70),
+                hintText: '9876543210',
+                hintStyle: TextStyle(color: Colors.white30),
+              ),
+            ),
+            TextField(
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Email (optional)',
+                labelStyle: TextStyle(color: Colors.white70),
+              ),
+            ),
+            TextField(
+              controller: user,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'CricHeroes username',
+                labelStyle: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      try {
+        await store.updatePlayerContact(
+          playerId: p.id,
+          phone: phone.text,
+          email: email.text.trim(),
+          username: user.text,
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e'.replaceFirst('ArgumentError: ', ''))),
+          );
+        }
+      }
+    }
+    phone.dispose();
+    email.dispose();
+    user.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -550,73 +633,18 @@ class _ContactsScreenState extends State<_ContactsScreen> {
                   '${p.teamName}\n'
                   'Phone: ${p.phone.isEmpty ? "—" : p.phone} · '
                   'Email: ${p.email.isEmpty ? "—" : p.email}\n'
-                  'User: ${p.cricheroesUsername}',
+                  'User: ${p.cricheroesUsername}\n'
+                  'Login: ${p.lastLoginAt == null ? "—" : DateFormat("d MMM, h:mm a").format(p.lastLoginAt!)} · '
+                  'Updated: ${p.lastUpdatedAt == null ? "—" : DateFormat("d MMM, h:mm a").format(p.lastUpdatedAt!)}',
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 isThreeLine: true,
-                onTap: () async {
-                  final phone = TextEditingController(text: p.phone);
-                  final email = TextEditingController(text: p.email);
-                  final user = TextEditingController(text: p.cricheroesUsername);
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: const Color(0xFF1A2E20),
-                      title: Text(p.name, style: const TextStyle(color: Colors.white)),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextField(
-                            controller: phone,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'Phone',
-                              labelStyle: TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                          TextField(
-                            controller: email,
-                            keyboardType: TextInputType.emailAddress,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                              labelStyle: TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                          TextField(
-                            controller: user,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'CricHeroes username',
-                              labelStyle: TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Cancel'),
-                        ),
-                        FilledButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Save'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (ok == true) {
-                    await store.updatePlayerContact(
-                      playerId: p.id,
-                      phone: phone.text,
-                      email: email.text.trim(),
-                      username: user.text,
-                    );
-                  }
-                  phone.dispose();
-                  email.dispose();
-                  user.dispose();
-                },
+                trailing: IconButton(
+                  tooltip: 'Edit mobile / email',
+                  icon: const Icon(Icons.edit_outlined, color: Color(0xFFB8F27A)),
+                  onPressed: () => _editContact(context, p),
+                ),
+                onTap: () => _editContact(context, p),
               );
             },
           );
@@ -691,7 +719,10 @@ Future<void> _editFeeAmounts(BuildContext context, FplStore store) async {
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: const Color(0xFF1A2E20),
-      title: const Text('Fee amounts', style: TextStyle(color: Colors.white)),
+      title: const Text(
+        'Default fee amounts',
+        style: TextStyle(color: Colors.white),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -700,7 +731,7 @@ Future<void> _editFeeAmounts(BuildContext context, FplStore store) async {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: const TextStyle(color: Colors.white),
-            decoration: _fieldDec('Weekly fee (₹)'),
+            decoration: _fieldDec('Default weekly fee (₹)'),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -708,7 +739,7 @@ Future<void> _editFeeAmounts(BuildContext context, FplStore store) async {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: const TextStyle(color: Colors.white),
-            decoration: _fieldDec('Season subscription (₹)'),
+            decoration: _fieldDec('Default subscription (₹)'),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -720,8 +751,8 @@ Future<void> _editFeeAmounts(BuildContext context, FplStore store) async {
           ),
           const SizedBox(height: 8),
           const Text(
-            'New weekly/guest marks use the current amounts. '
-            'Subscription total uses the current subscription amount × paid players.',
+            'Defaults for new marks only. Changing subscription default '
+            '(e.g. ₹750 → ₹500 after VPL) does not rewrite players who already paid.',
             style: TextStyle(color: Colors.white54, fontSize: 12),
           ),
         ],

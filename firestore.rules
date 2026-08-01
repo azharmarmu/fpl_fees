@@ -17,13 +17,8 @@ service cloud.firestore {
     }
 
     // Squad: public read for phone/username player login (no OTP).
-    // Admin: full write. Players: first-time phone (+ optional email) when phone empty.
-    function phoneWasEmpty() {
-      return !('phone' in resource.data)
-        || resource.data.phone == null
-        || resource.data.phone == '';
-    }
-
+    // Admin: full write. Anyone may update phone/email/lastUpdatedAt only
+    // (player sessions are local — no Firebase Auth).
     function validSelfPhone() {
       return request.resource.data.phone is string
         && request.resource.data.phone.size() >= 10
@@ -39,18 +34,31 @@ service cloud.firestore {
           && request.resource.data.email.size() <= 120);
     }
 
-    function onlyPhoneOrPhoneEmailFilled() {
+    function onlyContactFields() {
       let keys = request.resource.data.diff(resource.data).affectedKeys();
-      return (keys.hasOnly(['phone']) || keys.hasOnly(['phone', 'email']))
+      return (keys.hasOnly(['phone'])
+          || keys.hasOnly(['email'])
+          || keys.hasOnly(['phone', 'email'])
+          || keys.hasOnly(['phone', 'lastUpdatedAt'])
+          || keys.hasOnly(['email', 'lastUpdatedAt'])
+          || keys.hasOnly(['phone', 'email', 'lastUpdatedAt']))
         && validSelfPhone()
         && validOptionalEmail();
+    }
+
+    // Player sessions are local (no Firebase Auth) — allow stamping lastLoginAt only.
+    function onlyLastLoginAt() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasOnly(['lastLoginAt']);
     }
 
     match /players/{id} {
       allow read: if true;
       allow create: if isAdmin() && validPlayer();
       allow update: if (isAdmin() && validPlayer())
-        || (phoneWasEmpty() && onlyPhoneOrPhoneEmailFilled());
+        || onlyContactFields()
+        || onlyLastLoginAt();
       allow delete: if isAdmin();
     }
 

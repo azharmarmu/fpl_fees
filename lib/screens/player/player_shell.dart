@@ -30,11 +30,21 @@ class PlayerShell extends StatefulWidget {
 class _PlayerShellState extends State<PlayerShell> {
   var _index = 0;
   var _phonePromptShown = false;
+  var _loginRecorded = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAskForPhone());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _recordLoginOnce();
+      _maybeAskForPhone();
+    });
+  }
+
+  Future<void> _recordLoginOnce() async {
+    if (_loginRecorded) return;
+    _loginRecorded = true;
+    await widget.store.recordPlayerLogin(widget.playerId);
   }
 
   Future<void> _maybeAskForPhone() async {
@@ -48,10 +58,13 @@ class _PlayerShellState extends State<PlayerShell> {
       // Outside tap / system back won't dismiss — use Cancel (logs out) or Save.
       builder: (ctx) => PopScope(
         canPop: false,
-        child: _AddContactDialog(
+        child: _ContactDialog(
           store: widget.store,
           playerId: widget.playerId,
           playerName: me.name,
+          initialPhone: me.phone,
+          initialEmail: me.email,
+          requiredOnCancel: true,
         ),
       ),
     );
@@ -61,6 +74,21 @@ class _PlayerShellState extends State<PlayerShell> {
       _phonePromptShown = false;
       widget.onLogout();
     }
+  }
+
+  Future<void> _editContact() async {
+    final me = widget.store.playerById(widget.playerId);
+    if (me == null || !mounted) return;
+    await showDialog<bool>(
+      context: context,
+      builder: (ctx) => _ContactDialog(
+        store: widget.store,
+        playerId: widget.playerId,
+        playerName: me.name,
+        initialPhone: me.phone,
+        initialEmail: me.email,
+      ),
+    );
   }
 
   @override
@@ -94,12 +122,7 @@ class _PlayerShellState extends State<PlayerShell> {
             store: widget.store,
             me: me,
             onLogout: widget.onLogout,
-            onAddPhone: me.phone.trim().isEmpty
-                ? () {
-                    _phonePromptShown = false;
-                    _maybeAskForPhone();
-                  }
-                : null,
+            onEditContact: _editContact,
           ),
         ];
 
@@ -136,26 +159,42 @@ class _PlayerShellState extends State<PlayerShell> {
   }
 }
 
-class _AddContactDialog extends StatefulWidget {
-  const _AddContactDialog({
+class _ContactDialog extends StatefulWidget {
+  const _ContactDialog({
     required this.store,
     required this.playerId,
     required this.playerName,
+    this.initialPhone = '',
+    this.initialEmail = '',
+    this.requiredOnCancel = false,
   });
 
   final FplStore store;
   final String playerId;
   final String playerName;
+  final String initialPhone;
+  final String initialEmail;
+  /// When true (first login), Cancel logs the player out.
+  final bool requiredOnCancel;
 
   @override
-  State<_AddContactDialog> createState() => _AddContactDialogState();
+  State<_ContactDialog> createState() => _ContactDialogState();
 }
 
-class _AddContactDialogState extends State<_AddContactDialog> {
-  final _phone = TextEditingController();
-  final _email = TextEditingController();
+class _ContactDialogState extends State<_ContactDialog> {
+  late final TextEditingController _phone;
+  late final TextEditingController _email;
   String? _error;
   var _busy = false;
+
+  bool get _isEdit => widget.initialPhone.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _phone = TextEditingController(text: widget.initialPhone);
+    _email = TextEditingController(text: widget.initialEmail);
+  }
 
   @override
   void dispose() {
@@ -194,16 +233,18 @@ class _AddContactDialogState extends State<_AddContactDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: const Color(0xFF1A2E20),
-      title: const Text(
-        'Add your contact details',
-        style: TextStyle(color: Colors.white),
+      title: Text(
+        _isEdit ? 'Edit contact details' : 'Add your contact details',
+        style: const TextStyle(color: Colors.white),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Hi ${widget.playerName} — mobile number is required so you can log in and so the organizer can reach you. Email is optional. Cancel will log you out.',
+            widget.requiredOnCancel
+                ? 'Hi ${widget.playerName} — mobile number is required so you can log in and so the organizer can reach you. Email is optional. Cancel will log you out.'
+                : 'Update your mobile or email. Mobile is required for login.',
             style: const TextStyle(color: Colors.white70, fontSize: 13),
           ),
           const SizedBox(height: 16),
@@ -211,6 +252,7 @@ class _AddContactDialogState extends State<_AddContactDialog> {
             controller: _phone,
             autofocus: true,
             keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             style: const TextStyle(color: Colors.white),
             decoration: const InputDecoration(
               labelText: 'Mobile number *',
@@ -302,7 +344,11 @@ class _PlayerHome extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  el.label(weeklyFee: store.weeklyFee),
+                  el.label(
+                    weeklyFee: store.feeForWeek(),
+                    subscriptionAmount: me.subscriptionAmount,
+                    subscriptionValidUntil: me.subscriptionValidUntil,
+                  ),
                   style: const TextStyle(color: Colors.white70),
                 ),
               ],
@@ -525,16 +571,17 @@ class _PlayerProfile extends StatelessWidget {
     required this.store,
     required this.me,
     required this.onLogout,
-    this.onAddPhone,
+    required this.onEditContact,
   });
 
   final FplStore store;
   final FplPlayer me;
   final VoidCallback onLogout;
-  final VoidCallback? onAddPhone;
+  final VoidCallback onEditContact;
 
   @override
   Widget build(BuildContext context) {
+    final hasPhone = me.phone.trim().isNotEmpty;
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -551,7 +598,7 @@ class _PlayerProfile extends StatelessWidget {
             title: Text(me.name, style: const TextStyle(color: Colors.white)),
             subtitle: Text(
               '${me.teamName}\n'
-              'Phone: ${me.phone.isEmpty ? "—" : me.phone}\n'
+              'Phone: ${hasPhone ? me.phone : "—"}\n'
               'Email: ${me.email.isEmpty ? "—" : me.email}\n'
               'Username: ${me.cricheroesUsername}\n'
               '${me.isLifetimeMember ? "Lifetime member" : me.subscriptionPaid ? "Subscription paid" : "Weekly fee"}',
@@ -559,18 +606,16 @@ class _PlayerProfile extends StatelessWidget {
             ),
             isThreeLine: true,
           ),
-          if (onAddPhone != null) ...[
-            const SizedBox(height: 8),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFB8F27A),
-                foregroundColor: Colors.black,
-              ),
-              onPressed: onAddPhone,
-              icon: const Icon(Icons.phone_android),
-              label: const Text('Add phone number'),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB8F27A),
+              foregroundColor: Colors.black,
             ),
-          ],
+            onPressed: onEditContact,
+            icon: Icon(hasPhone ? Icons.edit_outlined : Icons.phone_android),
+            label: Text(hasPhone ? 'Edit mobile / email' : 'Add mobile / email'),
+          ),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: onLogout,

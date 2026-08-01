@@ -39,13 +39,18 @@ class FinanceScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              _row('Weekly fees (₹${store.weeklyFee})', f.weeklyTotal),
-              _row(
-                'Subscriptions (₹${store.subscriptionFee})',
-                f.subscriptionTotal,
-              ),
-              _row('Guest fees (₹${store.guestFee})', f.guestTotal),
+              _row('Weekly fees (ledger)', f.weeklyTotal),
+              _row('Subscriptions (ledger)', f.subscriptionTotal),
+              _row('Guest fees (ledger)', f.guestTotal),
               _row('Trade commissions (25%)', f.tradeCommissionTotal),
+              const SizedBox(height: 8),
+              Text(
+                'Defaults: weekly ₹${store.weeklyFee} · sub ₹${store.subscriptionFee} · guest ₹${store.guestFee}',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: 12,
+                ),
+              ),
               const SizedBox(height: 20),
               const Text(
                 'Week-wise (weekly + guests)',
@@ -59,7 +64,10 @@ class FinanceScreen extends StatelessWidget {
                   String label = e.key;
                   try {
                     final week = store.weeks.firstWhere((w) => w.id == e.key);
-                    label = '${week.label} · ${df.format(week.date)}';
+                    final weekFee = week.weeklyFee ?? store.weeklyFee;
+                    final guestFee = week.guestFee ?? store.guestFee;
+                    label =
+                        '${week.label} · ${df.format(week.date)} (₹$weekFee / guest ₹$guestFee)';
                   } catch (_) {}
                   return ListTile(
                     dense: true,
@@ -77,15 +85,31 @@ class FinanceScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
               ),
               ...store.players.where((p) => p.subscriptionPaid).map(
-                    (p) => ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(p.name, style: const TextStyle(color: Colors.white)),
-                      trailing: Text(
-                        '₹${store.subscriptionFee}',
-                        style: const TextStyle(color: Color(0xFFB8F27A)),
-                      ),
-                    ),
+                    (p) {
+                      final until = p.subscriptionValidUntil;
+                      final sub = until == null
+                          ? 'Season'
+                          : 'Until ${df.format(until)}';
+                      return ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          p.name,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        subtitle: Text(
+                          sub,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: Text(
+                          '₹${p.subscriptionAmount}',
+                          style: const TextStyle(color: Color(0xFFB8F27A)),
+                        ),
+                      );
+                    },
                   ),
             ],
           );

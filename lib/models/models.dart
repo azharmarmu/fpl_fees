@@ -13,6 +13,10 @@ class FplPlayer {
     this.isCaptain = false,
     this.subscriptionPaid = false,
     this.subscriptionPaidAt,
+    this.subscriptionAmount = 0,
+    this.subscriptionValidUntil,
+    this.lastLoginAt,
+    this.lastUpdatedAt,
     this.active = true,
   });
 
@@ -27,7 +31,26 @@ class FplPlayer {
   final bool isCaptain;
   final bool subscriptionPaid;
   final DateTime? subscriptionPaidAt;
+  /// INR collected for this player's subscription (0 if unpaid).
+  final int subscriptionAmount;
+  /// If set, subscription eligibility ends after this calendar day.
+  final DateTime? subscriptionValidUntil;
+  /// Last time this player opened / signed into the app.
+  final DateTime? lastLoginAt;
+  /// Last time this player changed their own profile data.
+  final DateTime? lastUpdatedAt;
   final bool active;
+
+  /// Paid subscription that is still in its valid window (or season-long).
+  bool get hasActiveSubscription {
+    if (!subscriptionPaid) return false;
+    final until = subscriptionValidUntil;
+    if (until == null) return true;
+    final today = DateTime.now();
+    final end = DateTime(until.year, until.month, until.day);
+    final now = DateTime(today.year, today.month, today.day);
+    return !now.isAfter(end);
+  }
 
   String get cricheroesUsernameLower => cricheroesUsername.trim().toLowerCase();
 
@@ -44,9 +67,14 @@ class FplPlayer {
     bool? isLifetimeMember,
     bool? subscriptionPaid,
     DateTime? subscriptionPaidAt,
+    int? subscriptionAmount,
+    DateTime? subscriptionValidUntil,
+    DateTime? lastLoginAt,
+    DateTime? lastUpdatedAt,
     String? teamId,
     String? teamName,
     bool clearSubscriptionDate = false,
+    bool clearSubscriptionValidUntil = false,
   }) {
     return FplPlayer(
       id: id,
@@ -62,6 +90,12 @@ class FplPlayer {
       subscriptionPaidAt: clearSubscriptionDate
           ? null
           : (subscriptionPaidAt ?? this.subscriptionPaidAt),
+      subscriptionAmount: subscriptionAmount ?? this.subscriptionAmount,
+      subscriptionValidUntil: clearSubscriptionValidUntil
+          ? null
+          : (subscriptionValidUntil ?? this.subscriptionValidUntil),
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
       active: active,
     );
   }
@@ -79,10 +113,17 @@ class FplPlayer {
         'isCaptain': isCaptain,
         'subscriptionPaid': subscriptionPaid,
         'subscriptionPaidAt': subscriptionPaidAt?.toIso8601String(),
+        'subscriptionAmount': subscriptionAmount,
+        'subscriptionValidUntil': subscriptionValidUntil?.toIso8601String(),
+        if (lastLoginAt != null) 'lastLoginAt': lastLoginAt!.toIso8601String(),
+        if (lastUpdatedAt != null)
+          'lastUpdatedAt': lastUpdatedAt!.toIso8601String(),
         'active': active,
       };
 
   factory FplPlayer.fromJson(Map<String, dynamic> json) {
+    final paid = json['subscriptionPaid'] as bool? ?? false;
+    final amount = (json['subscriptionAmount'] as num?)?.toInt();
     return FplPlayer(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -94,9 +135,20 @@ class FplPlayer {
           (json['name'] as String? ?? ''),
       isLifetimeMember: json['isLifetimeMember'] as bool? ?? false,
       isCaptain: json['isCaptain'] as bool? ?? false,
-      subscriptionPaid: json['subscriptionPaid'] as bool? ?? false,
+      subscriptionPaid: paid,
       subscriptionPaidAt: json['subscriptionPaidAt'] != null
           ? DateTime.tryParse(json['subscriptionPaidAt'] as String)
+          : null,
+      // Legacy: paid with no amount → treat as default season fee at read time in UI/finance.
+      subscriptionAmount: amount ?? (paid ? kSubscriptionFee : 0),
+      subscriptionValidUntil: json['subscriptionValidUntil'] != null
+          ? DateTime.tryParse(json['subscriptionValidUntil'] as String)
+          : null,
+      lastLoginAt: json['lastLoginAt'] != null
+          ? DateTime.tryParse(json['lastLoginAt'] as String)
+          : null,
+      lastUpdatedAt: json['lastUpdatedAt'] != null
+          ? DateTime.tryParse(json['lastUpdatedAt'] as String)
           : null,
       active: json['active'] as bool? ?? true,
     );
@@ -110,6 +162,8 @@ class LeagueWeek {
     required this.label,
     this.isVpl = false,
     this.isLeague = true,
+    this.weeklyFee,
+    this.guestFee,
   });
 
   final String id;
@@ -117,6 +171,10 @@ class LeagueWeek {
   final String label;
   final bool isVpl;
   final bool isLeague;
+  /// Weekly fee for this Sunday; null → use app default [kWeeklyFee] / store default.
+  final int? weeklyFee;
+  /// Guest fee for this Sunday; null → use app default [kGuestFee] / store default.
+  final int? guestFee;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -124,6 +182,8 @@ class LeagueWeek {
         'label': label,
         'isVpl': isVpl,
         'isLeague': isLeague,
+        if (weeklyFee != null) 'weeklyFee': weeklyFee,
+        if (guestFee != null) 'guestFee': guestFee,
       };
 
   factory LeagueWeek.fromJson(Map<String, dynamic> json) => LeagueWeek(
@@ -132,6 +192,24 @@ class LeagueWeek {
         label: json['label'] as String,
         isVpl: json['isVpl'] as bool? ?? false,
         isLeague: json['isLeague'] as bool? ?? true,
+        weeklyFee: (json['weeklyFee'] as num?)?.toInt(),
+        guestFee: (json['guestFee'] as num?)?.toInt(),
+      );
+
+  LeagueWeek copyWith({
+    int? weeklyFee,
+    int? guestFee,
+    bool clearWeeklyFee = false,
+    bool clearGuestFee = false,
+  }) =>
+      LeagueWeek(
+        id: id,
+        date: date,
+        label: label,
+        isVpl: isVpl,
+        isLeague: isLeague,
+        weeklyFee: clearWeeklyFee ? null : (weeklyFee ?? this.weeklyFee),
+        guestFee: clearGuestFee ? null : (guestFee ?? this.guestFee),
       );
 }
 
@@ -383,14 +461,24 @@ class Eligibility {
   String label({
     int weeklyFee = kWeeklyFee,
     int guestFee = kGuestFee,
-  }) =>
-      switch (reason) {
-        EligibilityReason.lifetime => 'Lifetime member',
-        EligibilityReason.subscription => 'Season subscription',
-        EligibilityReason.weeklyPaid => 'Paid ₹$weeklyFee this week',
-        EligibilityReason.unpaid => 'Unpaid',
-        EligibilityReason.guest => 'Guest (₹$guestFee)',
-      };
+    int? subscriptionAmount,
+    DateTime? subscriptionValidUntil,
+  }) {
+    final subAmt = subscriptionAmount;
+    final until = subscriptionValidUntil;
+    return switch (reason) {
+      EligibilityReason.lifetime => 'Lifetime member',
+      EligibilityReason.subscription => until != null
+          ? 'Subscription ₹${subAmt ?? ''} until '
+              '${until.day}/${until.month}/${until.year}'
+          : (subAmt != null && subAmt > 0
+              ? 'Season subscription ₹$subAmt'
+              : 'Season subscription'),
+      EligibilityReason.weeklyPaid => 'Paid ₹$weeklyFee this week',
+      EligibilityReason.unpaid => 'Unpaid',
+      EligibilityReason.guest => 'Guest (₹$guestFee)',
+    };
+  }
 }
 
 class FinanceSummary {

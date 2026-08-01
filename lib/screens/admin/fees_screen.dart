@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 import '../../config.dart';
+import '../../models/models.dart';
 import '../../services/fpl_store.dart';
 
 class FeesScreen extends StatefulWidget {
@@ -49,10 +52,35 @@ class _FeesScreenState extends State<FeesScreen>
                 ),
                 TextButton(
                   onPressed: () => _addGuest(context),
-                  child: Text('Add guest ₹${store.guestFee}'),
+                  child: AnimatedBuilder(
+                    animation: store,
+                    builder: (context, _) => Text(
+                      'Add guest ₹${store.guestFeeForWeek()}',
+                    ),
+                  ),
                 ),
               ],
             ),
+          ),
+          AnimatedBuilder(
+            animation: store,
+            builder: (context, _) {
+              final weekFee = store.feeForWeek();
+              final guest = store.guestFeeForWeek();
+              final week = store.selectedWeek;
+              final label = week?.label ?? store.selectedWeekId;
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => _editWeekFees(context, store),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: Text('$label · weekly ₹$weekFee · guest ₹$guest'),
+                  ),
+                ),
+              );
+            },
           ),
           TabBar(
             controller: _tabs,
@@ -86,9 +114,95 @@ class _FeesScreenState extends State<FeesScreen>
     );
   }
 
+  Future<void> _editWeekFees(BuildContext context, FplStore store) async {
+    final weeklyCtrl = TextEditingController(text: '${store.feeForWeek()}');
+    final guestCtrl =
+        TextEditingController(text: '${store.guestFeeForWeek()}');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2E20),
+        title: Text(
+          'Week fees · ${store.selectedWeek?.label ?? store.selectedWeekId}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: weeklyCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Weekly fee (₹)',
+                labelStyle: TextStyle(color: Colors.white54),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: guestCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Guest fee (₹)',
+                labelStyle: TextStyle(color: Colors.white54),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Applies to new marks this Sunday. '
+              'Defaults: weekly ₹${store.weeklyFee}, guest ₹${store.guestFee}.',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      final weekly = int.tryParse(weeklyCtrl.text.trim());
+      final guest = int.tryParse(guestCtrl.text.trim());
+      if (weekly != null && guest != null) {
+        try {
+          await store.setWeekFees(
+            store.selectedWeekId,
+            weekly: weekly,
+            guest: guest,
+          );
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$e')),
+            );
+          }
+        }
+      }
+    }
+    weeklyCtrl.dispose();
+    guestCtrl.dispose();
+  }
+
   Future<void> _addGuest(BuildContext context) async {
     final name = TextEditingController();
     var teamId = kTeamOx;
+    final guestAmount = widget.store.guestFeeForWeek();
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -124,7 +238,7 @@ class _FeesScreenState extends State<FeesScreen>
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Save ₹${widget.store.guestFee}'),
+              child: Text('Save ₹$guestAmount'),
             ),
           ],
         ),
@@ -142,16 +256,141 @@ class _TeamFees extends StatelessWidget {
   final FplStore store;
   final String teamId;
 
+  Future<void> _toggleSubscription(BuildContext context, FplPlayer p) async {
+    if (p.subscriptionPaid) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1A2E20),
+          title: const Text(
+            'Clear subscription?',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            'Remove ${p.name}\'s subscription (₹${p.subscriptionAmount}) from the ledger?',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Clear'),
+            ),
+          ],
+        ),
+      );
+      if (ok == true) await store.setSubscription(p, false);
+      return;
+    }
+
+    final amountCtrl = TextEditingController(text: '${store.subscriptionFee}');
+    DateTime? validUntil;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          backgroundColor: const Color(0xFF1A2E20),
+          title: Text(
+            'Subscription · ${p.name}',
+            style: const TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: amountCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'Amount (₹)',
+                  labelStyle: TextStyle(color: Colors.white54),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white24),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  validUntil == null
+                      ? 'Valid for full season'
+                      : 'Until ${DateFormat('d MMM y').format(validUntil!)}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                trailing: TextButton(
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: validUntil ?? DateTime.now(),
+                      firstDate: DateTime(2026, 8, 1),
+                      lastDate: DateTime(2027, 12, 31),
+                    );
+                    if (picked != null) setLocal(() => validUntil = picked);
+                  },
+                  child: const Text('Set end date'),
+                ),
+              ),
+              if (validUntil != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => setLocal(() => validUntil = null),
+                    child: const Text('Clear end date'),
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Mark paid'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok == true) {
+      final amount = int.tryParse(amountCtrl.text.trim());
+      if (amount != null) {
+        try {
+          await store.setSubscription(
+            p,
+            true,
+            amount: amount,
+            validUntil: validUntil,
+          );
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$e')),
+            );
+          }
+        }
+      }
+    }
+    amountCtrl.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final list = store.playersForTeam(teamId);
+    final weekFee = store.feeForWeek();
     return ListView.builder(
       itemCount: list.length,
       itemBuilder: (context, i) {
         final p = list[i];
         final el = store.eligibilityFor(p);
         final canToggleWeekly =
-            !p.isLifetimeMember && !p.subscriptionPaid;
+            !p.isLifetimeMember && !p.hasActiveSubscription;
         final paidWeekly = store.hasWeeklyPayment(p.id, store.selectedWeekId);
 
         return ListTile(
@@ -160,7 +399,11 @@ class _TeamFees extends StatelessWidget {
             style: const TextStyle(color: Colors.white),
           ),
           subtitle: Text(
-            el.label(weeklyFee: store.weeklyFee),
+            el.label(
+              weeklyFee: weekFee,
+              subscriptionAmount: p.subscriptionAmount,
+              subscriptionValidUntil: p.subscriptionValidUntil,
+            ),
             style: TextStyle(
               color: el.eligible ? const Color(0xFFB8F27A) : Colors.orangeAccent,
               fontSize: 12,
@@ -171,12 +414,16 @@ class _TeamFees extends StatelessWidget {
             children: [
               if (!p.isLifetimeMember)
                 IconButton(
-                  tooltip: 'Subscription ₹${store.subscriptionFee}',
+                  tooltip: p.subscriptionPaid
+                      ? 'Subscription ₹${p.subscriptionAmount}'
+                      : 'Subscription (default ₹${store.subscriptionFee})',
                   icon: Icon(
-                    p.subscriptionPaid ? Icons.workspace_premium : Icons.workspace_premium_outlined,
+                    p.subscriptionPaid
+                        ? Icons.workspace_premium
+                        : Icons.workspace_premium_outlined,
                     color: p.subscriptionPaid ? Colors.amber : Colors.white38,
                   ),
-                  onPressed: () => store.setSubscription(p, !p.subscriptionPaid),
+                  onPressed: () => _toggleSubscription(context, p),
                 ),
               if (canToggleWeekly)
                 Switch(

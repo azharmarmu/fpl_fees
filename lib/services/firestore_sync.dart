@@ -132,6 +132,7 @@ class FirestoreSync {
     required String playerId,
     required String phone,
     String email = '',
+    DateTime? lastUpdatedAt,
   }) async {
     if (_applyingRemote) return;
     _beginLocalWrite();
@@ -139,9 +140,12 @@ class FirestoreSync {
       final ref = _players.doc(playerId);
       final snap = await ref.get();
       if (snap.exists) {
-        final data = <String, dynamic>{'phone': phone};
-        if (email.trim().isNotEmpty) {
-          data['email'] = email.trim();
+        final data = <String, dynamic>{
+          'phone': phone,
+          'email': email.trim(),
+        };
+        if (lastUpdatedAt != null) {
+          data['lastUpdatedAt'] = lastUpdatedAt.toIso8601String();
         }
         await ref.update(data);
       } else {
@@ -151,6 +155,26 @@ class FirestoreSync {
     } catch (e, st) {
       debugPrint('Firestore phone push failed: $e\n$st');
       rethrow;
+    } finally {
+      _endLocalWrite();
+    }
+  }
+
+  Future<void> pushPlayerLogin({
+    required String playerId,
+    required DateTime lastLoginAt,
+  }) async {
+    if (_applyingRemote) return;
+    _beginLocalWrite();
+    try {
+      final ref = _players.doc(playerId);
+      final snap = await ref.get();
+      if (snap.exists) {
+        await ref.update({'lastLoginAt': lastLoginAt.toIso8601String()});
+      }
+    } catch (e, st) {
+      debugPrint('Firestore login push failed: $e\n$st');
+      // Non-fatal — local already updated.
     } finally {
       _endLocalWrite();
     }
