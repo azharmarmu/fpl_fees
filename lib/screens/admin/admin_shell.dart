@@ -404,23 +404,6 @@ class _MoreTab extends StatelessWidget {
             activeThumbColor: const Color(0xFFB8F27A),
             onChanged: (v) => store.setTradeOpen(v),
           ),
-          ListTile(
-            title: const Text(
-              'Season 1 archive',
-              style: TextStyle(color: Colors.white),
-            ),
-            subtitle: const Text(
-              'Points, heroes, bat/bowl/field · no fees',
-              style: TextStyle(color: Colors.white54),
-            ),
-            trailing: const Icon(Icons.history, color: Color(0xFFB8F27A)),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => Season1Screen(cloudEnabled: store.cloudEnabled),
-              ),
-            ),
-          ),
           if (store.cloudEnabled)
             ListTile(
               title: const Text(

@@ -12,7 +12,6 @@ import '../../widgets/app_brand.dart';
 import '../../widgets/schedule_list.dart';
 import '../admin/match_detail_screen.dart';
 import '../schedule_screen.dart';
-import '../season1_screen.dart';
 import '../stat_player_screen.dart';
 import '../tournament_stats_screen.dart';
 
@@ -381,28 +380,7 @@ class _PlayerHome extends StatelessWidget {
             icon: const Icon(Icons.leaderboard_outlined),
             label: const Text('Tournament stats'),
           ),
-          const SizedBox(height: 4),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.history, color: Color(0xFFB8F27A)),
-            title: const Text(
-              'Season 1 archive',
-              style: TextStyle(color: Colors.white),
-            ),
-            subtitle: const Text(
-              'Switch season inside Tournament stats',
-              style: TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    Season1Screen(cloudEnabled: store.cloudEnabled),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
