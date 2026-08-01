@@ -19,7 +19,6 @@ import 'finance_screen.dart';
 import 'match_detail_screen.dart';
 import 'trades_screen.dart';
 import '../schedule_screen.dart';
-import '../season1_screen.dart';
 import '../tournament_stats_screen.dart';
 import '../../services/stat_players_repository.dart';
 
