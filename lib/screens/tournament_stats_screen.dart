@@ -221,12 +221,28 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        _seasonId == 's2'
-                            ? 'Season 2 leaderboards will appear here after weekly stats are imported (points table, bat, bowl, field, MVP).'
-                            : 'No stats for this season yet.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white54),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _seasonId == 's2'
+                                ? 'Season 2 leaderboards will appear here after weekly stats are imported (points table, bat, bowl, field, MVP).'
+                                : 'No stats for this season yet.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white54),
+                          ),
+                          if (_seasonId == 's2') ...[
+                            const SizedBox(height: 16),
+                            FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFFB8F27A),
+                                foregroundColor: Colors.black,
+                              ),
+                              onPressed: () => _selectSeason('s1'),
+                              child: const Text('View Season 1 stats'),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   );
