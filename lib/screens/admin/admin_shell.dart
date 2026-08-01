@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../models/models.dart';
 import '../../services/fpl_store.dart';
 import '../../services/io_bytes.dart';
+import '../../widgets/all_time_leaders.dart';
 import '../../widgets/app_brand.dart';
 import '../../widgets/schedule_list.dart';
 import 'add_match_screen.dart';
@@ -157,6 +158,8 @@ class _Dashboard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           HomeWeekSchedule(store: store),
+          const SizedBox(height: 16),
+          AllTimeLeaders(cloudEnabled: store.cloudEnabled),
           const SizedBox(height: 16),
           Wrap(
             spacing: 10,
