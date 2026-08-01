@@ -66,6 +66,10 @@ flutter:
   assets:
     - assets/sample_contacts.csv
     - assets/images/fpl_logo.png
+    - assets/season1/batting_leaderboard.csv
+    - assets/season1/bowling_leaderboard.csv
+    - assets/season1/fielding_leaderboard.csv
+    - assets/season1/mvp_leaderboard.csv
 
   # To add assets to your application, add an assets section, like this:
   # assets:

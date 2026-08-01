@@ -11,6 +11,7 @@ import '../../widgets/app_brand.dart';
 import '../../widgets/schedule_list.dart';
 import '../admin/match_detail_screen.dart';
 import '../schedule_screen.dart';
+import '../season1_screen.dart';
 
 class PlayerShell extends StatefulWidget {
   const PlayerShell({
@@ -357,7 +358,25 @@ class _PlayerHome extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           HomeWeekSchedule(store: store),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.history, color: Color(0xFFB8F27A)),
+            title: const Text(
+              'Season 1 archive',
+              style: TextStyle(color: Colors.white),
+            ),
+            subtitle: const Text(
+              'Points, heroes & leaderboards (2025–26)',
+              style: TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const Season1Screen()),
+            ),
+          ),
+          const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

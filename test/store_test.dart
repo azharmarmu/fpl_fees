@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:fpl_fees/config.dart';
+import 'package:fpl_fees/data/season1.dart';
 import 'package:fpl_fees/data/seed.dart';
 import 'package:fpl_fees/models/models.dart';
 import 'package:fpl_fees/services/contact_import.dart';
@@ -350,6 +351,20 @@ void main() {
       expect(p.lastLoginAt, isNull);
       await store.recordPlayerLogin(p.id);
       expect(store.playerById(p.id)!.lastLoginAt, isNotNull);
+    });
+  });
+
+  group('season1 archive', () {
+    test('loads CricHeroes CSV leaderboards from assets', () async {
+      final data = await Season1Loader.load();
+      expect(data.batting, isNotEmpty);
+      expect(data.batting.first.name, 'Azhar Marmu');
+      expect(data.bowling.first.name, 'Anas');
+      expect(data.fielding.first.name, 'Mohammed Razee');
+      expect(data.mvp.first.name, 'Azhar Marmu');
+      expect(data.heroes, hasLength(4));
+      expect(season1Standings.first.teamName, 'OX CC');
+      expect(season1Standings.first.points, 80);
     });
   });
 

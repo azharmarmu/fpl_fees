@@ -1,0 +1,82 @@
+player_id,name,team_id,team_name,total_match,innings,total_wickets,balls,highest_wicket,economy,SR,maidens,avg,runs,bowling_style,overs,dot_balls
+27519438,Anas,10521833,OX CC,71,72,49,726,3,5.42,14.82,4,13.39,656,Right-arm medium,121.0,386
+33111878,Moniz Babs,10521833,OX CC,62,64,43,645,3,3.96,15.00,5,9.91,426,Right-arm fast,107.3,399
+33116935,Mansoor Vk,10521995,Gully Blasters,66,65,41,597,3,5.25,14.56,2,12.73,522,Right-arm medium,99.3,295
+32601476,M S Rusfi,10521833,OX CC,42,42,31,449,4,5.14,14.48,3,12.42,385,Right-arm fast,74.5,246
+13346088,Azhar Marmu,10521995,Gully Blasters,77,51,30,351,3,5.20,11.70,3,10.13,304,Right-arm medium,58.3,198
+41828992,Siraj,10521833,OX CC,72,68,30,461,4,5.36,15.37,3,13.73,412,Right-arm medium,76.5,242
+39134242,Nithish,10521995,Gully Blasters,38,38,26,385,2,4.89,14.81,3,12.08,314,Right-arm medium,64.1,217
+41754509,Afzal Afu,10521833,OX CC,58,49,22,330,2,5.62,15.00,2,14.05,309,Right-arm medium,55.0,177
+33112269,Mohammed Ali Mc,10521995,Gully Blasters,53,52,21,384,4,5.55,18.29,2,16.9,355,Left-arm medium,64.0,199
+41692561,Munaf Cpm,10521995,Gully Blasters,39,31,19,293,4,4.44,15.42,5,11.42,217,Right-arm medium,48.5,179
+31091273,Abishek K,10521995,Gully Blasters,44,33,18,217,3,5.97,12.06,0,12,216,Right-arm fast,36.1,108
+41938068,Ac Yousuf,10521995,Gully Blasters,38,33,16,277,3,4.98,17.31,2,14.38,230,Right-arm fast,46.1,164
+41721387,Md Zabeer,10521833,OX CC,54,39,15,258,3,5.02,17.20,3,14.4,216,Right-arm fast,43.0,136
+41744035,Mohammad Hamza,10521995,Gully Blasters,39,30,15,198,2,5.82,13.20,0,12.8,192,Right-arm fast,33.0,107
+41972640,Farziii,10521833,OX CC,16,17,14,129,4,5.02,9.21,1,7.71,108,Right-arm fast,21.3,69
+33112173,Syed Shibli,10521995,Gully Blasters,25,27,12,215,2,5.94,17.92,1,17.75,213,Right-arm fast,35.5,117
+41721426,Raheem,10521833,OX CC,24,21,11,161,2,5.33,14.64,2,13,143,Right-arm fast,26.5,101
+27379139,Faizal,10521995,Gully Blasters,49,20,10,125,2,4.85,12.50,1,10.1,101,Right-arm medium,20.5,67
+16531079,Jawad A,10521833,OX CC,41,37,9,260,2,5.24,28.89,0,25.22,227,Right-arm fast,43.2,142
+41692880,Nowfal,10521995,Gully Blasters,36,23,7,152,2,5.80,21.71,0,21,147,Left-arm fast,25.2,75
+33112864,Irshad Ali,10521833,OX CC,53,21,7,130,2,6.55,18.57,0,20.29,142,Right-arm medium,21.4,65
+41972628,Shanu,10521995,Gully Blasters,41,18,6,102,2,5.35,17.00,1,15.17,91,Right-arm medium,17.0,53
+41721305,Siddique Sidu,10521833,OX CC,8,9,5,78,2,4.54,15.60,1,11.8,59,Right-arm fast,13.0,51
+41938108,Muthu,10521833,OX CC,15,13,5,83,2,5.06,16.60,0,14,70,Right-arm medium,13.5,45
+3456038,Aslam Hashim,10521995,Gully Blasters,15,12,5,78,2,5.92,15.60,0,15.4,77,Right-arm medium,13.0,37
+30938839,Gokul,10521995,Gully Blasters,51,9,5,51,2,7.18,10.20,0,12.2,61,Right-arm medium,8.3,25
+44729204,Mufeedh,10521995,Gully Blasters,9,5,4,36,2,4.00,9.00,0,6,24,Right-arm fast,6.0,23
+41938110,Hafeez,10521833,OX CC,9,7,3,42,1,3.29,14.00,0,7.67,23,Right-arm Off Break,7.0,28
+45134231,Yousuf Abd,10521995,Gully Blasters,3,3,3,30,1,3.60,10.00,0,6,18,Right-arm fast,5.0,18
+41920317,Arul,10521995,Gully Blasters,23,9,3,60,2,4.80,20.00,0,16,48,Right-arm fast,10.0,30
+9419207,Syed Molana,10521995,Gully Blasters,6,6,3,66,1,5.27,22.00,0,19.33,58,Right-arm medium,11.0,32
+33133780,Mohammed Razee,10521833,OX CC,61,19,3,113,1,5.84,37.67,0,36.67,110,Right-arm medium,18.5,56
+41721419,Jaseer S,10521833,OX CC,40,5,3,36,2,7.67,12.00,0,15.33,46,Left-arm fast,6.0,13
+9419293,Mubarak,10521995,Gully Blasters,2,1,2,6,2,0.00,3.00,1,0,0,-,1.0,6
+34553625,Imtiyaz,10521833,OX CC,3,3,2,18,1,2.67,9.00,0,4,8,Right-arm Off Break,3.0,12
+45134282,Ajeez,10521833,OX CC,3,3,2,18,1,2.67,9.00,0,4,8,Right-arm fast,3.0,14
+45134229,Althaf,10521995,Gully Blasters,3,3,2,30,1,4.00,15.00,0,10,20,Right-arm fast,5.0,16
+45904413,Abiyaz Md,10521995,Gully Blasters,3,2,2,12,1,5.00,6.00,0,5,10,-,2.0,6
+42402540,Sabith Zakan,10521833,OX CC,8,6,2,30,1,5.80,15.00,0,14.5,29,-,5.0,16
+9455798,Moulana,10521995,Gully Blasters,3,3,2,18,1,6.00,9.00,0,9,18,Right-arm fast,3.0,10
+47362067,Vicky,10521995,Gully Blasters,3,2,2,18,2,6.33,9.00,0,9.5,19,-,3.0,10
+41692426,Bava Kvs,10521995,Gully Blasters,66,16,2,82,2,6.44,41.00,2,44,88,Right-arm medium,13.4,47
+41692707,Mashood A C,10521995,Gully Blasters,39,16,2,96,1,6.56,48.00,0,52.5,105,Right-arm Leg Break,16.0,46
+42947960,Praveen,10521833,OX CC,3,3,2,30,2,7.00,15.00,0,17.5,35,Right-arm fast,5.0,17
+41721476,Anas Jr,10521833,OX CC,6,4,2,24,1,9.50,12.00,0,19,38,Right-arm medium,4.0,8
+42791863,Md Saif,10521995,Gully Blasters,2,1,1,12,1,1.00,12.00,0,2,2,Right-arm fast,2.0,10
+42402861,Sabith,10521995,Gully Blasters,2,1,1,6,1,2.00,6.00,0,2,2,Slow left-arm orthodox,1.0,5
+41989291,yousuf ka 3star,10521833,OX CC,2,2,1,18,1,3.67,18.00,0,11,11,Left-arm medium,3.0,14
+45786273,Arif Pvh,10521833,OX CC,3,1,1,3,1,4.00,3.00,0,2,2,-,0.3,2
+45134232,Mujeebh,10521995,Gully Blasters,3,2,1,12,1,4.00,12.00,0,8,8,Right-arm fast,2.0,8
+50294956,Afsal Aks,10521995,Gully Blasters,2,2,1,24,1,4.00,24.00,0,16,16,Right-arm fast,4.0,12
+41803927,Mohammed Irfan,10521833,OX CC,5,5,1,30,1,4.60,30.00,0,23,23,Right-arm fast,5.0,16
+17194184,James J,10521995,Gully Blasters,2,1,1,6,1,5.00,6.00,0,5,5,Right-arm fast,1.0,5
+11456739,Gopinath,10521833,OX CC,2,1,1,6,1,6.00,6.00,0,6,6,Right-arm Off Break,1.0,5
+45134281,Aslam,10521833,OX CC,8,5,1,30,1,6.40,30.00,0,32,32,Right-arm fast,5.0,12
+41938062,Sam Nathaniel,10521995,Gully Blasters,3,2,1,12,1,6.50,12.00,0,13,13,Right-arm fast,2.0,5
+41972623,Ajith Kumar,10521995,Gully Blasters,1,2,1,12,1,8.50,12.00,0,17,17,Right-arm fast,2.0,5
+41754588,Fazil Farook,10521833,OX CC,13,3,1,14,1,8.57,14.00,0,20,20,Right-arm fast,2.2,4
+41938137,Shamil,10521833,OX CC,3,1,1,6,1,11.00,6.00,0,11,11,Right-arm fast,1.0,2
+9419259,Imthiyas,10521833,OX CC,3,2,0,12,0,4.50,0.00,0,0,9,Left-arm medium,2.0,9
+42314993,Sinan,10521833,OX CC,2,1,0,6,0,5.00,0.00,0,0,5,-,1.0,3
+42813038,Jeba,10521833,OX CC,3,1,0,6,0,5.00,0.00,0,0,5,-,1.0,3
+42610850,Mohammed Ishak,10521995,Gully Blasters,3,3,0,15,0,5.60,0.00,0,0,14,Right-arm medium,2.3,8
+41721477,Hashim Aadhi,10521833,OX CC,3,1,0,6,0,6.00,0.00,0,0,6,Right-arm medium,1.0,4
+42206747,Aasif,10521833,OX CC,10,3,0,13,0,6.92,0.00,0,0,15,Right-arm fast,2.1,5
+50293455,Muzaffar,10521995,Gully Blasters,2,1,0,6,0,7.00,0.00,0,0,7,-,1.0,2
+33057372,Shameel,10521833,OX CC,5,1,0,6,0,7.00,0.00,0,0,7,-,1.0,3
+14542156,Niyaz,10521995,Gully Blasters,5,2,0,12,0,7.00,0.00,0,0,14,Right-arm medium,2.0,4
+45134283,Bilal,10521833,OX CC,3,2,0,12,0,7.50,0.00,0,0,15,Right-arm fast,2.0,7
+21879177,Mohammed Rafi,10521833,OX CC,5,1,0,6,0,8.00,0.00,0,0,8,Right-arm Off Break,1.0,2
+9419267,Nasir Thala,10521995,Gully Blasters,7,2,0,9,0,12.00,0.00,0,0,18,Right-arm medium,1.3,1
+9403507,Ashwaq,10521995,Gully Blasters,3,1,0,6,0,13.00,0.00,0,0,13,-,1.0,2
+31684308,Mohammed Riyaz,10521995,Gully Blasters,2,1,0,6,0,14.00,0.00,0,0,14,Right-arm fast,1.0,1
+33813344,Mohammed Rahoof,10521833,OX CC,5,1,0,6,0,15.00,0.00,0,0,15,-,1.0,1
+42834143,Zaman,10521833,OX CC,2,0,,,,0.00,0.00,0,0,0,-,0.0,0
+42791589,Niyaz Jr,10521833,OX CC,1,0,,,,0.00,0.00,0,0,0,-,0.0,0
+42516196,Nazuruddeen,10521995,Gully Blasters,1,0,,,,0.00,0.00,0,0,0,-,0.0,0
+42510845,Vellore Ibrahim,10521833,OX CC,2,0,,,,0.00,0.00,0,0,0,-,0.0,0
+42080118,Azharudeen Shaik,10521995,Gully Blasters,2,0,,,,0.00,0.00,0,0,0,-,0.0,0
+50293457,Rayan,10521995,Gully Blasters,2,0,,,,0.00,0.00,0,0,0,-,0.0,0
+51025446,Sainul Habid,10521833,OX CC,5,0,,,,0.00,0.00,0,0,0,-,0.0,0

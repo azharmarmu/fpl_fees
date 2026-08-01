@@ -18,6 +18,7 @@ import 'finance_screen.dart';
 import 'match_detail_screen.dart';
 import 'trades_screen.dart';
 import '../schedule_screen.dart';
+import '../season1_screen.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.store, required this.onLogout});
@@ -379,6 +380,21 @@ class _MoreTab extends StatelessWidget {
             value: store.tradeOpen,
             activeThumbColor: const Color(0xFFB8F27A),
             onChanged: (v) => store.setTradeOpen(v),
+          ),
+          ListTile(
+            title: const Text(
+              'Season 1 archive',
+              style: TextStyle(color: Colors.white),
+            ),
+            subtitle: const Text(
+              'Points, heroes, bat/bowl/field · no fees',
+              style: TextStyle(color: Colors.white54),
+            ),
+            trailing: const Icon(Icons.history, color: Color(0xFFB8F27A)),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const Season1Screen()),
+            ),
           ),
           ListTile(
             title: const Text(
