@@ -7,6 +7,7 @@ import 'package:fpl_fees/data/seed.dart';
 import 'package:fpl_fees/models/models.dart';
 import 'package:fpl_fees/services/contact_import.dart';
 import 'package:fpl_fees/services/fpl_store.dart';
+import 'package:fpl_fees/services/stat_players_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -365,6 +366,17 @@ void main() {
       expect(data.heroes, hasLength(4));
       expect(season1Standings.first.teamName, 'OX CC');
       expect(season1Standings.first.points, 80);
+    });
+
+    test('builds career player from Season 1 assets', () async {
+      final p = await StatPlayersRepository.fromSeason1Assets(
+        playerId: '13346088',
+        name: 'Azhar Marmu',
+      );
+      expect(p, isNotNull);
+      expect(p!.seasons['s1']!.batting!.runs, 807);
+      expect(p.seasons['s1']!.bowling!.wickets, 30);
+      expect(p.allTeams, contains('Gully Blasters'));
     });
   });
 

@@ -112,6 +112,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Season archives (S1 points / meta) — public read, admin write.
+    match /seasons/{seasonId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Cross-season player stats (click-through careers) — public read, admin write.
+    match /statPlayers/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Admin allow-list: set docs in Console (UID -> {}). No client writes.
     match /admins/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;

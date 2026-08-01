@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../data/season1.dart';
+import 'stat_player_screen.dart';
 
 /// Read-only Season 1 archive — visible to admin and players (no fees).
 class Season1Screen extends StatefulWidget {
-  const Season1Screen({super.key});
+  const Season1Screen({super.key, this.cloudEnabled = false});
+
+  /// When true, player detail prefers Firestore `statPlayers`.
+  final bool cloudEnabled;
 
   @override
   State<Season1Screen> createState() => _Season1ScreenState();
@@ -67,15 +71,32 @@ class _Season1ScreenState extends State<Season1Screen>
             return const Center(child: CircularProgressIndicator());
           }
           final data = snap.data!;
+          void openPlayer({String? id, String? name}) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StatPlayerScreen(
+                  playerId: id,
+                  playerName: name,
+                  cloudEnabled: widget.cloudEnabled,
+                ),
+              ),
+            );
+          }
+
           return TabBarView(
             controller: _tabs,
             children: [
-              _OverviewTab(data: data),
+              _OverviewTab(data: data, onOpenPlayer: openPlayer),
               const _PointsTab(),
-              _HeroesTab(heroes: data.heroes, mvp: data.mvp),
-              _BattingTab(rows: data.batting),
-              _BowlingTab(rows: data.bowling),
-              _FieldingTab(rows: data.fielding),
+              _HeroesTab(
+                heroes: data.heroes,
+                mvp: data.mvp,
+                onOpenPlayer: openPlayer,
+              ),
+              _BattingTab(rows: data.batting, onOpenPlayer: openPlayer),
+              _BowlingTab(rows: data.bowling, onOpenPlayer: openPlayer),
+              _FieldingTab(rows: data.fielding, onOpenPlayer: openPlayer),
             ],
           );
         },
@@ -85,8 +106,9 @@ class _Season1ScreenState extends State<Season1Screen>
 }
 
 class _OverviewTab extends StatelessWidget {
-  const _OverviewTab({required this.data});
+  const _OverviewTab({required this.data, required this.onOpenPlayer});
   final Season1Archive data;
+  final void Function({String? id, String? name}) onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +193,8 @@ class _OverviewTab extends StatelessWidget {
                 '${h.title} · ${h.teamName}',
                 style: const TextStyle(color: Colors.white54, fontSize: 12),
               ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white38),
+              onTap: () => onOpenPlayer(name: h.name),
             ),
         ],
       ],
@@ -259,9 +283,14 @@ class _PointsTab extends StatelessWidget {
 }
 
 class _HeroesTab extends StatelessWidget {
-  const _HeroesTab({required this.heroes, required this.mvp});
+  const _HeroesTab({
+    required this.heroes,
+    required this.mvp,
+    required this.onOpenPlayer,
+  });
   final List<Season1Hero> heroes;
   final List<Season1MvpRow> mvp;
+  final void Function({String? id, String? name}) onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +321,7 @@ class _HeroesTab extends StatelessWidget {
                 style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
               isThreeLine: true,
+              onTap: () => onOpenPlayer(name: h.name),
             ),
           ),
         const SizedBox(height: 16),
@@ -320,6 +350,7 @@ class _HeroesTab extends StatelessWidget {
               mvp[i].total.toStringAsFixed(1),
               style: const TextStyle(color: Color(0xFFB8F27A)),
             ),
+            onTap: () => onOpenPlayer(name: mvp[i].name),
           ),
       ],
     );
@@ -327,8 +358,9 @@ class _HeroesTab extends StatelessWidget {
 }
 
 class _BattingTab extends StatelessWidget {
-  const _BattingTab({required this.rows});
+  const _BattingTab({required this.rows, required this.onOpenPlayer});
   final List<Season1BattingRow> rows;
+  final void Function({String? id, String? name}) onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -369,6 +401,7 @@ class _BattingTab extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          onTap: () => onOpenPlayer(id: r.playerId, name: r.name),
         );
       },
     );
@@ -376,8 +409,9 @@ class _BattingTab extends StatelessWidget {
 }
 
 class _BowlingTab extends StatelessWidget {
-  const _BowlingTab({required this.rows});
+  const _BowlingTab({required this.rows, required this.onOpenPlayer});
   final List<Season1BowlingRow> rows;
+  final void Function({String? id, String? name}) onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -418,6 +452,7 @@ class _BowlingTab extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          onTap: () => onOpenPlayer(id: r.playerId, name: r.name),
         );
       },
     );
@@ -425,8 +460,9 @@ class _BowlingTab extends StatelessWidget {
 }
 
 class _FieldingTab extends StatelessWidget {
-  const _FieldingTab({required this.rows});
+  const _FieldingTab({required this.rows, required this.onOpenPlayer});
   final List<Season1FieldingRow> rows;
+  final void Function({String? id, String? name}) onOpenPlayer;
 
   @override
   Widget build(BuildContext context) {
@@ -467,6 +503,7 @@ class _FieldingTab extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          onTap: () => onOpenPlayer(id: r.playerId, name: r.name),
         );
       },
     );

@@ -373,7 +373,10 @@ class _PlayerHome extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right, color: Colors.white38),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const Season1Screen()),
+              MaterialPageRoute(
+                builder: (_) =>
+                    Season1Screen(cloudEnabled: store.cloudEnabled),
+              ),
             ),
           ),
           const SizedBox(height: 8),

@@ -19,6 +19,7 @@ import 'match_detail_screen.dart';
 import 'trades_screen.dart';
 import '../schedule_screen.dart';
 import '../season1_screen.dart';
+import '../../services/stat_players_repository.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.store, required this.onLogout});
@@ -393,9 +394,25 @@ class _MoreTab extends StatelessWidget {
             trailing: const Icon(Icons.history, color: Color(0xFFB8F27A)),
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const Season1Screen()),
+              MaterialPageRoute(
+                builder: (_) => Season1Screen(cloudEnabled: store.cloudEnabled),
+              ),
             ),
           ),
+          if (store.cloudEnabled)
+            ListTile(
+              title: const Text(
+                'Upload Season 1 stats to Firestore',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Admin only · enables tap-to-career for all devices',
+                style: TextStyle(color: Colors.white54),
+              ),
+              trailing: const Icon(Icons.cloud_upload_outlined,
+                  color: Color(0xFFB8F27A)),
+              onTap: () => _uploadSeason1Stats(context, store),
+            ),
           ListTile(
             title: const Text(
               'Default fee amounts',
@@ -735,6 +752,57 @@ class _ExportScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+Future<void> _uploadSeason1Stats(BuildContext context, FplStore store) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1A2E20),
+      title: const Text(
+        'Upload Season 1 to Firestore?',
+        style: TextStyle(color: Colors.white),
+      ),
+      content: const Text(
+        'Writes seasons/s1 + statPlayers docs from bundled CricHeroes CSVs. '
+        'Sign in as Firebase admin first.',
+        style: TextStyle(color: Colors.white70),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Upload'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => const Center(child: CircularProgressIndicator()),
+  );
+  try {
+    final n = await StatPlayersRepository().uploadSeason1FromAssets();
+    if (context.mounted) {
+      Navigator.pop(context); // loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Uploaded $n Season 1 players to Firestore')),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: $e')),
+      );
+    }
   }
 }
 
