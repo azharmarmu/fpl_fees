@@ -49,7 +49,7 @@ class _FeesScreenState extends State<FeesScreen>
                 ),
                 TextButton(
                   onPressed: () => _addGuest(context),
-                  child: const Text('Add guest ₹200'),
+                  child: Text('Add guest ₹${store.guestFee}'),
                 ),
               ],
             ),
@@ -61,7 +61,7 @@ class _FeesScreenState extends State<FeesScreen>
             tabs: const [
               Tab(text: 'OX'),
               Tab(text: 'GB'),
-              Tab(text: 'Rusfi'),
+              Tab(text: 'Avengers'),
               Tab(text: 'Guests'),
             ],
           ),
@@ -74,7 +74,7 @@ class _FeesScreenState extends State<FeesScreen>
                   children: [
                     _TeamFees(store: store, teamId: kTeamOx),
                     _TeamFees(store: store, teamId: kTeamGb),
-                    _TeamFees(store: store, teamId: kTeamNew),
+                    _TeamFees(store: store, teamId: kTeamAvengers),
                     _GuestsList(store: store),
                   ],
                 );
@@ -122,7 +122,10 @@ class _FeesScreenState extends State<FeesScreen>
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save ₹200')),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Save ₹${widget.store.guestFee}'),
+            ),
           ],
         ),
       ),
@@ -157,7 +160,7 @@ class _TeamFees extends StatelessWidget {
             style: const TextStyle(color: Colors.white),
           ),
           subtitle: Text(
-            el.label,
+            el.label(weeklyFee: store.weeklyFee),
             style: TextStyle(
               color: el.eligible ? const Color(0xFFB8F27A) : Colors.orangeAccent,
               fontSize: 12,
@@ -168,7 +171,7 @@ class _TeamFees extends StatelessWidget {
             children: [
               if (!p.isLifetimeMember)
                 IconButton(
-                  tooltip: 'Subscription ₹$kSubscriptionFee',
+                  tooltip: 'Subscription ₹${store.subscriptionFee}',
                   icon: Icon(
                     p.subscriptionPaid ? Icons.workspace_premium : Icons.workspace_premium_outlined,
                     color: p.subscriptionPaid ? Colors.amber : Colors.white38,

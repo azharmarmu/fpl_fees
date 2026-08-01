@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -7,13 +8,23 @@ import 'package:uuid/uuid.dart';
 import '../config.dart';
 import '../data/seed.dart';
 import '../models/models.dart';
+import 'contact_import.dart';
+import 'firestore_sync.dart';
+import 'ledger_export.dart';
+import 'pdf_storage.dart';
 
-/// Local-first store. Swap to Firestore later when Firebase is configured.
+/// Local-first store with optional Firestore multi-device sync.
 class FplStore extends ChangeNotifier {
-  FplStore();
+  FplStore({
+    FirestoreSync? cloud,
+    PdfStorage? pdfStorage,
+  })  : _cloud = cloud,
+        pdfStorage = pdfStorage ?? PdfStorage();
 
   static const _prefsKey = 'fpl_fees_v1';
   final _uuid = const Uuid();
+  FirestoreSync? _cloud;
+  final PdfStorage pdfStorage;
 
   List<FplPlayer> players = [];
   List<LeagueWeek> weeks = [];
@@ -21,9 +32,15 @@ class FplStore extends ChangeNotifier {
   List<GuestPayment> guests = [];
   List<MatchScorecard> matches = [];
   List<PlayerTrade> trades = [];
+  List<ScheduledFixture> fixtures = [];
   bool tradeOpen = false;
   String selectedWeekId = '';
+  int weeklyFee = kWeeklyFee;
+  int subscriptionFee = kSubscriptionFee;
+  int guestFee = kGuestFee;
   bool ready = false;
+  bool cloudEnabled = false;
+  String? cloudError;
 
   LeagueWeek? get selectedWeek {
     try {
@@ -33,14 +50,83 @@ class FplStore extends ChangeNotifier {
     }
   }
 
+  /// Enable cloud after Firebase bootstrap succeeds.
+  void _applyCloud(CloudSnapshot snap) {
+    players = snap.players;
+    weeks = snap.weeks.isNotEmpty ? snap.weeks : weeks;
+    payments = snap.payments;
+    guests = snap.guests;
+    matches = snap.matches;
+    trades = snap.trades;
+    if (snap.fixtures.isNotEmpty) {
+      fixtures = snap.fixtures;
+    }
+    tradeOpen = snap.tradeOpen;
+    weeklyFee = _sanitizeFee(snap.weeklyFee, kWeeklyFee);
+    subscriptionFee = _sanitizeFee(snap.subscriptionFee, kSubscriptionFee);
+    guestFee = _sanitizeFee(snap.guestFee, kGuestFee);
+    if (snap.selectedWeekId.isNotEmpty) {
+      selectedWeekId = snap.selectedWeekId;
+    } else if (selectedWeekId.isEmpty) {
+      selectedWeekId = _defaultWeekId();
+    }
+  }
+
+  static int _sanitizeFee(int value, int fallback) {
+    if (value < 1 || value > 100000) return fallback;
+    return value;
+  }
+
+  Future<void> attachCloud(FirestoreSync sync) async {
+    _cloud = sync;
+    cloudEnabled = true;
+    pdfStorage.cloudEnabled = true;
+    try {
+      final remote = await sync.pullOnce();
+      if (remote != null && remote.players.isNotEmpty) {
+        _applyCloud(remote);
+        final migrated =
+            _migrateTeamIds() | _backfillTeamNames() | _ensureFixtures();
+        if (migrated) {
+          await _persist();
+        } else {
+          await _persistLocal();
+        }
+      } else if (players.isNotEmpty) {
+        _ensureFixtures();
+        await _pushCloud();
+      }
+      sync.listen((snap) {
+        if (snap.players.isEmpty) return;
+        _applyCloud(snap);
+        final migrated =
+            _migrateTeamIds() | _backfillTeamNames() | _ensureFixtures();
+        // Defer persist until after FirestoreSync clears isApplyingRemote.
+        scheduleMicrotask(() async {
+          if (migrated) {
+            await _persist();
+          } else {
+            await _persistLocal();
+          }
+          notifyListeners();
+        });
+      });
+    } catch (e) {
+      cloudError = '$e';
+      debugPrint('Cloud attach failed: $e');
+    }
+    notifyListeners();
+  }
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_prefsKey);
     if (raw == null) {
       players = buildSeedPlayers();
       weeks = buildSeasonWeeks();
+      fixtures = buildSeasonFixtures();
       selectedWeekId = _defaultWeekId();
-      await _persist();
+      await _persistLocal();
     } else {
       final map = jsonDecode(raw) as Map<String, dynamic>;
       players = (map['players'] as List)
@@ -67,11 +153,206 @@ class FplStore extends ChangeNotifier {
           .cast<Map<String, dynamic>>()
           .map(PlayerTrade.fromJson)
           .toList();
+      fixtures = (map['fixtures'] as List? ?? [])
+          .cast<Map<String, dynamic>>()
+          .map(ScheduledFixture.fromJson)
+          .toList();
       tradeOpen = map['tradeOpen'] as bool? ?? false;
       selectedWeekId = map['selectedWeekId'] as String? ?? _defaultWeekId();
+      weeklyFee = _sanitizeFee(
+        (map['weeklyFee'] as num?)?.toInt() ?? kWeeklyFee,
+        kWeeklyFee,
+      );
+      subscriptionFee = _sanitizeFee(
+        (map['subscriptionFee'] as num?)?.toInt() ?? kSubscriptionFee,
+        kSubscriptionFee,
+      );
+      guestFee = _sanitizeFee(
+        (map['guestFee'] as num?)?.toInt() ?? kGuestFee,
+        kGuestFee,
+      );
+      _backfillSeedPhones();
+      _backfillLifetimeFromSeed();
+      final migrated =
+          _migrateTeamIds() | _backfillTeamNames() | _ensureFixtures();
+      if (migrated) {
+        await _persist();
+      }
     }
     ready = true;
     notifyListeners();
+  }
+
+  /// Fill empty phones from [kSeedPhones] for installs created before seed phones existed.
+  void _backfillSeedPhones() {
+    var changed = false;
+    for (var i = 0; i < players.length; i++) {
+      final p = players[i];
+      final seed = kSeedPhones[p.id];
+      if (seed != null && seed.isNotEmpty && p.phone.trim().isEmpty) {
+        players[i] = p.copyWith(phone: seed);
+        changed = true;
+      }
+    }
+    if (changed) {
+      // Fire-and-forget local persist; cloud push happens on next mutation.
+      unawaited(_persistLocal());
+    }
+  }
+
+  /// Apply new lifetime flags from seed (e.g. Mohammed Ali MC) onto existing installs.
+  void _backfillLifetimeFromSeed() {
+    final seedLifetime = {
+      for (final p in buildSeedPlayers())
+        if (p.isLifetimeMember) p.id,
+    };
+    var changed = false;
+    for (var i = 0; i < players.length; i++) {
+      final p = players[i];
+      if (!seedLifetime.contains(p.id) || p.isLifetimeMember) continue;
+      players[i] = p.copyWith(
+        isLifetimeMember: true,
+        subscriptionPaid: false,
+        clearSubscriptionDate: true,
+      );
+      payments.removeWhere((pay) => pay.playerId == p.id);
+      changed = true;
+    }
+    if (changed) {
+      unawaited(_persist());
+    }
+  }
+
+  /// Migrate legacy team id `new` → `avengers` across players, guests, trades, matches.
+  /// Returns true if any row changed (caller should persist / push).
+  bool _migrateTeamIds() {
+    String mapId(String id) => id == kTeamNewLegacy ? kTeamAvengers : id;
+
+    var changed = false;
+    for (var i = 0; i < players.length; i++) {
+      final p = players[i];
+      if (p.teamId != kTeamNewLegacy) continue;
+      players[i] = p.copyWith(
+        teamId: kTeamAvengers,
+        teamName: kTeamNames[kTeamAvengers]!,
+      );
+      changed = true;
+    }
+
+    for (var i = 0; i < guests.length; i++) {
+      final g = guests[i];
+      if (g.teamId != kTeamNewLegacy) continue;
+      guests[i] = GuestPayment(
+        id: g.id,
+        weekId: g.weekId,
+        name: g.name,
+        teamId: kTeamAvengers,
+        amount: g.amount,
+        paidAt: g.paidAt,
+      );
+      changed = true;
+    }
+
+    for (var i = 0; i < trades.length; i++) {
+      final t = trades[i];
+      final from = mapId(t.fromTeamId);
+      final to = mapId(t.toTeamId);
+      if (from == t.fromTeamId && to == t.toTeamId) continue;
+      trades[i] = PlayerTrade(
+        id: t.id,
+        playerId: t.playerId,
+        playerName: t.playerName,
+        fromTeamId: from,
+        toTeamId: to,
+        salePriceInr: t.salePriceInr,
+        commissionInr: t.commissionInr,
+        commissionCollected: t.commissionCollected,
+        tradedAt: t.tradedAt,
+        notes: t.notes,
+      );
+      changed = true;
+    }
+
+    for (var i = 0; i < matches.length; i++) {
+      final m = matches[i];
+      final a = mapId(m.teamAId);
+      final b = mapId(m.teamBId);
+      if (a == m.teamAId && b == m.teamBId) continue;
+      matches[i] = MatchScorecard(
+        id: m.id,
+        date: m.date,
+        teamAId: a,
+        teamBId: b,
+        teamAName: kTeamNames[a] ?? m.teamAName,
+        teamBName: kTeamNames[b] ?? m.teamBName,
+        teamAScore: m.teamAScore,
+        teamBScore: m.teamBScore,
+        resultText: m.resultText,
+        tossText: m.tossText,
+        ground: m.ground,
+        pdfLocalPath: m.pdfLocalPath,
+        pdfUrl: m.pdfUrl,
+      );
+      changed = true;
+    }
+
+    for (var i = 0; i < fixtures.length; i++) {
+      final f = fixtures[i];
+      final a = mapId(f.teamAId);
+      final b = mapId(f.teamBId);
+      if (a == f.teamAId && b == f.teamBId) continue;
+      fixtures[i] = ScheduledFixture(
+        id: f.id,
+        weekId: f.weekId,
+        date: f.date,
+        slot: f.slot,
+        teamAId: a,
+        teamBId: b,
+        teamAName: kTeamNames[a] ?? f.teamAName,
+        teamBName: kTeamNames[b] ?? f.teamBName,
+      );
+      changed = true;
+    }
+
+    return changed;
+  }
+
+  /// Seed / merge Aug–Sep fixtures when missing (existing installs).
+  bool _ensureFixtures() {
+    final seed = buildSeasonFixtures();
+    if (fixtures.isEmpty) {
+      fixtures = List.of(seed);
+      return true;
+    }
+    final ids = fixtures.map((f) => f.id).toSet();
+    var changed = false;
+    for (final f in seed) {
+      if (ids.contains(f.id)) continue;
+      fixtures.add(f);
+      changed = true;
+    }
+    if (changed) {
+      fixtures.sort((a, b) {
+        final dc = a.date.compareTo(b.date);
+        if (dc != 0) return dc;
+        return a.slot.compareTo(b.slot);
+      });
+    }
+    return changed;
+  }
+
+  /// Keep player.teamName in sync with [kTeamNames].
+  /// Returns true if any row changed (caller should persist / push).
+  bool _backfillTeamNames() {
+    var changed = false;
+    for (var i = 0; i < players.length; i++) {
+      final p = players[i];
+      final expected = kTeamNames[p.teamId];
+      if (expected == null || p.teamName == expected) continue;
+      players[i] = p.copyWith(teamName: expected);
+      changed = true;
+    }
+    return changed;
   }
 
   String _defaultWeekId() {
@@ -84,21 +365,77 @@ class FplStore extends ChangeNotifier {
     return weeks.isEmpty ? '' : weeks.last.id;
   }
 
-  Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _prefsKey,
-      jsonEncode({
+  Map<String, dynamic> toBackupMap() => {
         'players': players.map((e) => e.toJson()).toList(),
         'weeks': weeks.map((e) => e.toJson()).toList(),
         'payments': payments.map((e) => e.toJson()).toList(),
         'guests': guests.map((e) => e.toJson()).toList(),
         'matches': matches.map((e) => e.toJson()).toList(),
         'trades': trades.map((e) => e.toJson()).toList(),
+        'fixtures': fixtures.map((e) => e.toJson()).toList(),
         'tradeOpen': tradeOpen,
         'selectedWeekId': selectedWeekId,
-      }),
-    );
+        'weeklyFee': weeklyFee,
+        'subscriptionFee': subscriptionFee,
+        'guestFee': guestFee,
+      };
+
+  Future<void> _persistLocal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKey, jsonEncode(toBackupMap()));
+  }
+
+  Future<void> _pushCloud() async {
+    final sync = _cloud;
+    if (sync == null || sync.isApplyingRemote) return;
+    try {
+      await sync.pushAll(
+        players: players,
+        weeks: weeks,
+        payments: payments,
+        guests: guests,
+        matches: matches,
+        trades: trades,
+        fixtures: fixtures,
+        tradeOpen: tradeOpen,
+        selectedWeekId: selectedWeekId,
+        weeklyFee: weeklyFee,
+        subscriptionFee: subscriptionFee,
+        guestFee: guestFee,
+      );
+      cloudError = null;
+    } catch (e) {
+      cloudError = '$e';
+      debugPrint('Cloud push: $e');
+    }
+  }
+
+  Future<void> setFeeAmounts({
+    int? weekly,
+    int? subscription,
+    int? guest,
+  }) async {
+    final nextWeekly = weekly ?? weeklyFee;
+    final nextSub = subscription ?? subscriptionFee;
+    final nextGuest = guest ?? guestFee;
+    if (nextWeekly < 1 ||
+        nextWeekly > 100000 ||
+        nextSub < 1 ||
+        nextSub > 100000 ||
+        nextGuest < 1 ||
+        nextGuest > 100000) {
+      throw ArgumentError('Fees must be between ₹1 and ₹100000');
+    }
+    weeklyFee = nextWeekly;
+    subscriptionFee = nextSub;
+    guestFee = nextGuest;
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> _persist() async {
+    await _persistLocal();
+    await _pushCloud();
   }
 
   Future<void> selectWeek(String weekId) async {
@@ -168,39 +505,100 @@ class FplStore extends ChangeNotifier {
     return guests.where((g) => g.weekId == w).toList();
   }
 
+  List<ScheduledFixture> fixturesForWeek([String? weekId]) {
+    final w = weekId ?? selectedWeekId;
+    return fixtures.where((f) => f.weekId == w).toList()
+      ..sort((a, b) => a.slot.compareTo(b.slot));
+  }
+
   Future<void> setWeeklyPaid(FplPlayer player, bool paid) async {
     if (player.isLifetimeMember || player.subscriptionPaid) return;
+    final weekId = selectedWeekId;
+    final paymentId = '${weekId}_${player.id}';
+
     payments.removeWhere(
-      (p) => p.playerId == player.id && p.weekId == selectedWeekId,
+      (p) => p.playerId == player.id && p.weekId == weekId,
     );
+    WeeklyPayment? added;
     if (paid) {
-      payments.add(
-        WeeklyPayment(
-          weekId: selectedWeekId,
-          playerId: player.id,
-          amount: kWeeklyFee,
-          paidAt: DateTime.now(),
-        ),
+      added = WeeklyPayment(
+        weekId: weekId,
+        playerId: player.id,
+        amount: weeklyFee,
+        paidAt: DateTime.now(),
       );
+      payments.add(added);
     }
-    await _persist();
+
+    // Update UI immediately before cloud I/O.
     notifyListeners();
+    await _persistLocal();
+
+    final sync = _cloud;
+    if (sync != null && !sync.isApplyingRemote) {
+      try {
+        if (paid && added != null) {
+          await sync.upsertPayment(added);
+        } else {
+          await sync.deletePayment(paymentId);
+        }
+        cloudError = null;
+      } catch (e) {
+        cloudError = '$e';
+        debugPrint('Weekly fee cloud sync: $e');
+      }
+    }
   }
 
   Future<void> setSubscription(FplPlayer player, bool paid) async {
     if (player.isLifetimeMember) return;
     final i = players.indexWhere((p) => p.id == player.id);
     if (i < 0) return;
+
+    final removedPaymentIds = <String>[];
+    if (paid) {
+      for (final p in payments.where((p) => p.playerId == player.id)) {
+        removedPaymentIds.add(p.id);
+      }
+      payments.removeWhere((p) => p.playerId == player.id);
+    }
+
     players[i] = player.copyWith(
       subscriptionPaid: paid,
       subscriptionPaidAt: paid ? DateTime.now() : null,
       clearSubscriptionDate: !paid,
     );
-    if (paid) {
-      payments.removeWhere((p) => p.playerId == player.id);
-    }
-    await _persist();
+
     notifyListeners();
+    await _persistLocal();
+
+    final sync = _cloud;
+    if (sync != null && !sync.isApplyingRemote) {
+      try {
+        // Push player subscription fields + delete cleared weekly docs.
+        await sync.pushAll(
+          players: players,
+          weeks: weeks,
+          payments: payments,
+          guests: guests,
+          matches: matches,
+          trades: trades,
+          fixtures: fixtures,
+          tradeOpen: tradeOpen,
+          selectedWeekId: selectedWeekId,
+          weeklyFee: weeklyFee,
+          subscriptionFee: subscriptionFee,
+          guestFee: guestFee,
+        );
+        if (removedPaymentIds.isNotEmpty) {
+          await sync.deletePayments(removedPaymentIds);
+        }
+        cloudError = null;
+      } catch (e) {
+        cloudError = '$e';
+        debugPrint('Subscription cloud sync: $e');
+      }
+    }
   }
 
   Future<void> addGuest({
@@ -213,7 +611,7 @@ class FplStore extends ChangeNotifier {
         weekId: selectedWeekId,
         name: name.trim(),
         teamId: teamId,
-        amount: kGuestFee,
+        amount: guestFee,
         paidAt: DateTime.now(),
       ),
     );
@@ -230,21 +628,101 @@ class FplStore extends ChangeNotifier {
   Future<void> updatePlayerContact({
     required String playerId,
     String? phone,
+    String? email,
     String? username,
   }) async {
     final i = players.indexWhere((p) => p.id == playerId);
     if (i < 0) return;
     players[i] = players[i].copyWith(
       phone: phone,
+      email: email,
       cricheroesUsername: username,
     );
     await _persist();
     notifyListeners();
   }
 
+  static final _emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+  /// Player self-service: set phone (required) + optional email when phone missing.
+  /// Returns null on success, or an error message.
+  Future<String?> updateOwnPhone({
+    required String playerId,
+    required String rawPhone,
+    String rawEmail = '',
+  }) async {
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    final ten =
+        digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+    if (ten.length != 10) {
+      return 'Enter a valid 10-digit mobile number';
+    }
+
+    final email = rawEmail.trim();
+    if (email.isNotEmpty && !_emailRe.hasMatch(email)) {
+      return 'Enter a valid email, or leave it blank';
+    }
+
+    final i = players.indexWhere((p) => p.id == playerId);
+    if (i < 0) return 'Player not found';
+    if (players[i].phone.trim().isNotEmpty) {
+      return 'Phone already set — ask admin to change it';
+    }
+
+    // Avoid duplicate phones on the squad.
+    final taken = players.any(
+      (p) => p.id != playerId && p.normalizedPhone == ten,
+    );
+    if (taken) return 'This number is already used by another player';
+
+    players[i] = players[i].copyWith(phone: ten, email: email);
+    await _persistLocal();
+    notifyListeners();
+
+    final sync = _cloud;
+    if (sync != null && !sync.isApplyingRemote) {
+      try {
+        await sync.pushPlayerPhone(
+          playerId: playerId,
+          phone: ten,
+          email: email,
+        );
+        cloudError = null;
+      } catch (e) {
+        cloudError = '$e';
+        // Keep local save; cloud may catch up when admin seeds / rules allow.
+        debugPrint('Own phone cloud sync: $e');
+      }
+    }
+    return null;
+  }
+
+  /// Bulk update phones / usernames from CSV paste or file contents.
+  Future<ContactImportResult> importContacts(String csv) async {
+    final (next, result) = ContactImporter.apply(players: players, csv: csv);
+    if (result.updated > 0) {
+      players = next;
+      await _persist();
+      notifyListeners();
+    }
+    return result;
+  }
+
+  String contactsTemplateCsv() => ContactImporter.templateCsv(players);
+
+  String exportFinanceCsv() => LedgerExport.financeCsv(this);
+
+  String exportPaymentsCsv() => LedgerExport.paymentsCsv(this);
+
+  String exportSubscriptionsCsv() => LedgerExport.subscriptionsCsv(players);
+
+  String exportFullBackupJson() =>
+      const JsonEncoder.withIndent('  ').convert(toBackupMap());
+
   FplPlayer? findByPhone(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
-    final ten = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+    final ten =
+        digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
     if (ten.isEmpty) return null;
     try {
       return players.firstWhere((p) => p.normalizedPhone == ten);
@@ -265,7 +743,8 @@ class FplStore extends ChangeNotifier {
 
   FinanceSummary financeSummary() {
     final weekly = payments.fold<int>(0, (s, p) => s + p.amount);
-    final subs = players.where((p) => p.subscriptionPaid).length * kSubscriptionFee;
+    final subs =
+        players.where((p) => p.subscriptionPaid).length * subscriptionFee;
     final guestTotal = guests.fold<int>(0, (s, g) => s + g.amount);
     final tradeTotal = trades
         .where((t) => t.commissionCollected)
@@ -295,7 +774,7 @@ class FplStore extends ChangeNotifier {
     final buf = StringBuffer();
     buf.writeln('FPL Eligible — ${selectedWeek?.label ?? selectedWeekId}');
     buf.writeln();
-    for (final teamId in [kTeamOx, kTeamGb, kTeamNew]) {
+    for (final teamId in [kTeamOx, kTeamGb, kTeamAvengers]) {
       final list = eligiblePlayers().where((p) => p.teamId == teamId).toList();
       buf.writeln('${kTeamNames[teamId]}');
       for (final p in list) {
@@ -375,5 +854,11 @@ class FplStore extends ChangeNotifier {
       if (!hasWeeklyPayment(p.id, selectedWeekId)) n++;
     }
     return n;
+  }
+
+  @override
+  void dispose() {
+    _cloud?.dispose();
+    super.dispose();
   }
 }

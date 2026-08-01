@@ -1,44 +1,113 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function isAdmin() {
-      return request.auth != null
+      return isSignedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Player-facing reads are public for phone/username login (no OTP).
-    // Tighten later if needed.
+    function validPlayer() {
+      return request.resource.data.keys().hasAll([
+        'id', 'name', 'teamId', 'teamName'
+      ]);
+    }
+
+    // Squad: public read for phone/username player login (no OTP).
+    // Admin: full write. Players: first-time phone (+ optional email) when phone empty.
+    function phoneWasEmpty() {
+      return !('phone' in resource.data)
+        || resource.data.phone == null
+        || resource.data.phone == '';
+    }
+
+    function validSelfPhone() {
+      return request.resource.data.phone is string
+        && request.resource.data.phone.size() >= 10
+        && request.resource.data.phone.size() <= 15;
+    }
+
+    function validOptionalEmail() {
+      return !('email' in request.resource.data)
+        || request.resource.data.email == null
+        || request.resource.data.email == ''
+        || (request.resource.data.email is string
+          && request.resource.data.email.size() > 3
+          && request.resource.data.email.size() <= 120);
+    }
+
+    function onlyPhoneOrPhoneEmailFilled() {
+      let keys = request.resource.data.diff(resource.data).affectedKeys();
+      return (keys.hasOnly(['phone']) || keys.hasOnly(['phone', 'email']))
+        && validSelfPhone()
+        && validOptionalEmail();
+    }
+
     match /players/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin() && validPlayer();
+      allow update: if (isAdmin() && validPlayer())
+        || (phoneWasEmpty() && onlyPhoneOrPhoneEmailFilled());
+      allow delete: if isAdmin();
     }
+
     match /weeks/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Fee ledger — readable by all app users; writable by admins only.
+    // Deletes must not require request.resource (null on delete) — that blocked
+    // weekly/guest toggle-off and left cloud docs that reappeared after restart.
+    function validFeeAmount() {
+      return request.resource.data.amount is int
+        && request.resource.data.amount > 0
+        && request.resource.data.amount <= 10000;
+    }
+
     match /payments/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && validFeeAmount();
+      allow delete: if isAdmin();
     }
+
     match /guestPayments/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && validFeeAmount();
+      allow delete: if isAdmin();
     }
+
     match /matches/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /trades/{id} {
+
+    // League schedule (CricHeroes feed source) — public read, admin write.
+    match /fixtures/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /trades/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.salePriceInr is int
+        && request.resource.data.commissionInr is int;
+      allow delete: if isAdmin();
+    }
+
     match /appConfig/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Admin allow-list: set docs in Console (UID -> {}). No client writes.
     match /admins/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false; // set via console
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false;
     }
   }
 }

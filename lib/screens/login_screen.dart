@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -13,11 +14,13 @@ class LoginScreen extends StatefulWidget {
     required this.store,
     required this.session,
     required this.onLoggedIn,
+    this.firebaseEnabled = false,
   });
 
   final FplStore store;
   final SessionService session;
   final VoidCallback onLoggedIn;
+  final bool firebaseEnabled;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -27,14 +30,27 @@ class _LoginScreenState extends State<LoginScreen> {
   var _asAdmin = false;
   var _playerModePhone = true;
   final _adminPass = TextEditingController();
+  late final TextEditingController _adminEmail;
   final _playerInput = TextEditingController();
+  final _playerFocus = FocusNode();
   String? _error;
   var _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Never prefill admin email in release builds.
+    _adminEmail = TextEditingController(
+      text: kDebugMode ? kFirebaseAdminEmail : '',
+    );
+  }
+
+  @override
   void dispose() {
     _adminPass.dispose();
+    _adminEmail.dispose();
     _playerInput.dispose();
+    _playerFocus.dispose();
     super.dispose();
   }
 
@@ -45,9 +61,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       if (_asAdmin) {
-        if (_adminPass.text.trim() != kLocalAdminPassword) {
-          throw Exception('Wrong admin password');
-        }
+        final err = await widget.session.authService.signInAdmin(
+          password: _adminPass.text,
+          email: widget.firebaseEnabled ? _adminEmail.text.trim() : null,
+        );
+        if (err != null) throw Exception(err);
         await widget.session.setAdmin();
       } else {
         final raw = _playerInput.text.trim();
@@ -70,6 +88,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final showFirebaseEmail = widget.firebaseEnabled;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F1A12),
       body: SafeArea(
@@ -79,20 +99,31 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                Center(
+                  child: Image.asset(
+                    kAppLogoAsset,
+                    width: 128,
+                    height: 128,
+                    filterQuality: FilterQuality.high,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 Text(
-                  'FPL SEASON 2',
+                  kAppName,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.bebasNeue(
-                    fontSize: 42,
+                    fontSize: 48,
                     color: const Color(0xFFB8F27A),
-                    letterSpacing: 1.2,
+                    letterSpacing: 2,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Fees · Eligible · Scorecards',
+                Text(
+                  widget.store.cloudEnabled
+                      ? 'Season 2 · Fees · Eligible · Cloud sync'
+                      : 'Season 2 · Fees · Eligible · Scorecards',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white54),
+                  style: const TextStyle(color: Colors.white54),
                 ),
                 const SizedBox(height: 28),
                 SegmentedButton<bool>(
@@ -108,17 +139,35 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
                 if (_asAdmin) ...[
+                  if (showFirebaseEmail) ...[
+                    TextField(
+                      controller: _adminEmail,
+                      style: const TextStyle(color: Colors.white),
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: _dec('Admin email'),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
                     controller: _adminPass,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white),
-                    decoration: _dec('Admin password'),
+                    decoration: _dec(
+                      showFirebaseEmail
+                          ? 'Password'
+                          : 'Admin password',
+                    ),
                     onSubmitted: (_) => _submit(),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Local mode password: fpladmin\n(Replace with Firebase Auth after setup)',
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                  Text(
+                    showFirebaseEmail
+                        ? (kDebugMode
+                            ? 'Firebase Auth email/password.\nDebug fallback: local password fpladmin'
+                            : 'Sign in with your admin email and password')
+                        : 'Local mode password: fpladmin',
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                 ] else ...[
                   SegmentedButton<bool>(
@@ -127,14 +176,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       ButtonSegment(value: false, label: Text('Username')),
                     ],
                     selected: {_playerModePhone},
-                    onSelectionChanged: (s) => setState(() {
-                      _playerModePhone = s.first;
-                      _error = null;
-                    }),
+                    onSelectionChanged: (s) {
+                      final next = s.first;
+                      if (next == _playerModePhone) return;
+                      setState(() {
+                        _playerModePhone = next;
+                        _error = null;
+                      });
+                      // Force keyboard type change (Flutter keeps old IME otherwise).
+                      _playerFocus.unfocus();
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _playerFocus.requestFocus();
+                      });
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextField(
+                    key: ValueKey<bool>(_playerModePhone),
                     controller: _playerInput,
+                    focusNode: _playerFocus,
                     style: const TextStyle(color: Colors.white),
                     keyboardType: _playerModePhone
                         ? TextInputType.phone
@@ -142,6 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textCapitalization: _playerModePhone
                         ? TextCapitalization.none
                         : TextCapitalization.none,
+                    autocorrect: !_playerModePhone,
                     decoration: _dec(
                       _playerModePhone
                           ? 'Phone number'

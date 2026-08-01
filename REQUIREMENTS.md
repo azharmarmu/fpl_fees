@@ -33,7 +33,7 @@ Scoring stays on **CricHeroes**. This app does not replace CricHeroes selection 
 |---------|------|---------|
 | `ox` | OX CC | Anas |
 | `gb` | Gully Blasters | Azhar Marmu |
-| `new` | Rusfi XI | M S Rusfi |
+| `avengers` | Farm Avengers CC | M S Rusfi |
 
 Squad size ~50 auction players (seeded in app). Phones filled later by admin.
 
@@ -52,6 +52,7 @@ Squad size ~50 auction players (seeded in app). Phones filled later by admin.
 ### Lifetime exempt (seeded)
 
 - Azhar Marmu  
+- Mohammed Ali MC  
 - Mashood A C  
 - Nowfal  
 - Mansoor Vk  

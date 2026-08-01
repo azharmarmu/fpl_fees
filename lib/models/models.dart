@@ -7,6 +7,7 @@ class FplPlayer {
     required this.teamId,
     required this.teamName,
     this.phone = '',
+    this.email = '',
     this.cricheroesUsername = '',
     this.isLifetimeMember = false,
     this.isCaptain = false,
@@ -20,6 +21,7 @@ class FplPlayer {
   final String teamId;
   final String teamName;
   final String phone;
+  final String email;
   final String cricheroesUsername;
   final bool isLifetimeMember;
   final bool isCaptain;
@@ -37,6 +39,7 @@ class FplPlayer {
 
   FplPlayer copyWith({
     String? phone,
+    String? email,
     String? cricheroesUsername,
     bool? isLifetimeMember,
     bool? subscriptionPaid,
@@ -51,6 +54,7 @@ class FplPlayer {
       teamId: teamId ?? this.teamId,
       teamName: teamName ?? this.teamName,
       phone: phone ?? this.phone,
+      email: email ?? this.email,
       cricheroesUsername: cricheroesUsername ?? this.cricheroesUsername,
       isLifetimeMember: isLifetimeMember ?? this.isLifetimeMember,
       isCaptain: isCaptain,
@@ -68,6 +72,7 @@ class FplPlayer {
         'teamId': teamId,
         'teamName': teamName,
         'phone': phone,
+        'email': email,
         'cricheroesUsername': cricheroesUsername,
         'cricheroesUsernameLower': cricheroesUsernameLower,
         'isLifetimeMember': isLifetimeMember,
@@ -84,6 +89,7 @@ class FplPlayer {
       teamId: json['teamId'] as String,
       teamName: json['teamName'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
+      email: json['email'] as String? ?? '',
       cricheroesUsername: json['cricheroesUsername'] as String? ??
           (json['name'] as String? ?? ''),
       isLifetimeMember: json['isLifetimeMember'] as bool? ?? false,
@@ -209,6 +215,7 @@ class MatchScorecard {
     this.tossText = '',
     this.ground = 'Farm MCK, Vellore',
     this.pdfLocalPath,
+    this.pdfUrl,
   });
 
   final String id;
@@ -223,6 +230,12 @@ class MatchScorecard {
   final String tossText;
   final String ground;
   final String? pdfLocalPath;
+  /// Firebase Storage download URL (when cloud sync is enabled).
+  final String? pdfUrl;
+
+  bool get hasPdf =>
+      (pdfUrl != null && pdfUrl!.isNotEmpty) ||
+      (pdfLocalPath != null && pdfLocalPath!.isNotEmpty);
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -237,6 +250,7 @@ class MatchScorecard {
         'tossText': tossText,
         'ground': ground,
         'pdfLocalPath': pdfLocalPath,
+        'pdfUrl': pdfUrl,
       };
 
   factory MatchScorecard.fromJson(Map<String, dynamic> json) => MatchScorecard(
@@ -252,6 +266,58 @@ class MatchScorecard {
         tossText: json['tossText'] as String? ?? '',
         ground: json['ground'] as String? ?? '',
         pdfLocalPath: json['pdfLocalPath'] as String?,
+        pdfUrl: json['pdfUrl'] as String?,
+      );
+}
+
+/// Pre-planned Sunday fixture for CricHeroes scheduling (before result entry).
+class ScheduledFixture {
+  const ScheduledFixture({
+    required this.id,
+    required this.weekId,
+    required this.date,
+    required this.slot,
+    required this.teamAId,
+    required this.teamBId,
+    required this.teamAName,
+    required this.teamBName,
+  });
+
+  final String id;
+  final String weekId;
+  final DateTime date;
+  /// Match order on the day: 1 = opening, then 2, 3.
+  final int slot;
+  final String teamAId;
+  final String teamBId;
+  final String teamAName;
+  final String teamBName;
+
+  bool get isOpening => slot == 1;
+
+  String get matchup => '$teamAName vs $teamBName';
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'weekId': weekId,
+        'date': date.toIso8601String(),
+        'slot': slot,
+        'teamAId': teamAId,
+        'teamBId': teamBId,
+        'teamAName': teamAName,
+        'teamBName': teamBName,
+      };
+
+  factory ScheduledFixture.fromJson(Map<String, dynamic> json) =>
+      ScheduledFixture(
+        id: json['id'] as String,
+        weekId: json['weekId'] as String,
+        date: DateTime.parse(json['date'] as String),
+        slot: json['slot'] as int? ?? 1,
+        teamAId: json['teamAId'] as String,
+        teamBId: json['teamBId'] as String,
+        teamAName: json['teamAName'] as String? ?? '',
+        teamBName: json['teamBName'] as String? ?? '',
       );
 }
 
@@ -314,12 +380,16 @@ class Eligibility {
   final bool eligible;
   final EligibilityReason reason;
 
-  String get label => switch (reason) {
+  String label({
+    int weeklyFee = kWeeklyFee,
+    int guestFee = kGuestFee,
+  }) =>
+      switch (reason) {
         EligibilityReason.lifetime => 'Lifetime member',
         EligibilityReason.subscription => 'Season subscription',
-        EligibilityReason.weeklyPaid => 'Paid ₹$kWeeklyFee this week',
+        EligibilityReason.weeklyPaid => 'Paid ₹$weeklyFee this week',
         EligibilityReason.unpaid => 'Unpaid',
-        EligibilityReason.guest => 'Guest (₹$kGuestFee)',
+        EligibilityReason.guest => 'Guest (₹$guestFee)',
       };
 }
 

@@ -45,7 +45,7 @@ class EligibleScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              for (final teamId in [kTeamOx, kTeamGb, kTeamNew]) ...[
+              for (final teamId in [kTeamOx, kTeamGb, kTeamAvengers]) ...[
                 Text(
                   kTeamNames[teamId]!,
                   style: const TextStyle(

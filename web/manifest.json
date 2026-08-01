@@ -1,12 +1,12 @@
 {
-    "name": "fpl_fees",
-    "short_name": "fpl_fees",
+    "name": "FPL",
+    "short_name": "FPL",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#0F1A12",
+    "theme_color": "#163020",
+    "description": "Farm Premier League Season 2 fees — weekly, subscription, guests, eligibility.",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

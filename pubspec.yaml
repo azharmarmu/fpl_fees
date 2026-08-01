@@ -1,5 +1,5 @@
 name: fpl_fees
-description: "A new Flutter project."
+description: "FPL — Farm Premier League Season 2 fees."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -44,6 +44,7 @@ dependencies:
   url_launcher: ^6.3.2
   file_picker: ^11.0.3
   uuid: ^4.6.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -61,11 +62,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/sample_contacts.csv
+    - assets/images/fpl_logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -79,7 +79,7 @@ flutter:
   # https://flutter.dev/to/asset-from-package
 
   # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
+  # in this "flutter" section. Each entry should have a
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:

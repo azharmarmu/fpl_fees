@@ -39,9 +39,12 @@ class FinanceScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              _row('Weekly fees (₹50)', f.weeklyTotal),
-              _row('Subscriptions (₹750)', f.subscriptionTotal),
-              _row('Guest fees (₹200)', f.guestTotal),
+              _row('Weekly fees (₹${store.weeklyFee})', f.weeklyTotal),
+              _row(
+                'Subscriptions (₹${store.subscriptionFee})',
+                f.subscriptionTotal,
+              ),
+              _row('Guest fees (₹${store.guestFee})', f.guestTotal),
               _row('Trade commissions (25%)', f.tradeCommissionTotal),
               const SizedBox(height: 20),
               const Text(
@@ -78,7 +81,10 @@ class FinanceScreen extends StatelessWidget {
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(p.name, style: const TextStyle(color: Colors.white)),
-                      trailing: const Text('₹750', style: TextStyle(color: Color(0xFFB8F27A))),
+                      trailing: Text(
+                        '₹${store.subscriptionFee}',
+                        style: const TextStyle(color: Color(0xFFB8F27A)),
+                      ),
                     ),
                   ),
             ],

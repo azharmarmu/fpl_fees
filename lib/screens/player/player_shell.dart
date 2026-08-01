@@ -7,6 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/fpl_store.dart';
+import '../../widgets/app_brand.dart';
+import '../../widgets/schedule_list.dart';
+import '../schedule_screen.dart';
 
 class PlayerShell extends StatefulWidget {
   const PlayerShell({
@@ -26,6 +29,39 @@ class PlayerShell extends StatefulWidget {
 
 class _PlayerShellState extends State<PlayerShell> {
   var _index = 0;
+  var _phonePromptShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAskForPhone());
+  }
+
+  Future<void> _maybeAskForPhone() async {
+    if (!mounted || _phonePromptShown) return;
+    final me = widget.store.playerById(widget.playerId);
+    if (me == null || me.phone.trim().isNotEmpty) return;
+    _phonePromptShown = true;
+    final saved = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      // Outside tap / system back won't dismiss — use Cancel (logs out) or Save.
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: _AddContactDialog(
+          store: widget.store,
+          playerId: widget.playerId,
+          playerName: me.name,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (saved != true) {
+      // Cancel or dismissed without save → logout.
+      _phonePromptShown = false;
+      widget.onLogout();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +81,26 @@ class _PlayerShellState extends State<PlayerShell> {
           );
         }
 
+        // If cloud sync later clears phone, or first frame raced, prompt again.
+        if (me.phone.trim().isEmpty && !_phonePromptShown) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAskForPhone());
+        }
+
         final pages = [
           _PlayerHome(store: widget.store, me: me),
           _MyTeam(store: widget.store, me: me),
           _PlayerMatches(store: widget.store),
-          _PlayerProfile(me: me, onLogout: widget.onLogout),
+          _PlayerProfile(
+            store: widget.store,
+            me: me,
+            onLogout: widget.onLogout,
+            onAddPhone: me.phone.trim().isEmpty
+                ? () {
+                    _phonePromptShown = false;
+                    _maybeAskForPhone();
+                  }
+                : null,
+          ),
         ];
 
         return Scaffold(
@@ -85,6 +136,124 @@ class _PlayerShellState extends State<PlayerShell> {
   }
 }
 
+class _AddContactDialog extends StatefulWidget {
+  const _AddContactDialog({
+    required this.store,
+    required this.playerId,
+    required this.playerName,
+  });
+
+  final FplStore store;
+  final String playerId;
+  final String playerName;
+
+  @override
+  State<_AddContactDialog> createState() => _AddContactDialogState();
+}
+
+class _AddContactDialogState extends State<_AddContactDialog> {
+  final _phone = TextEditingController();
+  final _email = TextEditingController();
+  String? _error;
+  var _busy = false;
+
+  @override
+  void dispose() {
+    _phone.dispose();
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final err = await widget.store.updateOwnPhone(
+      playerId: widget.playerId,
+      rawPhone: _phone.text,
+      rawEmail: _email.text,
+    );
+    if (!mounted) return;
+    if (err != null) {
+      setState(() {
+        _busy = false;
+        _error = err;
+      });
+      return;
+    }
+    Navigator.pop(context, true);
+  }
+
+  void _cancel() {
+    if (_busy) return;
+    Navigator.pop(context, false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1A2E20),
+      title: const Text(
+        'Add your contact details',
+        style: TextStyle(color: Colors.white),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Hi ${widget.playerName} — mobile number is required so you can log in and so the organizer can reach you. Email is optional. Cancel will log you out.',
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _phone,
+            autofocus: true,
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              labelText: 'Mobile number *',
+              labelStyle: TextStyle(color: Colors.white70),
+              hintText: '9876543210',
+              hintStyle: TextStyle(color: Colors.white30),
+            ),
+            onSubmitted: (_) => _busy ? null : _save(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              labelText: 'Email (optional)',
+              labelStyle: TextStyle(color: Colors.white70),
+              hintText: 'you@example.com',
+              hintStyle: TextStyle(color: Colors.white30),
+            ),
+            onSubmitted: (_) => _busy ? null : _save(),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 8),
+            Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : _cancel,
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: Text(_busy ? 'Saving…' : 'Save'),
+        ),
+      ],
+    );
+  }
+}
+
 class _PlayerHome extends StatelessWidget {
   const _PlayerHome({required this.store, required this.me});
   final FplStore store;
@@ -97,6 +266,8 @@ class _PlayerHome extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const AppBrandHeader(logoSize: 44),
+          const SizedBox(height: 16),
           Text(
             me.name.toUpperCase(),
             style: GoogleFonts.bebasNeue(
@@ -130,10 +301,15 @@ class _PlayerHome extends StatelessWidget {
                     fontSize: 20,
                   ),
                 ),
-                Text(el.label, style: const TextStyle(color: Colors.white70)),
+                Text(
+                  el.label(weeklyFee: store.weeklyFee),
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
@@ -263,16 +439,34 @@ class _PlayerMatches extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              'SCORECARDS',
-              style: GoogleFonts.bebasNeue(
-                fontSize: 28,
-                color: const Color(0xFFB8F27A),
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'SCORECARDS',
+                    style: GoogleFonts.bebasNeue(
+                      fontSize: 28,
+                      color: const Color(0xFFB8F27A),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Full schedule',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ScheduleScreen(store: store),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.calendar_month_outlined,
+                    color: Color(0xFFB8F27A),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -297,6 +491,25 @@ class _PlayerMatches extends StatelessWidget {
                           style: const TextStyle(color: Colors.white54),
                         ),
                         isThreeLine: true,
+                        trailing: m.hasPdf
+                            ? const Icon(
+                                Icons.picture_as_pdf,
+                                color: Color(0xFFB8F27A),
+                              )
+                            : null,
+                        onTap: m.hasPdf &&
+                                m.pdfUrl != null &&
+                                m.pdfUrl!.isNotEmpty
+                            ? () async {
+                                final uri = Uri.parse(m.pdfUrl!);
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              }
+                            : null,
                       );
                     },
                   ),
@@ -308,9 +521,17 @@ class _PlayerMatches extends StatelessWidget {
 }
 
 class _PlayerProfile extends StatelessWidget {
-  const _PlayerProfile({required this.me, required this.onLogout});
+  const _PlayerProfile({
+    required this.store,
+    required this.me,
+    required this.onLogout,
+    this.onAddPhone,
+  });
+
+  final FplStore store;
   final FplPlayer me;
   final VoidCallback onLogout;
+  final VoidCallback? onAddPhone;
 
   @override
   Widget build(BuildContext context) {
@@ -331,12 +552,25 @@ class _PlayerProfile extends StatelessWidget {
             subtitle: Text(
               '${me.teamName}\n'
               'Phone: ${me.phone.isEmpty ? "—" : me.phone}\n'
+              'Email: ${me.email.isEmpty ? "—" : me.email}\n'
               'Username: ${me.cricheroesUsername}\n'
               '${me.isLifetimeMember ? "Lifetime member" : me.subscriptionPaid ? "Subscription paid" : "Weekly fee"}',
               style: const TextStyle(color: Colors.white54),
             ),
             isThreeLine: true,
           ),
+          if (onAddPhone != null) ...[
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFB8F27A),
+                foregroundColor: Colors.black,
+              ),
+              onPressed: onAddPhone,
+              icon: const Icon(Icons.phone_android),
+              label: const Text('Add phone number'),
+            ),
+          ],
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: onLogout,

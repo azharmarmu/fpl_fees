@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "283215487299",
+    "project_id": "fpl-fees",
+    "storage_bucket": "fpl-fees.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:283215487299:android:c17cf44bf9cd9e2c8b4ff6",
+        "android_client_info": {
+          "package_name": "com.fpl.fpl_fees"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBf8NbCBgtPpMNgEZJYruxFQIz4e3Ts1oo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

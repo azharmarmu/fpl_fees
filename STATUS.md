@@ -3,7 +3,7 @@
 **Repo:** https://github.com/azharmarmu/fpl_fees  
 **Branch:** `main`  
 **Status date:** 1 Aug 2026  
-**Overall:** **v1 local MVP complete** — usable on-device without Firebase. Cloud sync / Auth / PDF storage still pending.
+**Overall:** **Firebase project `fpl-fees` wired** (`kFirebaseEnabled = true`). Finish Auth Email/Password in Console + `bash tool/create_admin.sh`. Storage optional. Distribute via App Distribution — see [`RELEASE.md`](./RELEASE.md).
 
 Full product requirements: see [`REQUIREMENTS.md`](./REQUIREMENTS.md).  
 Quick run notes: see [`README.md`](./README.md).
@@ -19,15 +19,19 @@ Quick run notes: see [`README.md`](./README.md).
 | Admin fees / guests / subscription | Done |
 | Eligible list + WhatsApp copy | Done |
 | Finance ledger | Done |
-| Scorecards (manual summary) | Done |
+| Scorecards (manual summary + PDF attach) | Done |
 | Trades (25% commission) | Done |
 | Player login (phone / username, no OTP) | Done |
 | Player home + UPI | Done |
 | Local persistence (SharedPreferences) | Done |
-| Firebase Auth / Firestore live | **Not done** (`kFirebaseEnabled = false`) |
-| PDF upload to Storage | **Not done** |
-| Bulk phone CSV import | **Not done** |
-| Online payments | Out of scope v1 |
+| Bulk CSV phone/username import | Done |
+| Ledger export / JSON backup | Done |
+| Firebase Auth / Firestore / Storage code path | Done — project `fpl-fees` live |
+| Firestore rules deployed | Done |
+| Auth Email/Password + admin UID | Pending one Console click + `tool/create_admin.sh` |
+| Storage bucket | Pending Console (optional for PDF cloud) |
+| Unit + widget tests | Done |
+| Firebase App Distribution | Documented (not Play / App Store) |
 
 ---
 
@@ -36,44 +40,37 @@ Quick run notes: see [`README.md`](./README.md).
 ### Platform
 
 - [x] Flutter project under `fpl_fees/`
-- [x] Config constants: fees, UPI, teams, local admin password (`lib/config.dart`)
-- [x] Models: players, weeks, payments, guests, matches, trades, eligibility, finance (`lib/models/models.dart`)
-- [x] In-memory + SharedPreferences store (`lib/services/fpl_store.dart`)
-- [x] Session (admin vs player) (`lib/services/session_service.dart`)
-- [x] Firestore rules template (`firestore.rules`) — ready to deploy later
-- [x] README with run / admin password / Firebase steps
+- [x] Config constants + Firebase enable flag (`lib/config.dart`)
+- [x] Models including `pdfUrl` on matches
+- [x] `FplStore` local + optional Firestore sync
+- [x] Session + AuthService (local password / Firebase email)
+- [x] Firestore + Storage rules + `firebase.json`
+- [x] `firebase_options.dart` placeholder (replace via flutterfire)
+- [x] README / REQUIREMENTS / STATUS / RELEASE
 
 ### Seed data
 
-- [x] 50 Season 2 auction squad players across OX / GB / Rusfi XI
-- [x] Captains flagged (Anas, Azhar, M S Rusfi)
-- [x] Lifetime members: Azhar, Mashood, Nowfal, Mansoor Vk, Bava Kvs
-- [x] Default CricHeroes username = display name
-- [x] Weeks Sun **2 Aug 2026 → 27 Dec 2026**; **8 Nov** = VPL placeholder
+- [x] 50 Season 2 auction squad players
+- [x] Captains + lifetime members
+- [x] Demo phones for captains / sample players (`kSeedPhones`)
+- [x] Weeks Sun **2 Aug 2026 → 27 Dec 2026**; **8 Nov** = VPL
+- [x] Sample CSV asset `assets/sample_contacts.csv`
 
 ### Admin
 
-- [x] Login with local password `fpladmin`
-- [x] Shell: Home · Fees · Matches · More
-- [x] Dashboard: week picker, paid/unpaid counts, finance total, shortcuts
-- [x] Fees: mark ₹50 weekly / toggle ₹750 subscription / add guest ₹200
-- [x] Eligible screen + copy text for WhatsApp
-- [x] Finance: season total by weekly / subscription / guest / trade commission + week-wise
-- [x] Add match scorecard summary
-- [x] Trades: enable window (More) → record sale → 25% commission + roster team update
-- [x] Edit player phone & CricHeroes username (More → contacts)
+- [x] Login (local password; Firebase Auth when cloud on)
+- [x] Fees / eligible / finance / matches / trades / contacts
+- [x] PDF attach on scorecards (local file + Storage upload when cloud)
+- [x] CSV import + template copy for phones/usernames
+- [x] Export finance / payments / subscriptions / full JSON
 
 ### Player
 
-- [x] Login phone **or** username (case-insensitive username; no OTP)
-- [x] Home: eligibility reason + UPI `marmuazhar@ybl` (copy / open)
-- [x] My team
-- [x] Scorecards browse
-- [x] Profile (lifetime / subscription / weekly)
+- [x] Phone or username login
+- [x] Eligibility + UPI
+- [x] Team / scorecards (open cloud PDF) / profile
 
-### Eligibility logic (implemented)
-
-Matches confirmed rules:
+### Eligibility logic
 
 1. Lifetime → eligible  
 2. Subscription paid → eligible  
@@ -87,58 +84,26 @@ Matches confirmed rules:
 
 | Item | Notes |
 |------|--------|
-| Firebase project + `flutterfire configure` | Flip `kFirebaseEnabled = true` after setup |
-| Firebase Auth (admin email) | Replace local password |
-| Firestore sync across devices | Today data is **per device** only |
-| Firebase Storage PDF attach | Match model supports summary; file upload TBD |
-| Auto PDF scorecard parse | Explicitly out of v1 |
-| Bulk CSV phone/username import | Manual edit UI exists; CSV later |
-| Captain role / write access | Not required (1B admin-only) |
-| In-app payment gateway | Out of scope (2A manual) |
-| OTP login | Replaced by phone/username lookup |
-| Ground ₹1,000/week Ali split report | Ops note only; not a ledger line item |
-| App store / Play release | Not started |
-| Automated tests beyond smoke widget test | Minimal |
-
----
-
-## Acceptance vs requirements
-
-| Requirement | Status |
-|-------------|--------|
-| Admin marks weekly / sub / guest | Done (local) |
-| Eligible list matches fee rules | Done |
-| Copy eligible for WhatsApp | Done |
-| Finance totals by type + week | Done |
-| Player phone or username login | Done |
-| Show UPI `marmuazhar@ybl` | Done |
-| Scorecard add + browse | Done (summary; no cloud PDF) |
-| Trades + 25% + roster update | Done |
-| Season calendar + VPL week | Done |
-| Firebase optional behind flag | Done (flag off) |
-| Multi-device shared data | Pending Firebase |
+| Run `flutterfire configure` with real project | Done (`fpl-fees`) |
+| Create Auth admin + `admins/{uid}` | Enable Email/Password in Console, then `bash tool/create_admin.sh` |
+| Storage Get Started | Optional — Console (may need Blaze) |
+| Auto PDF scorecard parse | Out of v1 |
+| In-app payment gateway | Out of scope |
+| OTP login | Out of scope |
+| Ground ₹1,000/week Ali split report | Ops note only |
+| App Distribution to testers | See RELEASE.md |
+| Play / App Store listing | Out of scope for now |
 
 ---
 
 ## How to run (current)
 
 ```bash
-cd fpl_fees
-flutter run
+fvm flutter pub get && fvm flutter test && fvm flutter run
 ```
 
 - **Admin password:** `fpladmin`  
-- Storage: device SharedPreferences until Firebase is enabled  
-
----
-
-## Suggested next milestones
-
-1. **Firebase enablement** — project, Auth admin user, deploy `firestore.rules`, turn on `kFirebaseEnabled`  
-2. **Seed phones** — bulk import or paste list into contacts  
-3. **PDF upload** — Storage + link on match docs  
-4. **Hardening** — tighten read rules; backup/export season ledger  
-5. **Release** — Android / iOS build for captains & players  
+- Storage: SharedPreferences; Firestore when Firebase configured  
 
 ---
 
@@ -146,5 +111,6 @@ flutter run
 
 | Date | Note |
 |------|------|
-| 1 Aug 2026 | Initial local MVP committed & pushed to GitHub |
-| 1 Aug 2026 | `REQUIREMENTS.md` + `STATUS.md` added for future reference |
+| 1 Aug 2026 | Initial local MVP |
+| 1 Aug 2026 | REQUIREMENTS + STATUS |
+| 1 Aug 2026 | Firebase project `fpl-fees`, options, Firestore rules, flag on |

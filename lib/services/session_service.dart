@@ -1,10 +1,16 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'auth_service.dart';
+
 enum AppRole { none, admin, player }
 
 class SessionService {
+  SessionService({AuthService? auth}) : authService = auth ?? AuthService();
+
   static const _roleKey = 'session_role';
   static const _playerIdKey = 'session_player_id';
+
+  final AuthService authService;
 
   AppRole role = AppRole.none;
   String? playerId;
@@ -37,6 +43,7 @@ class SessionService {
   }
 
   Future<void> clear() async {
+    await authService.signOut();
     role = AppRole.none;
     playerId = null;
     final prefs = await SharedPreferences.getInstance();

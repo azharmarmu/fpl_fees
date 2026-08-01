@@ -1,0 +1,7 @@
+id,name,phone,username
+azhar_marmu,Azhar Marmu,9000000001,Azhar Marmu
+anas,Anas,9000000002,Anas
+m_s_rusfi,M S Rusfi,9000000003,M S Rusfi
+nowfal,Nowfal,9000000004,Nowfal
+mashood_a_c,Mashood A C,9000000005,Mashood A C
+# Replace phones with real numbers, then: Admin → Contacts → Import CSV file

@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# FVM — track .fvmrc + .fvm/fvm_config.json; ignore local SDK link/cache
+.fvm/flutter_sdk
+.fvm/versions
+.fvm/release
+.fvm/version
+
+# Firebase local deploy cache
+.firebase/

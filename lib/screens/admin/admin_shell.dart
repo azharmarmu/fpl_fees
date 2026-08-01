@@ -1,14 +1,21 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/fpl_store.dart';
+import '../../services/io_bytes.dart';
+import '../../widgets/app_brand.dart';
+import '../../widgets/schedule_list.dart';
 import 'add_match_screen.dart';
 import 'eligible_screen.dart';
 import 'fees_screen.dart';
 import 'finance_screen.dart';
 import 'trades_screen.dart';
+import '../schedule_screen.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.store, required this.onLogout});
@@ -94,6 +101,8 @@ class _Dashboard extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const AppBrandHeader(logoSize: 44),
+          const SizedBox(height: 12),
           Text(
             'ADMIN',
             style: GoogleFonts.bebasNeue(
@@ -107,6 +116,14 @@ class _Dashboard extends StatelessWidget {
                 : '${week.label} · ${df.format(week.date)}',
             style: const TextStyle(color: Colors.white70),
           ),
+          if (store.cloudEnabled)
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                'Cloud sync ON',
+                style: TextStyle(color: Color(0xFFB8F27A), fontSize: 12),
+              ),
+            ),
           if (store.tradeOpen)
             const Padding(
               padding: EdgeInsets.only(top: 8),
@@ -134,6 +151,8 @@ class _Dashboard extends StatelessWidget {
               if (id != null) store.selectWeek(id);
             },
           ),
+          const SizedBox(height: 16),
+          HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
           Wrap(
             spacing: 10,
@@ -252,6 +271,15 @@ class _MatchesTab extends StatelessWidget {
                     ),
                   ),
                 ),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ScheduleScreen(store: store),
+                    ),
+                  ),
+                  child: const Text('Schedule'),
+                ),
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFB8F27A),
@@ -274,7 +302,7 @@ class _MatchesTab extends StatelessWidget {
             child: store.matches.isEmpty
                 ? const Center(
                     child: Text(
-                      'No matches yet.\nAdd after uploading CricHeroes PDF summary.',
+                      'No scorecards yet.\nAdd after the match / CricHeroes PDF.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white54),
                     ),
@@ -293,6 +321,15 @@ class _MatchesTab extends StatelessWidget {
                           style: const TextStyle(color: Colors.white54),
                         ),
                         isThreeLine: true,
+                        trailing: m.hasPdf
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.picture_as_pdf,
+                                  color: Color(0xFFB8F27A),
+                                ),
+                                onPressed: () => openMatchPdf(context, m),
+                              )
+                            : null,
                       );
                     },
                   ),
@@ -332,6 +369,15 @@ class _MoreTab extends StatelessWidget {
             onChanged: (v) => store.setTradeOpen(v),
           ),
           ListTile(
+            title: const Text('Fee amounts', style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              'Weekly ₹${store.weeklyFee} · Sub ₹${store.subscriptionFee} · Guest ₹${store.guestFee}',
+              style: const TextStyle(color: Colors.white54),
+            ),
+            trailing: const Icon(Icons.edit_outlined, color: Colors.white54),
+            onTap: () => _editFeeAmounts(context, store),
+          ),
+          ListTile(
             title: const Text('Trades', style: TextStyle(color: Colors.white)),
             trailing: const Icon(Icons.chevron_right, color: Colors.white54),
             onTap: () => Navigator.push(
@@ -351,6 +397,18 @@ class _MoreTab extends StatelessWidget {
               MaterialPageRoute(builder: (_) => _ContactsScreen(store: store)),
             ),
           ),
+          ListTile(
+            title: const Text('Export ledger / backup', style: TextStyle(color: Colors.white)),
+            subtitle: const Text(
+              'Copy finance CSV or full JSON backup',
+              style: TextStyle(color: Colors.white54),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white54),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => _ExportScreen(store: store)),
+            ),
+          ),
           const Divider(color: Colors.white12),
           ListTile(
             title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
@@ -362,9 +420,86 @@ class _MoreTab extends StatelessWidget {
   }
 }
 
-class _ContactsScreen extends StatelessWidget {
+class _ContactsScreen extends StatefulWidget {
   const _ContactsScreen({required this.store});
   final FplStore store;
+
+  @override
+  State<_ContactsScreen> createState() => _ContactsScreenState();
+}
+
+class _ContactsScreenState extends State<_ContactsScreen> {
+  FplStore get store => widget.store;
+
+  Future<void> _importDialog() async {
+    final controller = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2E20),
+        title: const Text('Import contacts CSV', style: TextStyle(color: Colors.white)),
+        content: SizedBox(
+          width: 400,
+          child: TextField(
+            controller: controller,
+            maxLines: 12,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+            decoration: const InputDecoration(
+              hintText: 'id,name,phone,username\nazhar_marmu,Azhar Marmu,98xxxxxxxx,...',
+              hintStyle: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      final result = await store.importContacts(controller.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Updated ${result.updated}, skipped ${result.skipped}'
+            '${result.errors.isEmpty ? "" : " · ${result.errors.take(2).join("; ")}"}',
+          ),
+        ),
+      );
+    }
+    controller.dispose();
+  }
+
+  Future<void> _importFile() async {
+    final picked = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['csv', 'txt'],
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty) return;
+    final f = picked.files.single;
+    var text = '';
+    if (f.bytes != null) {
+      text = utf8.decode(f.bytes!);
+    } else {
+      text = await readPathString(f.path) ?? '';
+    }
+    if (text.isEmpty) return;
+    final result = await store.importContacts(text);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Updated ${result.updated}, skipped ${result.skipped}'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -373,6 +508,32 @@ class _ContactsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF163020),
         title: const Text('Player contacts'),
+        actions: [
+          IconButton(
+            tooltip: 'Copy CSV template',
+            onPressed: () async {
+              await Clipboard.setData(
+                ClipboardData(text: store.contactsTemplateCsv()),
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('CSV template copied')),
+                );
+              }
+            },
+            icon: const Icon(Icons.copy_all_outlined),
+          ),
+          IconButton(
+            tooltip: 'Import CSV file',
+            onPressed: _importFile,
+            icon: const Icon(Icons.upload_file_outlined),
+          ),
+          IconButton(
+            tooltip: 'Paste CSV',
+            onPressed: _importDialog,
+            icon: const Icon(Icons.content_paste_go_outlined),
+          ),
+        ],
       ),
       body: AnimatedBuilder(
         animation: store,
@@ -386,12 +547,16 @@ class _ContactsScreen extends StatelessWidget {
               return ListTile(
                 title: Text(p.name, style: const TextStyle(color: Colors.white)),
                 subtitle: Text(
-                  '${p.teamName}\nPhone: ${p.phone.isEmpty ? "—" : p.phone} · User: ${p.cricheroesUsername}',
+                  '${p.teamName}\n'
+                  'Phone: ${p.phone.isEmpty ? "—" : p.phone} · '
+                  'Email: ${p.email.isEmpty ? "—" : p.email}\n'
+                  'User: ${p.cricheroesUsername}',
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 isThreeLine: true,
                 onTap: () async {
                   final phone = TextEditingController(text: p.phone);
+                  final email = TextEditingController(text: p.email);
                   final user = TextEditingController(text: p.cricheroesUsername);
                   final ok = await showDialog<bool>(
                     context: context,
@@ -406,6 +571,15 @@ class _ContactsScreen extends StatelessWidget {
                             style: const TextStyle(color: Colors.white),
                             decoration: const InputDecoration(
                               labelText: 'Phone',
+                              labelStyle: TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                          TextField(
+                            controller: email,
+                            keyboardType: TextInputType.emailAddress,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
                               labelStyle: TextStyle(color: Colors.white70),
                             ),
                           ),
@@ -435,10 +609,12 @@ class _ContactsScreen extends StatelessWidget {
                     await store.updatePlayerContact(
                       playerId: p.id,
                       phone: phone.text,
+                      email: email.text.trim(),
                       username: user.text,
                     );
                   }
                   phone.dispose();
+                  email.dispose();
                   user.dispose();
                 },
               );
@@ -448,6 +624,156 @@ class _ContactsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ExportScreen extends StatelessWidget {
+  const _ExportScreen({required this.store});
+  final FplStore store;
+
+  Future<void> _copy(BuildContext context, String label, String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$label copied')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F1A12),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF163020),
+        title: const Text('Export / backup'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Copy exports to paste into Sheets or save as backup.',
+            style: TextStyle(color: Colors.white54),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            title: const Text('Finance summary CSV', style: TextStyle(color: Colors.white)),
+            trailing: const Icon(Icons.copy, color: Colors.white54),
+            onTap: () => _copy(context, 'Finance CSV', store.exportFinanceCsv()),
+          ),
+          ListTile(
+            title: const Text('Weekly payments CSV', style: TextStyle(color: Colors.white)),
+            trailing: const Icon(Icons.copy, color: Colors.white54),
+            onTap: () => _copy(context, 'Payments CSV', store.exportPaymentsCsv()),
+          ),
+          ListTile(
+            title: const Text('Subscriptions CSV', style: TextStyle(color: Colors.white)),
+            trailing: const Icon(Icons.copy, color: Colors.white54),
+            onTap: () =>
+                _copy(context, 'Subscriptions CSV', store.exportSubscriptionsCsv()),
+          ),
+          ListTile(
+            title: const Text('Full season JSON backup', style: TextStyle(color: Colors.white)),
+            trailing: const Icon(Icons.copy, color: Colors.white54),
+            onTap: () =>
+                _copy(context, 'JSON backup', store.exportFullBackupJson()),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _editFeeAmounts(BuildContext context, FplStore store) async {
+  final weeklyCtrl = TextEditingController(text: '${store.weeklyFee}');
+  final subCtrl = TextEditingController(text: '${store.subscriptionFee}');
+  final guestCtrl = TextEditingController(text: '${store.guestFee}');
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1A2E20),
+      title: const Text('Fee amounts', style: TextStyle(color: Colors.white)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: weeklyCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(color: Colors.white),
+            decoration: _fieldDec('Weekly fee (₹)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: subCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(color: Colors.white),
+            decoration: _fieldDec('Season subscription (₹)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: guestCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(color: Colors.white),
+            decoration: _fieldDec('Guest fee (₹)'),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'New weekly/guest marks use the current amounts. '
+            'Subscription total uses the current subscription amount × paid players.',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+  if (ok == true && context.mounted) {
+    final weekly = int.tryParse(weeklyCtrl.text.trim());
+    final sub = int.tryParse(subCtrl.text.trim());
+    final guest = int.tryParse(guestCtrl.text.trim());
+    if (weekly == null || sub == null || guest == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid amounts')),
+      );
+    } else {
+      try {
+        await store.setFeeAmounts(
+          weekly: weekly,
+          subscription: sub,
+          guest: guest,
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Fees updated · weekly ₹$weekly · sub ₹$sub · guest ₹$guest',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$e')),
+          );
+        }
+      }
+    }
+  }
+  weeklyCtrl.dispose();
+  subCtrl.dispose();
+  guestCtrl.dispose();
 }
 
 InputDecoration _fieldDec(String label) => InputDecoration(
