@@ -20,6 +20,7 @@ import 'match_detail_screen.dart';
 import 'trades_screen.dart';
 import '../schedule_screen.dart';
 import '../season1_screen.dart';
+import '../tournament_stats_screen.dart';
 import '../../services/stat_players_repository.dart';
 
 class AdminShell extends StatefulWidget {
@@ -160,6 +161,24 @@ class _Dashboard extends StatelessWidget {
           HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
           AllTimeLeaders(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2E5A3C),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TournamentStatsScreen(
+                  cloudEnabled: store.cloudEnabled,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.leaderboard_outlined),
+            label: const Text('Tournament stats'),
+          ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 10,
