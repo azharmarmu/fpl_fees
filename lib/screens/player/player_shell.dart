@@ -12,6 +12,7 @@ import '../../widgets/schedule_list.dart';
 import '../admin/match_detail_screen.dart';
 import '../schedule_screen.dart';
 import '../season1_screen.dart';
+import '../stat_player_screen.dart';
 
 class PlayerShell extends StatefulWidget {
   const PlayerShell({
@@ -492,7 +493,23 @@ class _MyTeam extends StatelessWidget {
                       'Lifetime',
                       style: TextStyle(color: Colors.amber, fontSize: 12),
                     )
-                  : null,
+                  : Text(
+                      'Tap for stats',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontSize: 11,
+                      ),
+                    ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white24),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StatPlayerScreen(
+                    playerName: p.name,
+                    cloudEnabled: store.cloudEnabled,
+                  ),
+                ),
+              ),
             ),
         ],
       ),

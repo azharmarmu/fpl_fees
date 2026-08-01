@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/fpl_store.dart';
+import '../stat_player_screen.dart';
 
 class FeesScreen extends StatefulWidget {
   const FeesScreen({super.key, required this.store});
@@ -509,6 +510,15 @@ class _PlayerFeeTile extends StatelessWidget {
         style: TextStyle(
           color: el.eligible ? const Color(0xFFB8F27A) : Colors.orangeAccent,
           fontSize: 12,
+        ),
+      ),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StatPlayerScreen(
+            playerName: p.name,
+            cloudEnabled: store.cloudEnabled,
+          ),
         ),
       ),
       trailing: Row(

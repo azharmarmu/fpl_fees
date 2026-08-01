@@ -252,6 +252,21 @@ class StatPlayersRepository {
     return players.length;
   }
 
+  static bool _nameMatch(String a, String b) {
+    final x = nameKey(a);
+    final y = nameKey(b);
+    if (x.isEmpty || y.isEmpty) return false;
+    if (x == y) return true;
+    // "Moniz Babs" ↔ "MONIZ", "Mohammed Ali Mc" ↔ "Mohammed Ali MC"
+    if (x.startsWith(y) || y.startsWith(x)) return true;
+    final xt = x.split(' ');
+    final yt = y.split(' ');
+    if (xt.isNotEmpty && yt.isNotEmpty && xt.first == yt.first && xt.first.length >= 4) {
+      return true;
+    }
+    return false;
+  }
+
   /// Local fallback when Firestore has no doc yet (from bundled CSVs).
   static Future<CareerPlayer?> fromSeason1Assets({
     String? playerId,
@@ -268,59 +283,68 @@ class StatPlayersRepository {
     CareerMvp? mvp;
     final teams = <String>{};
 
-    if (id != null) {
-      for (final r in archive.batting) {
-        if (r.playerId == id) {
-          resolvedName = r.name;
-          team = r.teamName;
-          teams.add(r.teamName);
-          batting = CareerBatting(
-            matches: r.matches,
-            innings: r.innings,
-            runs: r.runs,
-            highest: r.highest,
-            average: r.average,
-            strikeRate: r.strikeRate,
-            fours: r.fours,
-            sixes: r.sixes,
-          );
-        }
+    final nameQuery = name;
+    bool hitId(String rowId) => id != null && id!.isNotEmpty && rowId == id;
+    bool hitName(String rowName) =>
+        nameQuery != null &&
+        nameQuery.isNotEmpty &&
+        _nameMatch(rowName, nameQuery);
+
+    for (final r in archive.batting) {
+      if (hitId(r.playerId) || hitName(r.name)) {
+        id ??= r.playerId;
+        resolvedName = r.name;
+        team = r.teamName;
+        teams.add(r.teamName);
+        batting = CareerBatting(
+          matches: r.matches,
+          innings: r.innings,
+          runs: r.runs,
+          highest: r.highest,
+          average: r.average,
+          strikeRate: r.strikeRate,
+          fours: r.fours,
+          sixes: r.sixes,
+        );
       }
-      for (final r in archive.bowling) {
-        if (r.playerId == id) {
-          resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
-          teams.add(r.teamName);
-          bowling = CareerBowling(
-            matches: r.matches,
-            innings: r.innings,
-            wickets: r.wickets,
-            overs: r.overs,
-            maidens: r.maidens,
-            runs: r.runs,
-            economy: r.economy,
-            best: r.best,
-          );
-        }
+    }
+    for (final r in archive.bowling) {
+      if (hitId(r.playerId) || hitName(r.name)) {
+        id ??= r.playerId;
+        resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
+        teams.add(r.teamName);
+        bowling = CareerBowling(
+          matches: r.matches,
+          innings: r.innings,
+          wickets: r.wickets,
+          overs: r.overs,
+          maidens: r.maidens,
+          runs: r.runs,
+          economy: r.economy,
+          best: r.best,
+        );
       }
-      for (final r in archive.fielding) {
-        if (r.playerId == id) {
-          resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
-          teams.add(r.teamName);
-          fielding = CareerFielding(
-            matches: r.matches,
-            catches: r.catches,
-            runOuts: r.runOuts,
-            stumpings: r.stumpings,
-            totalDismissals: r.totalDismissals,
-          );
-        }
+    }
+    for (final r in archive.fielding) {
+      if (hitId(r.playerId) || hitName(r.name)) {
+        id ??= r.playerId;
+        resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
+        teams.add(r.teamName);
+        fielding = CareerFielding(
+          matches: r.matches,
+          catches: r.catches,
+          runOuts: r.runOuts,
+          stumpings: r.stumpings,
+          totalDismissals: r.totalDismissals,
+        );
       }
     }
 
     final key = nameKey(resolvedName.isEmpty ? (name ?? '') : resolvedName);
     if (key.isNotEmpty) {
       for (final r in archive.mvp) {
-        if (nameKey(r.name) == key ||
+        if (_nameMatch(r.name, key) ||
+            nameKey(r.name) == key ||
             nameKey(r.name).contains(key) ||
             key.contains(nameKey(r.name))) {
           teams.add(r.teamName);
