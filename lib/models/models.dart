@@ -279,6 +279,134 @@ class GuestPayment {
       );
 }
 
+/// One batter line from a CricHeroes-style scorecard.
+class BattingEntry {
+  const BattingEntry({
+    this.playerId,
+    required this.name,
+    this.runs = 0,
+    this.balls = 0,
+    this.fours = 0,
+    this.sixes = 0,
+    this.dismissal = '',
+  });
+
+  final String? playerId;
+  final String name;
+  final int runs;
+  final int balls;
+  final int fours;
+  final int sixes;
+  final String dismissal;
+
+  Map<String, dynamic> toJson() => {
+        if (playerId != null && playerId!.isNotEmpty) 'playerId': playerId,
+        'name': name,
+        'runs': runs,
+        'balls': balls,
+        'fours': fours,
+        'sixes': sixes,
+        'dismissal': dismissal,
+      };
+
+  factory BattingEntry.fromJson(Map<String, dynamic> json) => BattingEntry(
+        playerId: json['playerId'] as String?,
+        name: json['name'] as String? ?? '',
+        runs: (json['runs'] as num?)?.toInt() ?? 0,
+        balls: (json['balls'] as num?)?.toInt() ?? 0,
+        fours: (json['fours'] as num?)?.toInt() ?? 0,
+        sixes: (json['sixes'] as num?)?.toInt() ?? 0,
+        dismissal: json['dismissal'] as String? ?? '',
+      );
+}
+
+/// One bowler line from a CricHeroes-style scorecard.
+class BowlingEntry {
+  const BowlingEntry({
+    this.playerId,
+    required this.name,
+    this.overs = '0',
+    this.maidens = 0,
+    this.runs = 0,
+    this.wickets = 0,
+  });
+
+  final String? playerId;
+  final String name;
+  final String overs;
+  final int maidens;
+  final int runs;
+  final int wickets;
+
+  Map<String, dynamic> toJson() => {
+        if (playerId != null && playerId!.isNotEmpty) 'playerId': playerId,
+        'name': name,
+        'overs': overs,
+        'maidens': maidens,
+        'runs': runs,
+        'wickets': wickets,
+      };
+
+  factory BowlingEntry.fromJson(Map<String, dynamic> json) => BowlingEntry(
+        playerId: json['playerId'] as String?,
+        name: json['name'] as String? ?? '',
+        overs: '${json['overs'] ?? '0'}',
+        maidens: (json['maidens'] as num?)?.toInt() ?? 0,
+        runs: (json['runs'] as num?)?.toInt() ?? 0,
+        wickets: (json['wickets'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// One innings: batting side + bowling against them.
+class MatchInnings {
+  const MatchInnings({
+    required this.battingTeamId,
+    required this.battingTeamName,
+    this.runs = 0,
+    this.wickets = 0,
+    this.overs = '',
+    this.batting = const [],
+    this.bowling = const [],
+  });
+
+  final String battingTeamId;
+  final String battingTeamName;
+  final int runs;
+  final int wickets;
+  final String overs;
+  final List<BattingEntry> batting;
+  final List<BowlingEntry> bowling;
+
+  String get scoreLabel {
+    final ov = overs.trim().isEmpty ? '' : ' (${overs.trim()} Ov)';
+    return '$runs/$wickets$ov';
+  }
+
+  Map<String, dynamic> toJson() => {
+        'battingTeamId': battingTeamId,
+        'battingTeamName': battingTeamName,
+        'runs': runs,
+        'wickets': wickets,
+        'overs': overs,
+        'batting': batting.map((e) => e.toJson()).toList(),
+        'bowling': bowling.map((e) => e.toJson()).toList(),
+      };
+
+  factory MatchInnings.fromJson(Map<String, dynamic> json) => MatchInnings(
+        battingTeamId: json['battingTeamId'] as String? ?? '',
+        battingTeamName: json['battingTeamName'] as String? ?? '',
+        runs: (json['runs'] as num?)?.toInt() ?? 0,
+        wickets: (json['wickets'] as num?)?.toInt() ?? 0,
+        overs: '${json['overs'] ?? ''}',
+        batting: (json['batting'] as List? ?? [])
+            .map((e) => BattingEntry.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+        bowling: (json['bowling'] as List? ?? [])
+            .map((e) => BowlingEntry.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+      );
+}
+
 class MatchScorecard {
   const MatchScorecard({
     required this.id,
@@ -294,6 +422,7 @@ class MatchScorecard {
     this.ground = 'Farm MCK, Vellore',
     this.pdfLocalPath,
     this.pdfUrl,
+    this.innings = const [],
   });
 
   final String id;
@@ -310,10 +439,16 @@ class MatchScorecard {
   final String? pdfLocalPath;
   /// Firebase Storage download URL (when cloud sync is enabled).
   final String? pdfUrl;
+  /// Structured batting/bowling (manual entry; optional).
+  final List<MatchInnings> innings;
 
   bool get hasPdf =>
       (pdfUrl != null && pdfUrl!.isNotEmpty) ||
       (pdfLocalPath != null && pdfLocalPath!.isNotEmpty);
+
+  bool get hasStructuredCard => innings.any(
+        (i) => i.batting.isNotEmpty || i.bowling.isNotEmpty || i.runs > 0,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -329,6 +464,8 @@ class MatchScorecard {
         'ground': ground,
         'pdfLocalPath': pdfLocalPath,
         'pdfUrl': pdfUrl,
+        if (innings.isNotEmpty)
+          'innings': innings.map((e) => e.toJson()).toList(),
       };
 
   factory MatchScorecard.fromJson(Map<String, dynamic> json) => MatchScorecard(
@@ -345,6 +482,9 @@ class MatchScorecard {
         ground: json['ground'] as String? ?? '',
         pdfLocalPath: json['pdfLocalPath'] as String?,
         pdfUrl: json['pdfUrl'] as String?,
+        innings: (json['innings'] as List? ?? [])
+            .map((e) => MatchInnings.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
       );
 }
 

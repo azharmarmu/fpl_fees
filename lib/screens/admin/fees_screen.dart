@@ -18,6 +18,8 @@ class FeesScreen extends StatefulWidget {
 class _FeesScreenState extends State<FeesScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+  final _search = TextEditingController();
+  var _query = '';
 
   @override
   void initState() {
@@ -28,12 +30,14 @@ class _FeesScreenState extends State<FeesScreen>
   @override
   void dispose() {
     _tabs.dispose();
+    _search.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final store = widget.store;
+    final searching = _query.isNotEmpty;
     return SafeArea(
       child: Column(
         children: [
@@ -82,21 +86,56 @@ class _FeesScreenState extends State<FeesScreen>
               );
             },
           ),
-          TabBar(
-            controller: _tabs,
-            labelColor: const Color(0xFFB8F27A),
-            unselectedLabelColor: Colors.white54,
-            tabs: const [
-              Tab(text: 'OX'),
-              Tab(text: 'GB'),
-              Tab(text: 'Avengers'),
-              Tab(text: 'Guests'),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TextField(
+              controller: _search,
+              style: const TextStyle(color: Colors.white),
+              textInputAction: TextInputAction.search,
+              onChanged: (v) => setState(() => _query = v.trim()),
+              decoration: InputDecoration(
+                hintText: 'Search player by name…',
+                hintStyle: const TextStyle(color: Colors.white38),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                suffixIcon: searching
+                    ? IconButton(
+                        tooltip: 'Clear',
+                        onPressed: () {
+                          _search.clear();
+                          setState(() => _query = '');
+                        },
+                        icon: const Icon(Icons.close, color: Colors.white54),
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFF1A2E20),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
           ),
+          if (!searching)
+            TabBar(
+              controller: _tabs,
+              labelColor: const Color(0xFFB8F27A),
+              unselectedLabelColor: Colors.white54,
+              tabs: const [
+                Tab(text: 'OX'),
+                Tab(text: 'GB'),
+                Tab(text: 'Avengers'),
+                Tab(text: 'Guests'),
+              ],
+            ),
           Expanded(
             child: AnimatedBuilder(
               animation: store,
               builder: (context, _) {
+                if (searching) {
+                  return _FeesSearchResults(store: store, query: _query);
+                }
                 return TabBarView(
                   controller: _tabs,
                   children: [
@@ -251,12 +290,78 @@ class _FeesScreenState extends State<FeesScreen>
   }
 }
 
+class _FeesSearchResults extends StatelessWidget {
+  const _FeesSearchResults({required this.store, required this.query});
+  final FplStore store;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = query.toLowerCase();
+    final players = store.players
+        .where((p) => p.active && p.name.toLowerCase().contains(q))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final guests = store
+        .guestsForWeek()
+        .where((g) => g.name.toLowerCase().contains(q))
+        .toList();
+
+    if (players.isEmpty && guests.isEmpty) {
+      return const Center(
+        child: Text('No matches', style: TextStyle(color: Colors.white54)),
+      );
+    }
+
+    return ListView(
+      children: [
+        for (final p in players)
+          _PlayerFeeTile(store: store, player: p, showTeam: true),
+        for (final g in guests)
+          ListTile(
+            title: Text(g.name, style: const TextStyle(color: Colors.white)),
+            subtitle: Text(
+              'Guest · ${kTeamNames[g.teamId]} · ₹${g.amount}',
+              style: const TextStyle(color: Colors.white54),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.white38),
+              onPressed: () => store.removeGuest(g.id),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class _TeamFees extends StatelessWidget {
   const _TeamFees({required this.store, required this.teamId});
   final FplStore store;
   final String teamId;
 
-  Future<void> _toggleSubscription(BuildContext context, FplPlayer p) async {
+  @override
+  Widget build(BuildContext context) {
+    final list = store.playersForTeam(teamId);
+    return ListView.builder(
+      itemCount: list.length,
+      itemBuilder: (context, i) => _PlayerFeeTile(store: store, player: list[i]),
+    );
+  }
+}
+
+class _PlayerFeeTile extends StatelessWidget {
+  const _PlayerFeeTile({
+    required this.store,
+    required this.player,
+    this.showTeam = false,
+  });
+
+  final FplStore store;
+  final FplPlayer player;
+  final bool showTeam;
+
+  Future<void> _toggleSubscription(BuildContext context) async {
+    final p = player;
     if (p.subscriptionPaid) {
       final ok = await showDialog<bool>(
         context: context,
@@ -382,61 +487,56 @@ class _TeamFees extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final list = store.playersForTeam(teamId);
+    final p = player;
+    final el = store.eligibilityFor(p);
     final weekFee = store.feeForWeek();
-    return ListView.builder(
-      itemCount: list.length,
-      itemBuilder: (context, i) {
-        final p = list[i];
-        final el = store.eligibilityFor(p);
-        final canToggleWeekly =
-            !p.isLifetimeMember && !p.hasActiveSubscription;
-        final paidWeekly = store.hasWeeklyPayment(p.id, store.selectedWeekId);
+    final canToggleWeekly = !p.isLifetimeMember && !p.hasActiveSubscription;
+    final paidWeekly = store.hasWeeklyPayment(p.id, store.selectedWeekId);
+    final status = el.label(
+      weeklyFee: weekFee,
+      subscriptionAmount: p.subscriptionAmount,
+      subscriptionValidUntil: p.subscriptionValidUntil,
+    );
+    final subtitle = showTeam ? '${p.teamName} · $status' : status;
 
-        return ListTile(
-          title: Text(
-            p.isCaptain ? '${p.name} (C)' : p.name,
-            style: const TextStyle(color: Colors.white),
-          ),
-          subtitle: Text(
-            el.label(
-              weeklyFee: weekFee,
-              subscriptionAmount: p.subscriptionAmount,
-              subscriptionValidUntil: p.subscriptionValidUntil,
+    return ListTile(
+      title: Text(
+        p.isCaptain ? '${p.name} (C)' : p.name,
+        style: const TextStyle(color: Colors.white),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: el.eligible ? const Color(0xFFB8F27A) : Colors.orangeAccent,
+          fontSize: 12,
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!p.isLifetimeMember)
+            IconButton(
+              tooltip: p.subscriptionPaid
+                  ? 'Subscription ₹${p.subscriptionAmount}'
+                  : 'Subscription (default ₹${store.subscriptionFee})',
+              icon: Icon(
+                p.subscriptionPaid
+                    ? Icons.workspace_premium
+                    : Icons.workspace_premium_outlined,
+                color: p.subscriptionPaid ? Colors.amber : Colors.white38,
+              ),
+              onPressed: () => _toggleSubscription(context),
             ),
-            style: TextStyle(
-              color: el.eligible ? const Color(0xFFB8F27A) : Colors.orangeAccent,
-              fontSize: 12,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!p.isLifetimeMember)
-                IconButton(
-                  tooltip: p.subscriptionPaid
-                      ? 'Subscription ₹${p.subscriptionAmount}'
-                      : 'Subscription (default ₹${store.subscriptionFee})',
-                  icon: Icon(
-                    p.subscriptionPaid
-                        ? Icons.workspace_premium
-                        : Icons.workspace_premium_outlined,
-                    color: p.subscriptionPaid ? Colors.amber : Colors.white38,
-                  ),
-                  onPressed: () => _toggleSubscription(context, p),
-                ),
-              if (canToggleWeekly)
-                Switch(
-                  value: paidWeekly,
-                  activeThumbColor: const Color(0xFFB8F27A),
-                  onChanged: (v) => store.setWeeklyPaid(p, v),
-                )
-              else
-                const Icon(Icons.check_circle, color: Color(0xFFB8F27A)),
-            ],
-          ),
-        );
-      },
+          if (canToggleWeekly)
+            Switch(
+              value: paidWeekly,
+              activeThumbColor: const Color(0xFFB8F27A),
+              onChanged: (v) => store.setWeeklyPaid(p, v),
+            )
+          else
+            const Icon(Icons.check_circle, color: Color(0xFFB8F27A)),
+        ],
+      ),
     );
   }
 }

@@ -352,4 +352,72 @@ void main() {
       expect(store.playerById(p.id)!.lastLoginAt, isNotNull);
     });
   });
+
+  group('structured scorecard', () {
+    test('innings round-trip in match JSON', () {
+      final match = MatchScorecard(
+        id: 'm1',
+        date: DateTime(2026, 8, 2),
+        teamAId: kTeamOx,
+        teamBId: kTeamGb,
+        teamAName: 'OX CC',
+        teamBName: 'Gully Blasters',
+        teamAScore: '53/6 (8.0 Ov)',
+        teamBScore: '48/8',
+        resultText: 'OX CC won',
+        innings: [
+          MatchInnings(
+            battingTeamId: kTeamOx,
+            battingTeamName: 'OX CC',
+            runs: 53,
+            wickets: 6,
+            overs: '8.0',
+            batting: const [
+              BattingEntry(
+                playerId: 'anas',
+                name: 'Anas',
+                runs: 20,
+                balls: 15,
+                fours: 2,
+                sixes: 1,
+                dismissal: 'b Siraj',
+              ),
+            ],
+            bowling: const [
+              BowlingEntry(
+                playerId: 'siraj',
+                name: 'Siraj',
+                overs: '2.0',
+                maidens: 0,
+                runs: 12,
+                wickets: 2,
+              ),
+            ],
+          ),
+        ],
+      );
+      final round = MatchScorecard.fromJson(match.toJson());
+      expect(round.hasStructuredCard, isTrue);
+      expect(round.innings, hasLength(1));
+      expect(round.innings.first.batting.single.runs, 20);
+      expect(round.innings.first.bowling.single.wickets, 2);
+      expect(round.innings.first.scoreLabel, '53/6 (8.0 Ov)');
+    });
+
+    test('legacy match without innings still loads', () {
+      final m = MatchScorecard.fromJson({
+        'id': 'old',
+        'date': '2026-08-02T00:00:00.000',
+        'teamAId': kTeamOx,
+        'teamBId': kTeamGb,
+        'teamAName': 'OX',
+        'teamBName': 'GB',
+        'teamAScore': '10/0',
+        'teamBScore': '9/1',
+        'resultText': 'OX won',
+      });
+      expect(m.innings, isEmpty);
+      expect(m.hasStructuredCard, isFalse);
+    });
+  });
 }

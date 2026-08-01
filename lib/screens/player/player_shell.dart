@@ -9,6 +9,7 @@ import '../../models/models.dart';
 import '../../services/fpl_store.dart';
 import '../../widgets/app_brand.dart';
 import '../../widgets/schedule_list.dart';
+import '../admin/match_detail_screen.dart';
 import '../schedule_screen.dart';
 
 class PlayerShell extends StatefulWidget {
@@ -542,20 +543,16 @@ class _PlayerMatches extends StatelessWidget {
                                 Icons.picture_as_pdf,
                                 color: Color(0xFFB8F27A),
                               )
-                            : null,
-                        onTap: m.hasPdf &&
-                                m.pdfUrl != null &&
-                                m.pdfUrl!.isNotEmpty
-                            ? () async {
-                                final uri = Uri.parse(m.pdfUrl!);
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(
-                                    uri,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                }
-                              }
-                            : null,
+                            : const Icon(
+                                Icons.chevron_right,
+                                color: Colors.white38,
+                              ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MatchDetailScreen(match: m),
+                          ),
+                        ),
                       );
                     },
                   ),

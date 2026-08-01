@@ -292,6 +292,7 @@ class FplStore extends ChangeNotifier {
         ground: m.ground,
         pdfLocalPath: m.pdfLocalPath,
         pdfUrl: m.pdfUrl,
+        innings: m.innings,
       );
       changed = true;
     }

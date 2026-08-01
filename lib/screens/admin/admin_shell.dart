@@ -15,6 +15,7 @@ import 'add_match_screen.dart';
 import 'eligible_screen.dart';
 import 'fees_screen.dart';
 import 'finance_screen.dart';
+import 'match_detail_screen.dart';
 import 'trades_screen.dart';
 import '../schedule_screen.dart';
 
@@ -318,7 +319,8 @@ class _MatchesTab extends StatelessWidget {
                           style: const TextStyle(color: Colors.white),
                         ),
                         subtitle: Text(
-                          '${DateFormat('d MMM yyyy').format(m.date)}\n${m.resultText}',
+                          '${DateFormat('d MMM yyyy').format(m.date)}\n${m.resultText}'
+                          '${m.hasStructuredCard ? " · structured" : ""}',
                           style: const TextStyle(color: Colors.white54),
                         ),
                         isThreeLine: true,
@@ -330,7 +332,16 @@ class _MatchesTab extends StatelessWidget {
                                 ),
                                 onPressed: () => openMatchPdf(context, m),
                               )
-                            : null,
+                            : const Icon(
+                                Icons.chevron_right,
+                                color: Colors.white38,
+                              ),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MatchDetailScreen(match: m),
+                          ),
+                        ),
                       );
                     },
                   ),
