@@ -9,11 +9,12 @@ import '../../models/models.dart';
 import '../../services/fpl_store.dart';
 import '../../widgets/all_time_leaders.dart';
 import '../../widgets/app_brand.dart';
+import '../../widgets/fpl_nav_scaffold.dart';
+import '../../widgets/home_points_table.dart';
 import '../../widgets/schedule_list.dart';
 import '../admin/match_detail_screen.dart';
 import '../schedule_screen.dart';
 import '../stat_player_screen.dart';
-import '../tournament_stats_screen.dart';
 
 class PlayerShell extends StatefulWidget {
   const PlayerShell({
@@ -130,33 +131,17 @@ class _PlayerShellState extends State<PlayerShell> {
           ),
         ];
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF0F1A12),
+        return FplScaffoldWithStatsFab(
           body: pages[_index],
-          bottomNavigationBar: NavigationBar(
-            backgroundColor: const Color(0xFF163020),
-            indicatorColor: const Color(0xFF2E5A3C),
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.groups_outlined),
-                label: 'My team',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.sports_cricket),
-                label: 'Scorecards',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                label: 'Profile',
-              ),
-            ],
-          ),
+          selectedIndex: _index,
+          onSelect: (i) => setState(() => _index = i),
+          items: const [
+            FplNavItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+            FplNavItem(index: 1, icon: Icons.groups_outlined, label: 'My team'),
+            FplNavItem(index: 2, icon: Icons.sports_cricket, label: 'Scorecards'),
+            FplNavItem(index: 3, icon: Icons.person_outline, label: 'Profile'),
+          ],
+          cloudEnabled: widget.store.cloudEnabled,
         );
       },
     );
@@ -314,143 +299,175 @@ class _PlayerHome extends StatelessWidget {
         children: [
           const AppBrandHeader(logoSize: 44),
           const SizedBox(height: 16),
-          Text(
-            me.name.toUpperCase(),
-            style: GoogleFonts.bebasNeue(
-              fontSize: 34,
-              color: const Color(0xFFB8F27A),
-            ),
-          ),
-          Text(me.teamName, style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF163020),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  store.selectedWeek?.label ?? 'This week',
-                  style: const TextStyle(color: Colors.white54),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      me.name.toUpperCase(),
+                      style: GoogleFonts.bebasNeue(
+                        fontSize: 34,
+                        height: 1.05,
+                        color: const Color(0xFFB8F27A),
+                      ),
+                    ),
+                    Text(
+                      me.teamName,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  el.eligible ? 'ELIGIBLE' : 'NOT ELIGIBLE',
-                  style: TextStyle(
-                    color: el.eligible
-                        ? const Color(0xFFB8F27A)
-                        : Colors.orangeAccent,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                  ),
+              ),
+              const SizedBox(width: 12),
+              _GroundFeeChip(
+                eligible: el.eligible,
+                weekLabel: store.selectedWeek?.label ?? 'This week',
+                detail: el.label(
+                  weeklyFee: store.feeForWeek(),
+                  subscriptionAmount: me.subscriptionAmount,
+                  subscriptionValidUntil: me.subscriptionValidUntil,
                 ),
-                Text(
-                  el.label(
-                    weeklyFee: store.feeForWeek(),
-                    subscriptionAmount: me.subscriptionAmount,
-                    subscriptionValidUntil: me.subscriptionValidUntil,
-                  ),
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
+          HomePointsTable(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 16),
+          SeasonLeaders(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 16),
           AllTimeLeaders(cloudEnabled: store.cloudEnabled),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2E5A3C),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TournamentStatsScreen(
-                  cloudEnabled: store.cloudEnabled,
-                ),
+          const SizedBox(height: 16),
+          if (el.reason == EligibilityReason.unpaid)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A2E20),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pay ground fee · ₹${store.feeForWeek()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Pay here, then admin will mark you Paid.',
+                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                  const SizedBox(height: 10),
+                  SelectableText(
+                    kUpiId,
+                    style: GoogleFonts.bebasNeue(
+                      fontSize: 28,
+                      color: const Color(0xFFB8F27A),
+                    ),
+                  ),
+                  const Text(
+                    kUpiDisplayName,
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            const ClipboardData(text: kUpiId),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('UPI copied')),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.copy, size: 16),
+                        label: const Text('Copy UPI'),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () async {
+                          final uri = Uri.parse(
+                            'upi://pay?pa=$kUpiId&pn=${Uri.encodeComponent(kUpiDisplayName)}&cu=INR',
+                          );
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        child: const Text('Open UPI'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            icon: const Icon(Icons.leaderboard_outlined),
-            label: const Text('Tournament stats'),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A2E20),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white24),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Pay ground fee',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Pay here, then admin will mark you Paid.',
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
-                ),
-                const SizedBox(height: 10),
-                SelectableText(
-                  kUpiId,
-                  style: GoogleFonts.bebasNeue(
-                    fontSize: 28,
-                    color: const Color(0xFFB8F27A),
-                  ),
-                ),
-                const Text(
-                  kUpiDisplayName,
-                  style: TextStyle(color: Colors.white54),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        await Clipboard.setData(
-                          const ClipboardData(text: kUpiId),
-                        );
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('UPI copied')),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.copy, size: 16),
-                      label: const Text('Copy UPI'),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () async {
-                        final uri = Uri.parse(
-                          'upi://pay?pa=$kUpiId&pn=${Uri.encodeComponent(kUpiDisplayName)}&cu=INR',
-                        );
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      },
-                      child: const Text('Open UPI'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _GroundFeeChip extends StatelessWidget {
+  const _GroundFeeChip({
+    required this.eligible,
+    required this.weekLabel,
+    required this.detail,
+  });
+
+  final bool eligible;
+  final String weekLabel;
+  final String detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent =
+        eligible ? const Color(0xFFB8F27A) : Colors.orangeAccent;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 148),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF163020),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: accent.withValues(alpha: 0.35)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              weekLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white38, fontSize: 10),
+            ),
+            Text(
+              eligible ? 'ELIGIBLE' : 'DUE',
+              style: TextStyle(
+                color: accent,
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+            Text(
+              detail,
+              textAlign: TextAlign.right,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -577,15 +594,10 @@ class _PlayerMatches extends StatelessWidget {
                           style: const TextStyle(color: Colors.white54),
                         ),
                         isThreeLine: true,
-                        trailing: m.hasPdf
-                            ? const Icon(
-                                Icons.picture_as_pdf,
-                                color: Color(0xFFB8F27A),
-                              )
-                            : const Icon(
-                                Icons.chevron_right,
-                                color: Colors.white38,
-                              ),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.white38,
+                        ),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(

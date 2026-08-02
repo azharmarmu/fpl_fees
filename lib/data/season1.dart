@@ -200,15 +200,25 @@ class Season1Loader {
   static Future<Season1Archive> load() async {
     final hit = _cached;
     if (hit != null) return hit;
+    return _cached = await loadFromAssetPaths(
+      battingAsset: 'assets/season1/batting_leaderboard.csv',
+      bowlingAsset: 'assets/season1/bowling_leaderboard.csv',
+      fieldingAsset: 'assets/season1/fielding_leaderboard.csv',
+      mvpAsset: 'assets/season1/mvp_leaderboard.csv',
+    );
+  }
 
-    final battingCsv =
-        await rootBundle.loadString('assets/season1/batting_leaderboard.csv');
-    final bowlingCsv =
-        await rootBundle.loadString('assets/season1/bowling_leaderboard.csv');
-    final fieldingCsv =
-        await rootBundle.loadString('assets/season1/fielding_leaderboard.csv');
-    final mvpCsv =
-        await rootBundle.loadString('assets/season1/mvp_leaderboard.csv');
+  /// Shared CricHeroes CSV parser (Season 1 / Season 2 exports share columns).
+  static Future<Season1Archive> loadFromAssetPaths({
+    required String battingAsset,
+    required String bowlingAsset,
+    required String fieldingAsset,
+    required String mvpAsset,
+  }) async {
+    final battingCsv = await rootBundle.loadString(battingAsset);
+    final bowlingCsv = await rootBundle.loadString(bowlingAsset);
+    final fieldingCsv = await rootBundle.loadString(fieldingAsset);
+    final mvpCsv = await rootBundle.loadString(mvpAsset);
 
     final batting = _parseBatting(battingCsv);
     final bowling = _parseBowling(bowlingCsv);
@@ -250,7 +260,7 @@ class Season1Loader {
         ),
     ];
 
-    return _cached = Season1Archive(
+    return Season1Archive(
       batting: batting,
       bowling: bowling,
       fielding: fielding,

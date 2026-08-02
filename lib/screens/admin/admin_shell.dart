@@ -11,6 +11,8 @@ import '../../services/fpl_store.dart';
 import '../../services/io_bytes.dart';
 import '../../widgets/all_time_leaders.dart';
 import '../../widgets/app_brand.dart';
+import '../../widgets/fpl_nav_scaffold.dart';
+import '../../widgets/home_points_table.dart';
 import '../../widgets/schedule_list.dart';
 import 'add_match_screen.dart';
 import 'eligible_screen.dart';
@@ -19,7 +21,6 @@ import 'finance_screen.dart';
 import 'match_detail_screen.dart';
 import 'trades_screen.dart';
 import '../schedule_screen.dart';
-import '../tournament_stats_screen.dart';
 import '../../services/stat_players_repository.dart';
 
 class AdminShell extends StatefulWidget {
@@ -36,6 +37,13 @@ class _AdminShellState extends State<AdminShell> {
   var _index = 0;
 
   FplStore get store => widget.store;
+
+  static const _nav = <FplNavItem>[
+    FplNavItem(index: 0, icon: Icons.home_outlined, label: 'Home'),
+    FplNavItem(index: 1, icon: Icons.payments_outlined, label: 'Fees'),
+    FplNavItem(index: 2, icon: Icons.sports_cricket, label: 'Matches'),
+    FplNavItem(index: 4, icon: Icons.more_horiz, label: 'More'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -56,25 +64,19 @@ class _AdminShellState extends State<AdminShell> {
           FeesScreen(store: store),
           _MatchesTab(store: store),
           FinanceScreen(store: store),
-          _MoreTab(store: store, onLogout: widget.onLogout),
+          _MoreTab(
+            store: store,
+            onLogout: widget.onLogout,
+            onOpenFinance: () => setState(() => _index = 3),
+          ),
         ];
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF0F1A12),
+        return FplScaffoldWithStatsFab(
           body: pages[_index],
-          bottomNavigationBar: NavigationBar(
-            backgroundColor: const Color(0xFF163020),
-            indicatorColor: const Color(0xFF2E5A3C),
-            selectedIndex: _index,
-            onDestinationSelected: (i) => setState(() => _index = i),
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-              NavigationDestination(icon: Icon(Icons.payments_outlined), label: 'Fees'),
-              NavigationDestination(icon: Icon(Icons.sports_cricket), label: 'Matches'),
-              NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), label: 'Finance'),
-              NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
-            ],
-          ),
+          selectedIndex: _index,
+          onSelect: (i) => setState(() => _index = i),
+          items: _nav,
+          cloudEnabled: store.cloudEnabled,
         );
       },
     );
@@ -159,25 +161,11 @@ class _Dashboard extends StatelessWidget {
           const SizedBox(height: 16),
           HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
+          HomePointsTable(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 16),
+          SeasonLeaders(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 16),
           AllTimeLeaders(cloudEnabled: store.cloudEnabled),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2E5A3C),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => TournamentStatsScreen(
-                  cloudEnabled: store.cloudEnabled,
-                ),
-              ),
-            ),
-            icon: const Icon(Icons.leaderboard_outlined),
-            label: const Text('Tournament stats'),
-          ),
           const SizedBox(height: 16),
           Wrap(
             spacing: 10,
@@ -327,7 +315,7 @@ class _MatchesTab extends StatelessWidget {
             child: store.matches.isEmpty
                 ? const Center(
                     child: Text(
-                      'No scorecards yet.\nAdd after the match / CricHeroes PDF.',
+                      'No scorecards yet.\nAdd match details after the game.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white54),
                     ),
@@ -342,23 +330,14 @@ class _MatchesTab extends StatelessWidget {
                           style: const TextStyle(color: Colors.white),
                         ),
                         subtitle: Text(
-                          '${DateFormat('d MMM yyyy').format(m.date)}\n${m.resultText}'
-                          '${m.hasStructuredCard ? " · structured" : ""}',
+                          '${DateFormat('d MMM yyyy').format(m.date)}\n${m.resultText}',
                           style: const TextStyle(color: Colors.white54),
                         ),
                         isThreeLine: true,
-                        trailing: m.hasPdf
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.picture_as_pdf,
-                                  color: Color(0xFFB8F27A),
-                                ),
-                                onPressed: () => openMatchPdf(context, m),
-                              )
-                            : const Icon(
-                                Icons.chevron_right,
-                                color: Colors.white38,
-                              ),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: Colors.white38,
+                        ),
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -376,9 +355,14 @@ class _MatchesTab extends StatelessWidget {
 }
 
 class _MoreTab extends StatelessWidget {
-  const _MoreTab({required this.store, required this.onLogout});
+  const _MoreTab({
+    required this.store,
+    required this.onLogout,
+    required this.onOpenFinance,
+  });
   final FplStore store;
   final VoidCallback onLogout;
+  final VoidCallback onOpenFinance;
 
   @override
   Widget build(BuildContext context) {
@@ -392,6 +376,15 @@ class _MoreTab extends StatelessWidget {
               fontSize: 28,
               color: const Color(0xFFB8F27A),
             ),
+          ),
+          ListTile(
+            title: const Text('Finance', style: TextStyle(color: Colors.white)),
+            subtitle: const Text(
+              'Collections & unpaid',
+              style: TextStyle(color: Colors.white54),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.white54),
+            onTap: onOpenFinance,
           ),
           SwitchListTile(
             title: const Text('Trade window open', style: TextStyle(color: Colors.white)),
@@ -416,6 +409,20 @@ class _MoreTab extends StatelessWidget {
               trailing: const Icon(Icons.cloud_upload_outlined,
                   color: Color(0xFFB8F27A)),
               onTap: () => _uploadSeason1Stats(context, store),
+            ),
+          if (store.cloudEnabled)
+            ListTile(
+              title: const Text(
+                'Upload Season 2 stats to Firestore',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Week 1 leaderboards + points · merges into career docs',
+                style: TextStyle(color: Colors.white54),
+              ),
+              trailing: const Icon(Icons.cloud_upload_outlined,
+                  color: Color(0xFFB8F27A)),
+              onTap: () => _uploadSeason2Stats(context, store),
             ),
           ListTile(
             title: const Text(
@@ -798,6 +805,57 @@ Future<void> _uploadSeason1Stats(BuildContext context, FplStore store) async {
       Navigator.pop(context); // loading
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Uploaded $n Season 1 players to Firestore')),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: $e')),
+      );
+    }
+  }
+}
+
+Future<void> _uploadSeason2Stats(BuildContext context, FplStore store) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1A2E20),
+      title: const Text(
+        'Upload Season 2 to Firestore?',
+        style: TextStyle(color: Colors.white),
+      ),
+      content: const Text(
+        'Writes seasons/s2 + merges Week 1 leaderboards into statPlayers. '
+        'Preserves existing Season 1 career data. Sign in as Firebase admin first.',
+        style: TextStyle(color: Colors.white70),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Upload'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => const Center(child: CircularProgressIndicator()),
+  );
+  try {
+    final n = await StatPlayersRepository().uploadSeason2FromAssets();
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Uploaded $n Season 2 players to Firestore')),
       );
     }
   } catch (e) {

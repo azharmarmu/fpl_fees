@@ -64,6 +64,8 @@ List<FplPlayer> buildSeedPlayers() {
     ('nowfal', 'Nowfal', kTeamOx, true, false),
     ('shanu', 'Shanu', kTeamOx, false, false),
     ('siraj', 'Siraj', kTeamOx, false, false),
+    // Lifetime guest — plays as floating player; not fee'd, not on a squad tab.
+    ('mulla', 'Mulla', kTeamGuest, true, false),
   ];
 
   return [

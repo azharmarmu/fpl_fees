@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../data/season1.dart';
+import '../data/season2.dart';
 import '../models/stat_player.dart';
 import '../screens/stat_player_screen.dart';
 
-class AllTimeLeader {
-  const AllTimeLeader({
+class StatLeader {
+  const StatLeader({
     required this.name,
     required this.teamLabel,
     required this.value,
@@ -20,13 +21,132 @@ class AllTimeLeader {
   final String? playerId;
 }
 
+/// Season 2 top batter & bowler (assets, or Firestore `seasons.s2` when uploaded).
+class SeasonLeaders extends StatelessWidget {
+  const SeasonLeaders({super.key, this.cloudEnabled = false});
+
+  final bool cloudEnabled;
+
+  static Future<({StatLeader runs, StatLeader wickets})?> load({
+    bool cloudEnabled = false,
+  }) async {
+    if (cloudEnabled) {
+      try {
+        final fromCloud = await _fromFirestoreSeason('s2');
+        if (fromCloud != null) return fromCloud;
+      } catch (_) {}
+    }
+    try {
+      return await _fromSeason2Assets();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<({StatLeader runs, StatLeader wickets})>
+      _fromSeason2Assets() async {
+    final a = await Season2Loader.load();
+    if (a.batting.isEmpty || a.bowling.isEmpty) {
+      throw StateError('Season 2 leaderboards empty');
+    }
+    final bat = a.batting.first;
+    final bowl = a.bowling.first;
+    return (
+      runs: StatLeader(
+        name: bat.name,
+        teamLabel: bat.teamName,
+        value: bat.runs,
+        playerId: bat.playerId,
+      ),
+      wickets: StatLeader(
+        name: bowl.name,
+        teamLabel: bowl.teamName,
+        value: bowl.wickets,
+        playerId: bowl.playerId,
+      ),
+    );
+  }
+
+  static Future<({StatLeader runs, StatLeader wickets})?>
+      _fromFirestoreSeason(String seasonId) async {
+    final snap =
+        await FirebaseFirestore.instance.collection('statPlayers').get();
+    if (snap.docs.isEmpty) return null;
+
+    StatLeader? topRuns;
+    StatLeader? topWkts;
+
+    for (final doc in snap.docs) {
+      final p = CareerPlayer.fromJson(doc.data());
+      final s = p.seasons[seasonId];
+      if (s == null) continue;
+      final runs = s.batting?.runs ?? 0;
+      final wickets = s.bowling?.wickets ?? 0;
+      final teamLabel = s.primaryTeamName.isNotEmpty
+          ? s.primaryTeamName
+          : (s.teams.isEmpty ? '' : s.teams.first);
+      if (runs > 0 && (topRuns == null || runs > topRuns.value)) {
+        topRuns = StatLeader(
+          name: p.name,
+          teamLabel: teamLabel,
+          value: runs,
+          playerId: p.id,
+        );
+      }
+      if (wickets > 0 && (topWkts == null || wickets > topWkts.value)) {
+        topWkts = StatLeader(
+          name: p.name,
+          teamLabel: teamLabel,
+          value: wickets,
+          playerId: p.id,
+        );
+      }
+    }
+
+    if (topRuns == null || topWkts == null) return null;
+    return (runs: topRuns, wickets: topWkts);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<({StatLeader runs, StatLeader wickets})?>(
+      future: load(cloudEnabled: cloudEnabled),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 100,
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+        final data = snap.data;
+        if (data == null) return const SizedBox.shrink();
+        return _LeadersSection(
+          heading: 'THIS SEASON',
+          subtitle: 'Season 2 · top batter & bowler',
+          runsTitle: 'Top batsman',
+          wicketsTitle: 'Top bowler',
+          runs: data.runs,
+          wickets: data.wickets,
+          cloudEnabled: cloudEnabled,
+        );
+      },
+    );
+  }
+}
+
 /// Most runs & most wickets across seasons (Firestore when available, else S1 CSVs).
 class AllTimeLeaders extends StatelessWidget {
   const AllTimeLeaders({super.key, this.cloudEnabled = false});
 
   final bool cloudEnabled;
 
-  static Future<({AllTimeLeader runs, AllTimeLeader wickets})> load({
+  static Future<({StatLeader runs, StatLeader wickets})> load({
     bool cloudEnabled = false,
   }) async {
     if (cloudEnabled) {
@@ -38,19 +158,19 @@ class AllTimeLeaders extends StatelessWidget {
     return _fromSeason1Assets();
   }
 
-  static Future<({AllTimeLeader runs, AllTimeLeader wickets})>
+  static Future<({StatLeader runs, StatLeader wickets})>
       _fromSeason1Assets() async {
     final a = await Season1Loader.load();
     final bat = a.batting.first;
     final bowl = a.bowling.first;
     return (
-      runs: AllTimeLeader(
+      runs: StatLeader(
         name: bat.name,
         teamLabel: bat.teamName,
         value: bat.runs,
         playerId: bat.playerId,
       ),
-      wickets: AllTimeLeader(
+      wickets: StatLeader(
         name: bowl.name,
         teamLabel: bowl.teamName,
         value: bowl.wickets,
@@ -59,14 +179,14 @@ class AllTimeLeaders extends StatelessWidget {
     );
   }
 
-  static Future<({AllTimeLeader runs, AllTimeLeader wickets})?>
+  static Future<({StatLeader runs, StatLeader wickets})?>
       _fromFirestore() async {
     final snap =
         await FirebaseFirestore.instance.collection('statPlayers').get();
     if (snap.docs.isEmpty) return null;
 
-    AllTimeLeader? topRuns;
-    AllTimeLeader? topWkts;
+    StatLeader? topRuns;
+    StatLeader? topWkts;
 
     for (final doc in snap.docs) {
       final p = CareerPlayer.fromJson(doc.data());
@@ -80,7 +200,7 @@ class AllTimeLeaders extends StatelessWidget {
       }
       final teamLabel = teams.isEmpty ? '' : teams.join(' · ');
       if (topRuns == null || runs > topRuns.value) {
-        topRuns = AllTimeLeader(
+        topRuns = StatLeader(
           name: p.name,
           teamLabel: teamLabel,
           value: runs,
@@ -88,7 +208,7 @@ class AllTimeLeaders extends StatelessWidget {
         );
       }
       if (topWkts == null || wickets > topWkts.value) {
-        topWkts = AllTimeLeader(
+        topWkts = StatLeader(
           name: p.name,
           teamLabel: teamLabel,
           value: wickets,
@@ -104,7 +224,7 @@ class AllTimeLeaders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<({AllTimeLeader runs, AllTimeLeader wickets})>(
+    return FutureBuilder<({StatLeader runs, StatLeader wickets})>(
       future: load(cloudEnabled: cloudEnabled),
       builder: (context, snap) {
         if (!snap.hasData) {
@@ -121,45 +241,78 @@ class AllTimeLeaders extends StatelessWidget {
         }
         final runs = snap.data!.runs;
         final wickets = snap.data!.wickets;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ALL-TIME LEADERS',
-              style: GoogleFonts.bebasNeue(
-                fontSize: 18,
-                color: const Color(0xFFB8F27A),
-              ),
-            ),
-            const Text(
-              'Across all seasons',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _LeaderBox(
-                    title: 'Most runs',
-                    leader: runs,
-                    unit: 'runs',
-                    cloudEnabled: cloudEnabled,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _LeaderBox(
-                    title: 'Most wickets',
-                    leader: wickets,
-                    unit: 'wkts',
-                    cloudEnabled: cloudEnabled,
-                  ),
-                ),
-              ],
-            ),
-          ],
+        return _LeadersSection(
+          heading: 'ALL-TIME LEADERS',
+          subtitle: 'Across all seasons',
+          runsTitle: 'Most runs',
+          wicketsTitle: 'Most wickets',
+          runs: runs,
+          wickets: wickets,
+          cloudEnabled: cloudEnabled,
         );
       },
+    );
+  }
+}
+
+class _LeadersSection extends StatelessWidget {
+  const _LeadersSection({
+    required this.heading,
+    required this.subtitle,
+    required this.runsTitle,
+    required this.wicketsTitle,
+    required this.runs,
+    required this.wickets,
+    required this.cloudEnabled,
+  });
+
+  final String heading;
+  final String subtitle;
+  final String runsTitle;
+  final String wicketsTitle;
+  final StatLeader runs;
+  final StatLeader wickets;
+  final bool cloudEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          heading,
+          style: GoogleFonts.bebasNeue(
+            fontSize: 18,
+            color: const Color(0xFFB8F27A),
+          ),
+        ),
+        Text(
+          subtitle,
+          style: const TextStyle(color: Colors.white38, fontSize: 11),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _LeaderBox(
+                title: runsTitle,
+                leader: runs,
+                unit: 'runs',
+                cloudEnabled: cloudEnabled,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _LeaderBox(
+                title: wicketsTitle,
+                leader: wickets,
+                unit: 'wkts',
+                cloudEnabled: cloudEnabled,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -173,7 +326,7 @@ class _LeaderBox extends StatelessWidget {
   });
 
   final String title;
-  final AllTimeLeader leader;
+  final StatLeader leader;
   final String unit;
   final bool cloudEnabled;
 

@@ -67,6 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         if (err != null) throw Exception(err);
         await widget.session.setAdmin();
+        // Push local migrations (scorecards, fees) once Firebase admin is live.
+        await widget.store.syncToCloudIfAdmin();
       } else {
         final raw = _playerInput.text.trim();
         if (raw.isEmpty) throw Exception('Enter phone or username');

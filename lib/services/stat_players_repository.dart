@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 import '../data/season1.dart';
+import '../data/season2.dart';
 import '../models/stat_player.dart';
 
 /// Firestore-backed career stats (`statPlayers/{id}`) for Season 1+ archives.
@@ -16,6 +17,9 @@ class StatPlayersRepository {
 
   DocumentReference<Map<String, dynamic>> get _season1Meta =>
       _db.collection('seasons').doc('s1');
+
+  DocumentReference<Map<String, dynamic>> get _season2Meta =>
+      _db.collection('seasons').doc('s2');
 
   static String nameKey(String name) =>
       name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
@@ -252,6 +256,229 @@ class StatPlayersRepository {
     return players.length;
   }
 
+  /// Merge Season 2 CSV stats into `statPlayers` (preserves Season 1 seasons).
+  Future<int> uploadSeason2FromAssets() async {
+    final archive = await Season2Loader.load();
+    final byId = <String, CareerSeasonStats>{};
+    final idByName = <String, String>{};
+    final names = <String, String>{};
+
+    void remember(String id, String name) {
+      idByName[nameKey(name)] = id;
+      names[id] = name;
+    }
+
+    CareerSeasonStats ensure({
+      required String id,
+      required String name,
+      required String teamName,
+    }) {
+      remember(id, name);
+      final existing = byId[id];
+      if (existing != null) {
+        final teams = [...existing.teams];
+        if (teamName.isNotEmpty && !teams.contains(teamName)) {
+          teams.add(teamName);
+          byId[id] = CareerSeasonStats(
+            seasonId: existing.seasonId,
+            seasonLabel: existing.seasonLabel,
+            teams: teams,
+            primaryTeamName: existing.primaryTeamName.isEmpty
+                ? teamName
+                : existing.primaryTeamName,
+            batting: existing.batting,
+            bowling: existing.bowling,
+            fielding: existing.fielding,
+            mvp: existing.mvp,
+          );
+        }
+        return byId[id]!;
+      }
+      final created = CareerSeasonStats(
+        seasonId: 's2',
+        seasonLabel: Season2Meta.seasonLabel,
+        teams: teamName.isEmpty ? const [] : [teamName],
+        primaryTeamName: teamName,
+      );
+      byId[id] = created;
+      return created;
+    }
+
+    void patch(
+      String id, {
+      CareerBatting? batting,
+      CareerBowling? bowling,
+      CareerFielding? fielding,
+      CareerMvp? mvp,
+      String? teamName,
+    }) {
+      final s = byId[id]!;
+      final teams = [...s.teams];
+      if (teamName != null &&
+          teamName.isNotEmpty &&
+          !teams.contains(teamName)) {
+        teams.add(teamName);
+      }
+      byId[id] = CareerSeasonStats(
+        seasonId: s.seasonId,
+        seasonLabel: s.seasonLabel,
+        teams: teams,
+        primaryTeamName: s.primaryTeamName.isEmpty
+            ? (teamName ?? '')
+            : s.primaryTeamName,
+        batting: batting ?? s.batting,
+        bowling: bowling ?? s.bowling,
+        fielding: fielding ?? s.fielding,
+        mvp: mvp ?? s.mvp,
+      );
+    }
+
+    for (final r in archive.batting) {
+      ensure(id: r.playerId, name: r.name, teamName: r.teamName);
+      patch(
+        r.playerId,
+        teamName: r.teamName,
+        batting: CareerBatting(
+          matches: r.matches,
+          innings: r.innings,
+          runs: r.runs,
+          highest: r.highest,
+          average: r.average,
+          strikeRate: r.strikeRate,
+          fours: r.fours,
+          sixes: r.sixes,
+        ),
+      );
+    }
+
+    for (final r in archive.bowling) {
+      ensure(id: r.playerId, name: r.name, teamName: r.teamName);
+      patch(
+        r.playerId,
+        teamName: r.teamName,
+        bowling: CareerBowling(
+          matches: r.matches,
+          innings: r.innings,
+          wickets: r.wickets,
+          overs: r.overs,
+          maidens: r.maidens,
+          runs: r.runs,
+          economy: r.economy,
+          best: r.best,
+        ),
+      );
+    }
+
+    for (final r in archive.fielding) {
+      ensure(id: r.playerId, name: r.name, teamName: r.teamName);
+      patch(
+        r.playerId,
+        teamName: r.teamName,
+        fielding: CareerFielding(
+          matches: r.matches,
+          catches: r.catches,
+          runOuts: r.runOuts,
+          stumpings: r.stumpings,
+          totalDismissals: r.totalDismissals,
+        ),
+      );
+    }
+
+    for (final r in archive.mvp) {
+      final key = nameKey(r.name);
+      var id = idByName[key];
+      if (id == null) {
+        for (final e in idByName.entries) {
+          if (e.key.contains(key) || key.contains(e.key)) {
+            id = e.value;
+            break;
+          }
+        }
+      }
+      id ??= idFromName(r.name);
+      ensure(id: id, name: r.name, teamName: r.teamName);
+      patch(
+        id,
+        teamName: r.teamName,
+        mvp: CareerMvp(
+          matches: r.matches,
+          battingPts: r.battingPts,
+          bowlingPts: r.bowlingPts,
+          fieldingPts: r.fieldingPts,
+          total: r.total,
+        ),
+      );
+    }
+
+    await _season2Meta.set({
+      'id': 's2',
+      'title': Season2Meta.title,
+      'seasonLabel': Season2Meta.seasonLabel,
+      'location': Season2Meta.location,
+      'dateRange': Season2Meta.dateRange,
+      'totalMatches': Season2Meta.totalMatches,
+      'totalTeams': Season2Meta.totalTeams,
+      'standings': [
+        for (final s in season2Standings)
+          {
+            'rank': s.rank,
+            'teamName': s.teamName,
+            'played': s.played,
+            'won': s.won,
+            'lost': s.lost,
+            'points': s.points,
+            'nrr': s.nrr,
+            'forScore': s.forScore,
+            'againstScore': s.againstScore,
+            'last5': s.last5,
+          },
+      ],
+      'updatedAt': DateTime.now().toIso8601String(),
+    });
+
+    // Deep-merge seasons maps (Firestore top-level merge replaces `seasons`).
+    final ids = byId.keys.toList();
+    const chunk = 200;
+    for (var i = 0; i < ids.length; i += chunk) {
+      final slice = ids.skip(i).take(chunk).toList();
+      final snaps = await Future.wait(slice.map((id) => _col.doc(id).get()));
+      final batch = _db.batch();
+      for (var j = 0; j < slice.length; j++) {
+        final id = slice[j];
+        final snap = snaps[j];
+        final existing = snap.data() ?? <String, dynamic>{};
+        final seasonsRaw = existing['seasons'];
+        final seasons = <String, dynamic>{};
+        if (seasonsRaw is Map) {
+          for (final e in seasonsRaw.entries) {
+            seasons['${e.key}'] = e.value;
+          }
+        }
+        seasons['s2'] = byId[id]!.toJson();
+        final name = names[id] ?? '${existing['name'] ?? id}';
+        final seasonIds = <String>{
+          ...((existing['seasonIds'] as List?) ?? []).map((e) => '$e'),
+          's2',
+        }.toList();
+        batch.set(
+          _col.doc(id),
+          {
+            'id': id,
+            'name': name,
+            'nameLower': nameKey(name),
+            'seasonIds': seasonIds,
+            'seasons': seasons,
+          },
+          SetOptions(merge: true),
+        );
+      }
+      await batch.commit();
+    }
+
+    debugPrint('Uploaded ${ids.length} Season 2 statPlayers');
+    return ids.length;
+  }
+
   static bool _nameMatch(String a, String b) {
     final x = nameKey(a);
     final y = nameKey(b);
@@ -271,8 +498,51 @@ class StatPlayersRepository {
   static Future<CareerPlayer?> fromSeason1Assets({
     String? playerId,
     String? name,
+  }) =>
+      _fromArchiveAssets(
+        archive: Season1Loader.load(),
+        seasonId: 's1',
+        seasonLabel: Season1Meta.seasonLabel,
+        playerId: playerId,
+        name: name,
+      );
+
+  static Future<CareerPlayer?> fromSeason2Assets({
+    String? playerId,
+    String? name,
+  }) =>
+      _fromArchiveAssets(
+        archive: Season2Loader.load(),
+        seasonId: 's2',
+        seasonLabel: Season2Meta.seasonLabel,
+        playerId: playerId,
+        name: name,
+      );
+
+  /// Prefer Season 2 + Season 1 merged for offline career view.
+  static Future<CareerPlayer?> fromBundledAssets({
+    String? playerId,
+    String? name,
   }) async {
-    final archive = await Season1Loader.load();
+    final s2 = await fromSeason2Assets(playerId: playerId, name: name);
+    final s1 = await fromSeason1Assets(playerId: playerId, name: name);
+    if (s1 == null) return s2;
+    if (s2 == null) return s1;
+    return CareerPlayer(
+      id: s2.id.isNotEmpty ? s2.id : s1.id,
+      name: s2.name.isNotEmpty ? s2.name : s1.name,
+      seasons: {...s1.seasons, ...s2.seasons},
+    );
+  }
+
+  static Future<CareerPlayer?> _fromArchiveAssets({
+    required Future<Season1Archive> archive,
+    required String seasonId,
+    required String seasonLabel,
+    String? playerId,
+    String? name,
+  }) async {
+    final data = await archive;
     String? id = playerId;
     String resolvedName = name ?? '';
     String team = '';
@@ -284,13 +554,13 @@ class StatPlayersRepository {
     final teams = <String>{};
 
     final nameQuery = name;
-    bool hitId(String rowId) => id != null && id!.isNotEmpty && rowId == id;
+    bool hitId(String rowId) => id != null && id.isNotEmpty && rowId == id;
     bool hitName(String rowName) =>
         nameQuery != null &&
         nameQuery.isNotEmpty &&
         _nameMatch(rowName, nameQuery);
 
-    for (final r in archive.batting) {
+    for (final r in data.batting) {
       if (hitId(r.playerId) || hitName(r.name)) {
         id ??= r.playerId;
         resolvedName = r.name;
@@ -308,7 +578,7 @@ class StatPlayersRepository {
         );
       }
     }
-    for (final r in archive.bowling) {
+    for (final r in data.bowling) {
       if (hitId(r.playerId) || hitName(r.name)) {
         id ??= r.playerId;
         resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
@@ -325,7 +595,7 @@ class StatPlayersRepository {
         );
       }
     }
-    for (final r in archive.fielding) {
+    for (final r in data.fielding) {
       if (hitId(r.playerId) || hitName(r.name)) {
         id ??= r.playerId;
         resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
@@ -342,7 +612,7 @@ class StatPlayersRepository {
 
     final key = nameKey(resolvedName.isEmpty ? (name ?? '') : resolvedName);
     if (key.isNotEmpty) {
-      for (final r in archive.mvp) {
+      for (final r in data.mvp) {
         if (_nameMatch(r.name, key) ||
             nameKey(r.name) == key ||
             nameKey(r.name).contains(key) ||
@@ -368,9 +638,9 @@ class StatPlayersRepository {
       id: id,
       name: resolvedName,
       seasons: {
-        's1': CareerSeasonStats(
-          seasonId: 's1',
-          seasonLabel: Season1Meta.seasonLabel,
+        seasonId: CareerSeasonStats(
+          seasonId: seasonId,
+          seasonLabel: seasonLabel,
           teams: teams.toList(),
           primaryTeamName: team.isNotEmpty
               ? team

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../data/season1.dart';
+import '../data/season2.dart';
 import 'stat_player_screen.dart';
 
 class _SeasonOption {
@@ -99,13 +100,13 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
         mvp: a.mvp,
       );
     }
-    // Season 2 — populated as weekly stats are imported later.
-    return const _TournamentBundle(
-      standings: [],
-      batting: [],
-      bowling: [],
-      fielding: [],
-      mvp: [],
+    final a = await Season2Loader.load();
+    return _TournamentBundle(
+      standings: season2Standings,
+      batting: a.batting,
+      bowling: a.bowling,
+      fielding: a.fielding,
+      mvp: a.mvp,
     );
   }
 
@@ -292,29 +293,52 @@ class _PointsTab extends StatelessWidget {
         for (final s in standings)
           Card(
             color: const Color(0xFF1A2E20),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFF2E5A3C),
-                child: Text(
-                  '#${s.rank}',
-                  style: const TextStyle(color: Color(0xFFB8F27A)),
-                ),
-              ),
-              title: Text(s.teamName, style: const TextStyle(color: Colors.white)),
-              subtitle: Text(
-                'P ${s.played} · W ${s.won} · L ${s.lost} · '
-                'NRR ${s.nrr.toStringAsFixed(3)}\n'
-                'For ${s.forScore} · Against ${s.againstScore}\n'
-                'Last 5: ${s.last5}',
-                style: const TextStyle(color: Colors.white54, fontSize: 12),
-              ),
-              isThreeLine: true,
-              trailing: Text(
-                '${s.points}',
-                style: GoogleFonts.bebasNeue(
-                  fontSize: 28,
-                  color: const Color(0xFFB8F27A),
-                ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: const Color(0xFF2E5A3C),
+                    child: Text(
+                      '#${s.rank}',
+                      style: const TextStyle(
+                        color: Color(0xFFB8F27A),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s.teamName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'P ${s.played} · W ${s.won} · L ${s.lost} · '
+                          'NRR ${s.nrr.toStringAsFixed(3)}',
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${s.points}',
+                    style: GoogleFonts.bebasNeue(
+                      fontSize: 28,
+                      color: const Color(0xFFB8F27A),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -349,21 +373,40 @@ class _MvpTab extends StatelessWidget {
         final r = rows[i - 1];
         return ListTile(
           dense: true,
-          contentPadding: EdgeInsets.zero,
-          leading: Text('$i', style: const TextStyle(color: Colors.white38)),
-          title: Text(r.name, style: const TextStyle(color: Colors.white)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          minLeadingWidth: 28,
+          leading: SizedBox(
+            width: 28,
+            child: Text(
+              '$i',
+              style: const TextStyle(color: Colors.white38),
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  r.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                r.total.toStringAsFixed(1),
+                style: const TextStyle(
+                  color: Color(0xFFB8F27A),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           subtitle: Text(
             '${r.teamName} · Bat ${r.battingPts.toStringAsFixed(1)} · '
             'Bowl ${r.bowlingPts.toStringAsFixed(1)} · '
             'Field ${r.fieldingPts.toStringAsFixed(1)}',
             style: const TextStyle(color: Colors.white54, fontSize: 11),
-          ),
-          trailing: Text(
-            r.total.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Color(0xFFB8F27A),
-              fontWeight: FontWeight.w700,
-            ),
           ),
           onTap: () => onOpenPlayer(name: r.name),
         );
@@ -398,20 +441,39 @@ class _BattingTab extends StatelessWidget {
         final r = rows[i - 1];
         return ListTile(
           dense: true,
-          contentPadding: EdgeInsets.zero,
-          leading: Text('$i', style: const TextStyle(color: Colors.white38)),
-          title: Text(r.name, style: const TextStyle(color: Colors.white)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          minLeadingWidth: 28,
+          leading: SizedBox(
+            width: 28,
+            child: Text(
+              '$i',
+              style: const TextStyle(color: Colors.white38),
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  r.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${r.runs}',
+                style: const TextStyle(
+                  color: Color(0xFFB8F27A),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           subtitle: Text(
             '${r.teamName} · ${r.innings} inn · HS ${r.highest} · '
             'SR ${r.strikeRate}',
             style: const TextStyle(color: Colors.white54, fontSize: 11),
-          ),
-          trailing: Text(
-            '${r.runs}',
-            style: const TextStyle(
-              color: Color(0xFFB8F27A),
-              fontWeight: FontWeight.w700,
-            ),
           ),
           onTap: () => onOpenPlayer(id: r.playerId, name: r.name),
         );
@@ -446,19 +508,38 @@ class _BowlingTab extends StatelessWidget {
         final r = rows[i - 1];
         return ListTile(
           dense: true,
-          contentPadding: EdgeInsets.zero,
-          leading: Text('$i', style: const TextStyle(color: Colors.white38)),
-          title: Text(r.name, style: const TextStyle(color: Colors.white)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          minLeadingWidth: 28,
+          leading: SizedBox(
+            width: 28,
+            child: Text(
+              '$i',
+              style: const TextStyle(color: Colors.white38),
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  r.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${r.wickets}',
+                style: const TextStyle(
+                  color: Color(0xFFB8F27A),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           subtitle: Text(
             '${r.teamName} · ${r.overs} ov · econ ${r.economy}',
             style: const TextStyle(color: Colors.white54, fontSize: 11),
-          ),
-          trailing: Text(
-            '${r.wickets}',
-            style: const TextStyle(
-              color: Color(0xFFB8F27A),
-              fontWeight: FontWeight.w700,
-            ),
           ),
           onTap: () => onOpenPlayer(id: r.playerId, name: r.name),
         );
@@ -493,19 +574,38 @@ class _FieldingTab extends StatelessWidget {
         final r = rows[i - 1];
         return ListTile(
           dense: true,
-          contentPadding: EdgeInsets.zero,
-          leading: Text('$i', style: const TextStyle(color: Colors.white38)),
-          title: Text(r.name, style: const TextStyle(color: Colors.white)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          minLeadingWidth: 28,
+          leading: SizedBox(
+            width: 28,
+            child: Text(
+              '$i',
+              style: const TextStyle(color: Colors.white38),
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  r.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${r.totalDismissals}',
+                style: const TextStyle(
+                  color: Color(0xFFB8F27A),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           subtitle: Text(
             '${r.teamName} · ${r.catches} catches · ${r.runOuts} RO',
             style: const TextStyle(color: Colors.white54, fontSize: 11),
-          ),
-          trailing: Text(
-            '${r.totalDismissals}',
-            style: const TextStyle(
-              color: Color(0xFFB8F27A),
-              fontWeight: FontWeight.w700,
-            ),
           ),
           onTap: () => onOpenPlayer(id: r.playerId, name: r.name),
         );

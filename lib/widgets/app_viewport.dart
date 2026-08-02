@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Keeps phone/tablet full-bleed; centers a readable column on wide laptops.
+/// Phone-first column: full bleed on small screens, centered max-width on wide.
 class AppViewport extends StatelessWidget {
   const AppViewport({
     super.key,
     required this.child,
-    this.maxWidth = 720,
+    this.maxWidth = 480,
   });
 
   final Widget child;
@@ -15,15 +15,34 @@ class AppViewport extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth <= maxWidth) return child;
+        if (constraints.maxWidth <= maxWidth) {
+          return ColoredBox(
+            color: const Color(0xFF0F1A12),
+            child: child,
+          );
+        }
         return ColoredBox(
-          color: const Color(0xFF0F1A12),
+          color: const Color(0xFF07100A),
           child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxWidth,
-                maxHeight: constraints.maxHeight,
+            child: Container(
+              width: maxWidth,
+              height: constraints.maxHeight,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F1A12),
+                border: Border.symmetric(
+                  vertical: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
+              clipBehavior: Clip.hardEdge,
               child: child,
             ),
           ),

@@ -1,13 +1,10 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../config.dart';
 import '../../models/models.dart';
 import '../../services/fpl_store.dart';
-import '../../services/io_bytes.dart';
 import '../../services/pdf_storage.dart';
 
 class AddMatchScreen extends StatefulWidget {
@@ -43,10 +40,8 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   final _result = TextEditingController();
   final _toss = TextEditingController();
   DateTime _date = DateTime.now();
-  String? _pdfName;
-  List<int>? _pdfBytes;
   var _busy = false;
-  var _showStructured = false;
+  var _showStructured = true;
   late final List<_InningsDraft> _innings;
 
   @override
@@ -73,32 +68,6 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
   void _syncInningsTeams() {
     _innings[0].battingTeamId = _teamA;
     _innings[1].battingTeamId = _teamB;
-  }
-
-  Future<void> _pickPdf() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['pdf'],
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return;
-    final f = result.files.single;
-    List<int>? bytes = f.bytes;
-    if (bytes == null || bytes.isEmpty) {
-      bytes = await readPathBytes(f.path);
-    }
-    if (bytes == null || bytes.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not read PDF bytes')),
-        );
-      }
-      return;
-    }
-    setState(() {
-      _pdfName = f.name;
-      _pdfBytes = bytes;
-    });
   }
 
   List<MatchInnings> _buildInnings() {
@@ -138,17 +107,6 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
     setState(() => _busy = true);
     try {
       final id = PdfStorage.newMatchId();
-      String? localPath;
-      String? pdfUrl;
-      if (_pdfBytes != null && _pdfBytes!.isNotEmpty) {
-        final saved = await widget.store.pdfStorage.saveMatchPdf(
-          matchId: id,
-          fileName: _pdfName ?? 'scorecard.pdf',
-          bytes: _pdfBytes!,
-        );
-        localPath = saved.localPath;
-        pdfUrl = saved.pdfUrl;
-      }
       final structured = _buildInnings();
       // Prefer structured totals for summary score strings when empty.
       var scoreA = _scoreA.text.trim();
@@ -175,8 +133,6 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
           teamBScore: scoreB,
           resultText: _result.text.trim(),
           tossText: _toss.text.trim(),
-          pdfLocalPath: localPath,
-          pdfUrl: pdfUrl,
           innings: structured,
         ),
       );
@@ -497,22 +453,6 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
             decoration: _dec('Toss (optional)'),
           ),
           const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _busy ? null : _pickPdf,
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: Text(
-              _pdfName == null ? 'Attach CricHeroes PDF' : 'PDF: $_pdfName',
-            ),
-          ),
-          if (widget.store.cloudEnabled)
-            const Padding(
-              padding: EdgeInsets.only(top: 6),
-              child: Text(
-                'PDF uploads to Firebase Storage when cloud sync is on',
-                style: TextStyle(color: Colors.white38, fontSize: 12),
-              ),
-            ),
-          const SizedBox(height: 16),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text(
@@ -704,28 +644,4 @@ class _AddMatchScreenState extends State<AddMatchScreen> {
         fillColor: const Color(0xFF1A2E20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       );
-}
-
-Future<void> openMatchPdf(BuildContext context, MatchScorecard m) async {
-  final url = m.pdfUrl;
-  if (url != null && url.isNotEmpty) {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      return;
-    }
-  }
-  if (m.pdfLocalPath != null && m.pdfLocalPath!.isNotEmpty) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF saved at ${m.pdfLocalPath}')),
-      );
-    }
-    return;
-  }
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No PDF attached')),
-    );
-  }
 }

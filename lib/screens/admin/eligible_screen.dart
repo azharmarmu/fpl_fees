@@ -68,6 +68,38 @@ class EligibleScreen extends StatelessWidget {
                     ),
                 const SizedBox(height: 14),
               ],
+              Builder(
+                builder: (context) {
+                  final floating = store
+                      .eligiblePlayers()
+                      .where((p) => p.teamId == kTeamGuest)
+                      .toList();
+                  if (floating.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Floating / guest (lifetime)',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ...floating.map(
+                        (p) => Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '• ${p.name}',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                  );
+                },
+              ),
               if (guests.isNotEmpty) ...[
                 const Text(
                   'Guests',

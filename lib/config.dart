@@ -21,6 +21,9 @@ const kTeamOx = 'ox';
 const kTeamGb = 'gb';
 const kTeamAvengers = 'avengers';
 
+/// Floating / guest player — not on a squad; lifetime members here pay no fees.
+const kTeamGuest = 'guest';
+
 /// Legacy id used in early Season 2 data — migrated to [kTeamAvengers] on load.
 const kTeamNewLegacy = 'new';
 
@@ -28,6 +31,7 @@ const kTeamNames = {
   kTeamOx: 'OX CC',
   kTeamGb: 'Gully Blasters',
   kTeamAvengers: 'Farm Avengers CC',
+  kTeamGuest: 'Guest',
 };
 
 /// Local admin gate when Firebase Auth is not configured.

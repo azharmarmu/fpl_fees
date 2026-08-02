@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/models.dart';
-import 'add_match_screen.dart';
 
 class MatchDetailScreen extends StatelessWidget {
   const MatchDetailScreen({super.key, required this.match});
@@ -19,14 +18,6 @@ class MatchDetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF163020),
         title: const Text('Scorecard'),
-        actions: [
-          if (m.hasPdf)
-            IconButton(
-              tooltip: 'Open PDF',
-              onPressed: () => openMatchPdf(context, m),
-              icon: const Icon(Icons.picture_as_pdf, color: Color(0xFFB8F27A)),
-            ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -71,7 +62,7 @@ class MatchDetailScreen extends StatelessWidget {
           if (!m.hasStructuredCard) ...[
             const SizedBox(height: 24),
             const Text(
-              'No structured batting/bowling yet. Open the PDF if attached.',
+              'Full batting/bowling not entered yet.',
               style: TextStyle(color: Colors.white38),
             ),
           ] else
@@ -106,17 +97,28 @@ class _InningsBlock extends StatelessWidget {
             innings.scoreLabel,
             style: const TextStyle(color: Colors.white70),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           const Text(
             'Batting',
             style: TextStyle(color: Colors.white54, fontWeight: FontWeight.w600),
           ),
+          const SizedBox(height: 4),
+          const Row(
+            children: [
+              Expanded(child: Text('Batter', style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 36, child: Text('R', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 36, child: Text('B', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 28, child: Text('4s', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 28, child: Text('6s', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+            ],
+          ),
+          const Divider(height: 12, color: Colors.white12),
           if (innings.batting.isEmpty)
             const Text('—', style: TextStyle(color: Colors.white38))
           else
             for (final b in innings.batting)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 5),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -136,24 +138,66 @@ class _InningsBlock extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text(
-                      '${b.runs} (${b.balls})',
-                      style: const TextStyle(color: Color(0xFFB8F27A)),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        '${b.runs}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          color: Color(0xFFB8F27A),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        '${b.balls}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${b.fours}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${b.sixes}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
               ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           const Text(
             'Bowling',
             style: TextStyle(color: Colors.white54, fontWeight: FontWeight.w600),
           ),
+          const SizedBox(height: 4),
+          const Row(
+            children: [
+              Expanded(child: Text('Bowler', style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 40, child: Text('O', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 28, child: Text('M', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 36, child: Text('R', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+              SizedBox(width: 28, child: Text('W', textAlign: TextAlign.right, style: TextStyle(color: Colors.white38, fontSize: 11))),
+            ],
+          ),
+          const Divider(height: 12, color: Colors.white12),
           if (innings.bowling.isEmpty)
             const Text('—', style: TextStyle(color: Colors.white38))
           else
             for (final b in innings.bowling)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 5),
                 child: Row(
                   children: [
                     Expanded(
@@ -162,9 +206,40 @@ class _InningsBlock extends StatelessWidget {
                         style: const TextStyle(color: Colors.white),
                       ),
                     ),
-                    Text(
-                      '${b.overs}-${b.maidens}-${b.runs}-${b.wickets}',
-                      style: const TextStyle(color: Color(0xFFB8F27A)),
+                    SizedBox(
+                      width: 40,
+                      child: Text(
+                        b.overs,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${b.maidens}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        '${b.runs}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${b.wickets}',
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          color: Color(0xFFB8F27A),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),

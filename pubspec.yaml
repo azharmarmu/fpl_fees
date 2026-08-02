@@ -70,6 +70,10 @@ flutter:
     - assets/season1/bowling_leaderboard.csv
     - assets/season1/fielding_leaderboard.csv
     - assets/season1/mvp_leaderboard.csv
+    - assets/season2/batting_leaderboard.csv
+    - assets/season2/bowling_leaderboard.csv
+    - assets/season2/fielding_leaderboard.csv
+    - assets/season2/mvp_leaderboard.csv
 
   # To add assets to your application, add an assets section, like this:
   # assets:

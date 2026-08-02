@@ -46,7 +46,7 @@ class _StatPlayerScreenState extends State<StatPlayerScreen> {
         // Fall through to assets.
       }
     }
-    return StatPlayersRepository.fromSeason1Assets(
+    return StatPlayersRepository.fromBundledAssets(
       playerId: widget.playerId,
       name: widget.playerName,
     );

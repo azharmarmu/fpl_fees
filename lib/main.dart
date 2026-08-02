@@ -70,26 +70,33 @@ class _FplFeesAppState extends State<FplFeesApp> {
           ThemeData(brightness: Brightness.dark).textTheme,
         ),
         useMaterial3: true,
+        // Keep list rows compact on every screen (phone density).
+        listTileTheme: const ListTileThemeData(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16),
+        ),
       ),
-      home: AppViewport(
-        child: !widget.store.ready
-            ? const Scaffold(
-                backgroundColor: Color(0xFF0F1A12),
-                body: Center(child: CircularProgressIndicator()),
-              )
-            : widget.session.role == AppRole.none
-                ? LoginScreen(
-                    store: widget.store,
-                    session: widget.session,
-                    onLoggedIn: _refresh,
-                    firebaseEnabled: widget.firebaseEnabled,
-                  )
-                : RoleGate(
-                    store: widget.store,
-                    session: widget.session,
-                    onLogout: _logout,
-                  ),
+      builder: (context, child) => AppViewport(
+        child: child ?? const SizedBox.shrink(),
       ),
+      home: !widget.store.ready
+          ? const Scaffold(
+              backgroundColor: Color(0xFF0F1A12),
+              body: Center(child: CircularProgressIndicator()),
+            )
+          : widget.session.role == AppRole.none
+              ? LoginScreen(
+                  store: widget.store,
+                  session: widget.session,
+                  onLoggedIn: _refresh,
+                  firebaseEnabled: widget.firebaseEnabled,
+                )
+              : RoleGate(
+                  store: widget.store,
+                  session: widget.session,
+                  onLogout: _logout,
+                ),
     );
   }
 }

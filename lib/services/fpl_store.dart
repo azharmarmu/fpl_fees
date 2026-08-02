@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config.dart';
 import '../data/seed.dart';
+import '../data/season2_matches.dart';
 import '../models/models.dart';
 import 'contact_import.dart';
 import 'firestore_sync.dart';
@@ -85,8 +87,13 @@ class FplStore extends ChangeNotifier {
       final remote = await sync.pullOnce();
       if (remote != null && remote.players.isNotEmpty) {
         _applyCloud(remote);
-        final migrated =
-            _migrateTeamIds() | _backfillTeamNames() | _ensureFixtures();
+        _backfillLifetimeFromSeed();
+        final migrated = _migrateTeamIds() |
+            _backfillTeamNames() |
+            _backfillMissingSeedPlayers() |
+            _ensureFixtures() |
+            _ensureWeek1Scorecards() |
+            _migrateWeek4GroundFeesToWeek1();
         if (migrated) {
           await _persist();
         } else {
@@ -94,13 +101,19 @@ class FplStore extends ChangeNotifier {
         }
       } else if (players.isNotEmpty) {
         _ensureFixtures();
+        _ensureWeek1Scorecards();
         await _pushCloud();
       }
       sync.listen((snap) {
         if (snap.players.isEmpty) return;
         _applyCloud(snap);
-        final migrated =
-            _migrateTeamIds() | _backfillTeamNames() | _ensureFixtures();
+        _backfillLifetimeFromSeed();
+        final migrated = _migrateTeamIds() |
+            _backfillTeamNames() |
+            _backfillMissingSeedPlayers() |
+            _ensureFixtures() |
+            _ensureWeek1Scorecards() |
+            _migrateWeek4GroundFeesToWeek1();
         // Defer persist until after FirestoreSync clears isApplyingRemote.
         scheduleMicrotask(() async {
           if (migrated) {
@@ -125,6 +138,7 @@ class FplStore extends ChangeNotifier {
       players = buildSeedPlayers();
       weeks = buildSeasonWeeks();
       fixtures = buildSeasonFixtures();
+      matches = buildSeason2Week1Matches();
       selectedWeekId = _defaultWeekId();
       await _persistLocal();
     } else {
@@ -173,8 +187,12 @@ class FplStore extends ChangeNotifier {
       );
       _backfillSeedPhones();
       _backfillLifetimeFromSeed();
-      final migrated =
-          _migrateTeamIds() | _backfillTeamNames() | _ensureFixtures();
+      final migrated = _migrateTeamIds() |
+          _backfillTeamNames() |
+          _backfillMissingSeedPlayers() |
+          _ensureFixtures() |
+          _ensureWeek1Scorecards() |
+          _migrateWeek4GroundFeesToWeek1();
       if (migrated) {
         await _persist();
       }
@@ -221,6 +239,112 @@ class FplStore extends ChangeNotifier {
     if (changed) {
       unawaited(_persist());
     }
+  }
+
+  /// Add / sync players introduced in later seed revisions (e.g. Mulla guest).
+  /// Returns true if any row changed (caller should persist / push).
+  bool _backfillMissingSeedPlayers() {
+    var changed = false;
+    for (final seed in buildSeedPlayers()) {
+      final i = players.indexWhere((p) => p.id == seed.id);
+      if (i < 0) {
+        players.add(seed);
+        changed = true;
+        continue;
+      }
+      // Keep floating guests on [kTeamGuest] + lifetime (never fee'd).
+      if (seed.teamId != kTeamGuest) continue;
+      final p = players[i];
+      if (p.teamId == kTeamGuest &&
+          p.isLifetimeMember &&
+          p.teamName == seed.teamName) {
+        continue;
+      }
+      players[i] = p.copyWith(
+        teamId: kTeamGuest,
+        teamName: seed.teamName,
+        isLifetimeMember: true,
+        subscriptionPaid: false,
+        clearSubscriptionDate: true,
+      );
+      payments.removeWhere((pay) => pay.playerId == p.id);
+      changed = true;
+    }
+    return changed;
+  }
+
+  /// Seed / refresh League Week 1 scorecards (structured innings, no PDF).
+  bool _ensureWeek1Scorecards() {
+    final seed = buildSeason2Week1Matches();
+    var changed = false;
+    for (final m in seed) {
+      final i = matches.indexWhere((x) => x.id == m.id);
+      if (i < 0) {
+        matches.add(m);
+        changed = true;
+        continue;
+      }
+      final existing = matches[i];
+      final needsUpgrade =
+          !existing.hasStructuredCard ||
+          existing.hasPdf ||
+          existing.innings.length != m.innings.length;
+      if (!needsUpgrade) continue;
+      matches[i] = m;
+      changed = true;
+    }
+    if (changed) {
+      matches.sort((a, b) => b.date.compareTo(a.date));
+    }
+    return changed;
+  }
+
+  /// One-time fix: ground fees marked on League Week 4 by mistake → Week 1.
+  bool _migrateWeek4GroundFeesToWeek1() {
+    const fromWeek = '2026-08-23';
+    const toWeek = '2026-08-02';
+    var changed = false;
+
+    final week4Pays = payments.where((p) => p.weekId == fromWeek).toList();
+    if (week4Pays.isNotEmpty) {
+      for (final p in week4Pays) {
+        payments.removeWhere(
+          (x) => x.weekId == fromWeek && x.playerId == p.playerId,
+        );
+        payments.removeWhere(
+          (x) => x.weekId == toWeek && x.playerId == p.playerId,
+        );
+        payments.add(
+          WeeklyPayment(
+            weekId: toWeek,
+            playerId: p.playerId,
+            amount: p.amount,
+            paidAt: p.paidAt,
+          ),
+        );
+      }
+      changed = true;
+    }
+
+    final week4Guests = guests.where((g) => g.weekId == fromWeek).toList();
+    if (week4Guests.isNotEmpty) {
+      for (final g in week4Guests) {
+        guests.removeWhere((x) => x.id == g.id);
+        guests.add(
+          GuestPayment(
+            id: g.id,
+            weekId: toWeek,
+            name: g.name,
+            teamId: g.teamId,
+            amount: g.amount,
+            paidAt: g.paidAt,
+          ),
+        );
+      }
+      changed = true;
+    }
+
+    return changed;
   }
 
   /// Migrate legacy team id `new` → `avengers` across players, guests, trades, matches.
@@ -386,9 +510,21 @@ class FplStore extends ChangeNotifier {
     await prefs.setString(_prefsKey, jsonEncode(toBackupMap()));
   }
 
+  /// Season writes need Firebase Auth + `admins/{uid}`. Players / local-password
+  /// admin keep data local-only until a real Firebase admin signs in.
+  bool get canWriteCloud {
+    if (!cloudEnabled || _cloud == null) return false;
+    try {
+      return FirebaseAuth.instance.currentUser != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _pushCloud() async {
     final sync = _cloud;
     if (sync == null || sync.isApplyingRemote) return;
+    if (!canWriteCloud) return;
     try {
       await sync.pushAll(
         players: players,
@@ -409,6 +545,13 @@ class FplStore extends ChangeNotifier {
       cloudError = '$e';
       debugPrint('Cloud push: $e');
     }
+  }
+
+  /// Call after Firebase admin login so migrations (scorecards, etc.) sync up.
+  Future<void> syncToCloudIfAdmin() async {
+    if (!canWriteCloud) return;
+    await _pushCloud();
+    notifyListeners();
   }
 
   Future<void> setFeeAmounts({
@@ -559,6 +702,21 @@ class FplStore extends ChangeNotifier {
       ..sort((a, b) => a.slot.compareTo(b.slot));
   }
 
+  /// Completed scorecard for a fixture (same calendar day + same two teams).
+  MatchScorecard? matchForFixture(ScheduledFixture fixture) {
+    bool sameDay(DateTime a, DateTime b) =>
+        a.year == b.year && a.month == b.month && a.day == b.day;
+
+    for (final m in matches) {
+      if (!sameDay(m.date, fixture.date)) continue;
+      final teams = {m.teamAId, m.teamBId};
+      if (teams.contains(fixture.teamAId) && teams.contains(fixture.teamBId)) {
+        return m;
+      }
+    }
+    return null;
+  }
+
   Future<void> setWeeklyPaid(FplPlayer player, bool paid) async {
     if (player.isLifetimeMember || player.hasActiveSubscription) return;
     final weekId = selectedWeekId;
@@ -583,7 +741,7 @@ class FplStore extends ChangeNotifier {
     await _persistLocal();
 
     final sync = _cloud;
-    if (sync != null && !sync.isApplyingRemote) {
+    if (sync != null && !sync.isApplyingRemote && canWriteCloud) {
       try {
         if (paid && added != null) {
           await sync.upsertPayment(added);
@@ -639,7 +797,7 @@ class FplStore extends ChangeNotifier {
     await _persistLocal();
 
     final sync = _cloud;
-    if (sync != null && !sync.isApplyingRemote) {
+    if (sync != null && !sync.isApplyingRemote && canWriteCloud) {
       try {
         // Push player subscription fields + delete cleared weekly docs.
         await sync.pushAll(
@@ -896,6 +1054,15 @@ class FplStore extends ChangeNotifier {
       final list = eligiblePlayers().where((p) => p.teamId == teamId).toList();
       buf.writeln('${kTeamNames[teamId]}');
       for (final p in list) {
+        buf.writeln('• ${p.name}');
+      }
+      buf.writeln();
+    }
+    final floating =
+        eligiblePlayers().where((p) => p.teamId == kTeamGuest).toList();
+    if (floating.isNotEmpty) {
+      buf.writeln('Floating / guest (lifetime)');
+      for (final p in floating) {
         buf.writeln('• ${p.name}');
       }
       buf.writeln();

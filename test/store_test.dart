@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:fpl_fees/config.dart';
 import 'package:fpl_fees/data/season1.dart';
+import 'package:fpl_fees/data/season2.dart';
+import 'package:fpl_fees/data/season2_matches.dart';
 import 'package:fpl_fees/data/seed.dart';
 import 'package:fpl_fees/models/models.dart';
 import 'package:fpl_fees/services/contact_import.dart';
@@ -17,14 +19,14 @@ void main() {
   });
 
   group('seed', () {
-    test('builds 50 players and season Sundays', () {
+    test('builds 51 players and season Sundays', () {
       final players = buildSeedPlayers();
       final weeks = buildSeasonWeeks();
-      expect(players.length, 50);
+      expect(players.length, 51);
       expect(weeks.first.id, '2026-08-02');
       expect(weeks.last.id, '2026-12-27');
       expect(weeks.where((w) => w.isVpl), hasLength(1));
-      expect(players.where((p) => p.isLifetimeMember), hasLength(6));
+      expect(players.where((p) => p.isLifetimeMember), hasLength(7));
       expect(
         players.firstWhere((p) => p.id == 'mohammed_ali_mc').isLifetimeMember,
         isTrue,
@@ -377,6 +379,40 @@ void main() {
       expect(p!.seasons['s1']!.batting!.runs, 807);
       expect(p.seasons['s1']!.bowling!.wickets, 30);
       expect(p.allTeams, contains('Gully Blasters'));
+    });
+  });
+
+  group('season2 week 1', () {
+    test('loads Week 1 leaderboards and points', () async {
+      final data = await Season2Loader.load();
+      expect(data.batting, isNotEmpty);
+      expect(data.batting.first.name, 'Moniz');
+      expect(data.bowling.first.name, 'Siraj');
+      expect(season2Standings.first.points, 4);
+      expect(season2Standings.length, 3);
+    });
+
+    test('seeds three Sunday scorecards with innings', () {
+      final matches = buildSeason2Week1Matches();
+      expect(matches, hasLength(3));
+      expect(matches.map((m) => m.id), containsAll(['ch_26445586', 'ch_26446857', 'ch_26447419']));
+      for (final m in matches) {
+        expect(m.hasStructuredCard, isTrue);
+        expect(m.hasPdf, isFalse);
+        expect(m.innings, hasLength(2));
+      }
+    });
+
+    test('Mulla is lifetime guest (no squad fees)', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      final mulla = store.playerById('mulla');
+      expect(mulla, isNotNull);
+      expect(mulla!.isLifetimeMember, isTrue);
+      expect(mulla.teamId, kTeamGuest);
+      expect(store.playersForTeam(kTeamOx).any((p) => p.id == 'mulla'), isFalse);
+      expect(store.eligibilityFor(mulla).eligible, isTrue);
     });
   });
 
