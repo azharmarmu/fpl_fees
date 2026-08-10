@@ -91,8 +91,9 @@ class FplStore extends ChangeNotifier {
         final migrated = _migrateTeamIds() |
             _backfillTeamNames() |
             _backfillMissingSeedPlayers() |
+            _removeNonSquadGuests() |
             _ensureFixtures() |
-            _ensureWeek1Scorecards() |
+            _ensureSeason2Scorecards() |
             _migrateWeek4GroundFeesToWeek1();
         if (migrated) {
           await _persist();
@@ -101,7 +102,7 @@ class FplStore extends ChangeNotifier {
         }
       } else if (players.isNotEmpty) {
         _ensureFixtures();
-        _ensureWeek1Scorecards();
+        _ensureSeason2Scorecards();
         await _pushCloud();
       }
       sync.listen((snap) {
@@ -111,8 +112,9 @@ class FplStore extends ChangeNotifier {
         final migrated = _migrateTeamIds() |
             _backfillTeamNames() |
             _backfillMissingSeedPlayers() |
+            _removeNonSquadGuests() |
             _ensureFixtures() |
-            _ensureWeek1Scorecards() |
+            _ensureSeason2Scorecards() |
             _migrateWeek4GroundFeesToWeek1();
         // Defer persist until after FirestoreSync clears isApplyingRemote.
         scheduleMicrotask(() async {
@@ -138,7 +140,7 @@ class FplStore extends ChangeNotifier {
       players = buildSeedPlayers();
       weeks = buildSeasonWeeks();
       fixtures = buildSeasonFixtures();
-      matches = buildSeason2Week1Matches();
+      matches = buildSeason2SeedMatches();
       selectedWeekId = _defaultWeekId();
       await _persistLocal();
     } else {
@@ -190,8 +192,9 @@ class FplStore extends ChangeNotifier {
       final migrated = _migrateTeamIds() |
           _backfillTeamNames() |
           _backfillMissingSeedPlayers() |
+          _removeNonSquadGuests() |
           _ensureFixtures() |
-          _ensureWeek1Scorecards() |
+          _ensureSeason2Scorecards() |
           _migrateWeek4GroundFeesToWeek1();
       if (migrated) {
         await _persist();
@@ -273,9 +276,21 @@ class FplStore extends ChangeNotifier {
     return changed;
   }
 
-  /// Seed / refresh League Week 1 scorecards (structured innings, no PDF).
-  bool _ensureWeek1Scorecards() {
-    final seed = buildSeason2Week1Matches();
+  /// Drop one-off match guests who were briefly seeded onto a squad (e.g. Mohammed Arif).
+  bool _removeNonSquadGuests() {
+    const dropIds = {'mohammed_arif'};
+    final before = players.length;
+    players.removeWhere((p) => dropIds.contains(p.id));
+    if (players.length == before) return false;
+    for (final id in dropIds) {
+      payments.removeWhere((pay) => pay.playerId == id);
+    }
+    return true;
+  }
+
+  /// Seed / refresh Season 2 scorecards (structured innings, no PDF).
+  bool _ensureSeason2Scorecards() {
+    final seed = buildSeason2SeedMatches();
     var changed = false;
     for (final m in seed) {
       final i = matches.indexWhere((x) => x.id == m.id);
@@ -288,7 +303,10 @@ class FplStore extends ChangeNotifier {
       final needsUpgrade =
           !existing.hasStructuredCard ||
           existing.hasPdf ||
-          existing.innings.length != m.innings.length;
+          existing.innings.length != m.innings.length ||
+          existing.resultText != m.resultText ||
+          existing.teamAScore != m.teamAScore ||
+          existing.teamBScore != m.teamBScore;
       if (!needsUpgrade) continue;
       matches[i] = m;
       changed = true;

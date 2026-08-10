@@ -382,20 +382,34 @@ void main() {
     });
   });
 
-  group('season2 week 1', () {
-    test('loads Week 1 leaderboards and points', () async {
+  group('season2', () {
+    test('loads Week 2 leaderboards and points', () async {
+      Season2Loader.clearCache();
       final data = await Season2Loader.load();
       expect(data.batting, isNotEmpty);
-      expect(data.batting.first.name, 'Moniz');
+      expect(data.batting.first.name, 'Azhar Marmu');
       expect(data.bowling.first.name, 'Siraj');
-      expect(season2Standings.first.points, 4);
+      expect(data.mvp.first.name, 'MONIZ');
+      expect(season2Standings.first.teamName, 'Gully Blasters');
+      expect(season2Standings.first.points, 6);
       expect(season2Standings.length, 3);
+      expect(Season2Meta.totalMatches, 6);
     });
 
-    test('seeds three Sunday scorecards with innings', () {
-      final matches = buildSeason2Week1Matches();
-      expect(matches, hasLength(3));
-      expect(matches.map((m) => m.id), containsAll(['ch_26445586', 'ch_26446857', 'ch_26447419']));
+    test('seeds six Sunday scorecards with innings', () {
+      final matches = buildSeason2SeedMatches();
+      expect(matches, hasLength(6));
+      expect(
+        matches.map((m) => m.id),
+        containsAll([
+          'ch_26445586',
+          'ch_26446857',
+          'ch_26447419',
+          'ch_26553505',
+          'ch_26555293',
+          'ch_26556294',
+        ]),
+      );
       for (final m in matches) {
         expect(m.hasStructuredCard, isTrue);
         expect(m.hasPdf, isFalse);
@@ -413,6 +427,23 @@ void main() {
       expect(mulla.teamId, kTeamGuest);
       expect(store.playersForTeam(kTeamOx).any((p) => p.id == 'mulla'), isFalse);
       expect(store.eligibilityFor(mulla).eligible, isTrue);
+    });
+
+    test('Mohammed Arif is not on GB squad (match guest only)', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      expect(store.playerById('mohammed_arif'), isNull);
+      expect(
+        store.playersForTeam(kTeamGb).any((p) => p.name == 'Mohammed Arif'),
+        isFalse,
+      );
+      final gbOx = buildSeason2Week2Matches()
+          .firstWhere((m) => m.id == 'ch_26556294');
+      expect(
+        gbOx.innings.first.batting.any((b) => b.name == 'Mohammed Arif'),
+        isTrue,
+      );
     });
   });
 
