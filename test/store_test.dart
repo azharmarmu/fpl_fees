@@ -445,6 +445,37 @@ void main() {
         isTrue,
       );
     });
+
+    test('trade window opens and GB releases return auction points', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      expect(store.tradeOpen, isTrue);
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);
+      expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
+      final purse = store.auctionPurseLive(kTeamGb);
+      expect(purse.spent, 3250);
+      expect(purse.left, 6750);
+      expect(store.freeAgents().map((p) => p.id), containsAll([
+        'aslam_hashim',
+        'syed_molana',
+      ]));
+    });
+
+    test('buy free agent spends auction points', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      final aslam = store.playerById('aslam_hashim')!;
+      await store.recordBuy(
+        player: aslam,
+        toTeamId: kTeamOx,
+        auctionPoints: 1000,
+      );
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamOx);
+      expect(store.auctionPurseLive(kTeamOx).spent, 5300);
+      expect(store.auctionPurseLive(kTeamOx).left, 4700);
+    });
   });
 
   group('structured scorecard', () {

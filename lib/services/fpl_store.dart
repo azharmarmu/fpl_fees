@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../config.dart';
 import '../data/seed.dart';
+import '../data/season2_auction.dart';
 import '../data/season2_matches.dart';
 import '../models/models.dart';
 import 'contact_import.dart';
@@ -94,7 +95,8 @@ class FplStore extends ChangeNotifier {
             _removeNonSquadGuests() |
             _ensureFixtures() |
             _ensureSeason2Scorecards() |
-            _migrateWeek4GroundFeesToWeek1();
+            _migrateWeek4GroundFeesToWeek1() |
+            _ensureTradeWindowAndReleases();
         if (migrated) {
           await _persist();
         } else {
@@ -103,6 +105,7 @@ class FplStore extends ChangeNotifier {
       } else if (players.isNotEmpty) {
         _ensureFixtures();
         _ensureSeason2Scorecards();
+        _ensureTradeWindowAndReleases();
         await _pushCloud();
       }
       sync.listen((snap) {
@@ -115,7 +118,8 @@ class FplStore extends ChangeNotifier {
             _removeNonSquadGuests() |
             _ensureFixtures() |
             _ensureSeason2Scorecards() |
-            _migrateWeek4GroundFeesToWeek1();
+            _migrateWeek4GroundFeesToWeek1() |
+            _ensureTradeWindowAndReleases();
         // Defer persist until after FirestoreSync clears isApplyingRemote.
         scheduleMicrotask(() async {
           if (migrated) {
@@ -142,6 +146,7 @@ class FplStore extends ChangeNotifier {
       fixtures = buildSeasonFixtures();
       matches = buildSeason2SeedMatches();
       selectedWeekId = _defaultWeekId();
+      _ensureTradeWindowAndReleases();
       await _persistLocal();
     } else {
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -195,7 +200,8 @@ class FplStore extends ChangeNotifier {
           _removeNonSquadGuests() |
           _ensureFixtures() |
           _ensureSeason2Scorecards() |
-          _migrateWeek4GroundFeesToWeek1();
+          _migrateWeek4GroundFeesToWeek1() |
+          _ensureTradeWindowAndReleases();
       if (migrated) {
         await _persist();
       }
@@ -288,7 +294,113 @@ class FplStore extends ChangeNotifier {
     return true;
   }
 
-  /// Seed / refresh Season 2 scorecards (structured innings, no PDF).
+  /// Open trade window + seed known releases (GB: Aslam Hashim, Syed Molana).
+  bool _ensureTradeWindowAndReleases() {
+    var changed = false;
+    if (!tradeOpen) {
+      tradeOpen = true;
+      changed = true;
+    }
+
+    const planned = <(String id, String playerId, int points)>[
+      ('s2_release_aslam_hashim', 'aslam_hashim', 6200),
+      ('s2_release_syed_molana', 'syed_molana', 50),
+    ];
+
+    for (final row in planned) {
+      final tradeId = row.$1;
+      final playerId = row.$2;
+      final points = row.$3;
+      if (trades.any((t) => t.id == tradeId)) {
+        // Still ensure roster reflects release.
+        final i = players.indexWhere((p) => p.id == playerId);
+        if (i >= 0 && players[i].teamId != kTeamFreeAgent) {
+          players[i] = players[i].copyWith(
+            teamId: kTeamFreeAgent,
+            teamName: kTeamNames[kTeamFreeAgent]!,
+          );
+          changed = true;
+        }
+        continue;
+      }
+      final p = playerById(playerId);
+      if (p == null) continue;
+      if (p.teamId != kTeamGb && p.teamId != kTeamFreeAgent) continue;
+      trades.insert(
+        0,
+        PlayerTrade(
+          id: tradeId,
+          playerId: p.id,
+          playerName: p.name,
+          fromTeamId: kTeamGb,
+          toTeamId: kTeamFreeAgent,
+          salePriceInr: 0,
+          commissionInr: 0,
+          commissionCollected: false,
+          tradedAt: DateTime(2026, 8, 10),
+          kind: TradeKind.release,
+          auctionPoints: points,
+          notes: 'Trade window release',
+        ),
+      );
+      final i = players.indexWhere((x) => x.id == p.id);
+      if (i >= 0) {
+        players[i] = players[i].copyWith(
+          teamId: kTeamFreeAgent,
+          teamName: kTeamNames[kTeamFreeAgent]!,
+        );
+      }
+      changed = true;
+    }
+    return changed;
+  }
+
+  /// Current auction cost per player id (seed + trade history).
+  Map<String, int> auctionCostsByPlayerId() {
+    final costs = <String, int>{};
+    for (final seed in season2AuctionSeeds) {
+      final byName = seed.initialCostsByName();
+      for (final p in players) {
+        final pts = byName[auctionNameKey(p.name)];
+        if (pts != null) costs[p.id] = pts;
+      }
+    }
+    final chronological = [...trades]
+      ..sort((a, b) => a.tradedAt.compareTo(b.tradedAt));
+    for (final t in chronological) {
+      switch (t.kind) {
+        case TradeKind.release:
+          costs[t.playerId] = 0;
+        case TradeKind.buy:
+        case TradeKind.sell:
+          costs[t.playerId] = t.auctionPoints;
+      }
+    }
+    return costs;
+  }
+
+  int auctionCostFor(String playerId) =>
+      auctionCostsByPlayerId()[playerId] ?? 0;
+
+  /// Live purse for a team after releases / buys / sells.
+  ({int spent, int left, int squadSize}) auctionPurseLive(String teamId) {
+    final costs = auctionCostsByPlayerId();
+    final squad = playersForTeam(teamId);
+    var spent = 0;
+    for (final p in squad) {
+      if (p.isCaptain) continue;
+      spent += costs[p.id] ?? 0;
+    }
+    return (
+      spent: spent,
+      left: kAuctionBudgetTotal - spent,
+      squadSize: squad.length,
+    );
+  }
+
+  List<FplPlayer> freeAgents() =>
+      players.where((p) => p.teamId == kTeamFreeAgent && p.active).toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
   bool _ensureSeason2Scorecards() {
     final seed = buildSeason2SeedMatches();
     var changed = false;
@@ -400,18 +512,7 @@ class FplStore extends ChangeNotifier {
       final from = mapId(t.fromTeamId);
       final to = mapId(t.toTeamId);
       if (from == t.fromTeamId && to == t.toTeamId) continue;
-      trades[i] = PlayerTrade(
-        id: t.id,
-        playerId: t.playerId,
-        playerName: t.playerName,
-        fromTeamId: from,
-        toTeamId: to,
-        salePriceInr: t.salePriceInr,
-        commissionInr: t.commissionInr,
-        commissionCollected: t.commissionCollected,
-        tradedAt: t.tradedAt,
-        notes: t.notes,
-      );
+      trades[i] = t.copyWith(fromTeamId: from, toTeamId: to);
       changed = true;
     }
 
@@ -1107,6 +1208,147 @@ class FplStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> recordRelease({
+    required FplPlayer player,
+    int? auctionPoints,
+    String notes = '',
+  }) async {
+    if (player.teamId == kTeamFreeAgent || player.teamId == kTeamGuest) {
+      throw StateError('Player is not on a squad');
+    }
+    if (player.isCaptain) {
+      throw StateError('Cannot release captain');
+    }
+    final pts = auctionPoints ?? auctionCostFor(player.id);
+    final from = player.teamId;
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: _uuid.v4(),
+        playerId: player.id,
+        playerName: player.name,
+        fromTeamId: from,
+        toTeamId: kTeamFreeAgent,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: DateTime.now(),
+        kind: TradeKind.release,
+        auctionPoints: pts,
+        notes: notes,
+      ),
+    );
+    final i = players.indexWhere((p) => p.id == player.id);
+    if (i >= 0) {
+      players[i] = players[i].copyWith(
+        teamId: kTeamFreeAgent,
+        teamName: kTeamNames[kTeamFreeAgent]!,
+      );
+    }
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> recordBuy({
+    required FplPlayer player,
+    required String toTeamId,
+    required int auctionPoints,
+    String notes = '',
+  }) async {
+    if (player.teamId != kTeamFreeAgent) {
+      throw StateError('Buy is for free agents only — use Sell for transfers');
+    }
+    if (toTeamId == kTeamFreeAgent || toTeamId == kTeamGuest) {
+      throw StateError('Invalid buying team');
+    }
+    final purse = auctionPurseLive(toTeamId);
+    if (auctionPoints > purse.left) {
+      throw StateError(
+        'Not enough points (left ${purse.left}, need $auctionPoints)',
+      );
+    }
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: _uuid.v4(),
+        playerId: player.id,
+        playerName: player.name,
+        fromTeamId: kTeamFreeAgent,
+        toTeamId: toTeamId,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: DateTime.now(),
+        kind: TradeKind.buy,
+        auctionPoints: auctionPoints,
+        notes: notes,
+      ),
+    );
+    final i = players.indexWhere((p) => p.id == player.id);
+    if (i >= 0) {
+      players[i] = players[i].copyWith(
+        teamId: toTeamId,
+        teamName: kTeamNames[toTeamId] ?? toTeamId,
+      );
+    }
+    await _persist();
+    notifyListeners();
+  }
+
+  Future<void> recordSell({
+    required FplPlayer player,
+    required String toTeamId,
+    required int auctionPoints,
+    String notes = '',
+  }) async {
+    if (player.teamId == kTeamFreeAgent || player.teamId == kTeamGuest) {
+      throw StateError('Player is not on a squad — use Buy');
+    }
+    if (player.isCaptain) {
+      throw StateError('Cannot sell captain');
+    }
+    if (player.teamId == toTeamId) {
+      throw StateError('Player already on that team');
+    }
+    if (toTeamId == kTeamFreeAgent || toTeamId == kTeamGuest) {
+      throw StateError('Use Release instead');
+    }
+    final buyerPurse = auctionPurseLive(toTeamId);
+    if (auctionPoints > buyerPurse.left) {
+      throw StateError(
+        'Buyer short on points (left ${buyerPurse.left}, need $auctionPoints)',
+      );
+    }
+    final from = player.teamId;
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: _uuid.v4(),
+        playerId: player.id,
+        playerName: player.name,
+        fromTeamId: from,
+        toTeamId: toTeamId,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: DateTime.now(),
+        kind: TradeKind.sell,
+        auctionPoints: auctionPoints,
+        notes: notes,
+      ),
+    );
+    final i = players.indexWhere((p) => p.id == player.id);
+    if (i >= 0) {
+      players[i] = players[i].copyWith(
+        teamId: toTeamId,
+        teamName: kTeamNames[toTeamId] ?? toTeamId,
+      );
+    }
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Legacy INR trade (kept for old ledger rows / finance). Prefer [recordSell].
   Future<void> recordTrade({
     required FplPlayer player,
     required String toTeamId,
@@ -1127,6 +1369,8 @@ class FplStore extends ChangeNotifier {
         commissionInr: commission,
         commissionCollected: commissionCollected,
         tradedAt: DateTime.now(),
+        kind: TradeKind.sell,
+        auctionPoints: 0,
       ),
     );
     final i = players.indexWhere((p) => p.id == player.id);

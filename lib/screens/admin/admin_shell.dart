@@ -12,6 +12,7 @@ import '../../services/io_bytes.dart';
 import '../../widgets/all_time_leaders.dart';
 import '../../widgets/app_brand.dart';
 import '../../widgets/fpl_nav_scaffold.dart';
+import '../../widgets/home_auction_purses.dart';
 import '../../widgets/home_points_table.dart';
 import '../../widgets/schedule_list.dart';
 import 'add_match_screen.dart';
@@ -162,6 +163,8 @@ class _Dashboard extends StatelessWidget {
           HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
           HomePointsTable(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 16),
+          HomeAuctionPurses(store: store),
           const SizedBox(height: 16),
           SeasonLeaders(cloudEnabled: store.cloudEnabled),
           const SizedBox(height: 16),
@@ -389,7 +392,7 @@ class _MoreTab extends StatelessWidget {
           SwitchListTile(
             title: const Text('Trade window open', style: TextStyle(color: Colors.white)),
             subtitle: const Text(
-              'Enable after VPL',
+              'Open for Release / Buy / Sell (auction points)',
               style: TextStyle(color: Colors.white54),
             ),
             value: store.tradeOpen,

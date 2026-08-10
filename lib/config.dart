@@ -24,6 +24,9 @@ const kTeamAvengers = 'avengers';
 /// Floating / guest player — not on a squad; lifetime members here pay no fees.
 const kTeamGuest = 'guest';
 
+/// Released / unattached during trade window (auction points free agents).
+const kTeamFreeAgent = 'fa';
+
 /// Legacy id used in early Season 2 data — migrated to [kTeamAvengers] on load.
 const kTeamNewLegacy = 'new';
 
@@ -32,6 +35,7 @@ const kTeamNames = {
   kTeamGb: 'Gully Blasters',
   kTeamAvengers: 'Farm Avengers CC',
   kTeamGuest: 'Guest',
+  kTeamFreeAgent: 'Free agent',
 };
 
 /// Local admin gate when Firebase Auth is not configured.

@@ -73,6 +73,7 @@ class FplPlayer {
     DateTime? lastUpdatedAt,
     String? teamId,
     String? teamName,
+    bool? active,
     bool clearSubscriptionDate = false,
     bool clearSubscriptionValidUntil = false,
   }) {
@@ -96,7 +97,7 @@ class FplPlayer {
           : (subscriptionValidUntil ?? this.subscriptionValidUntil),
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
-      active: active,
+      active: active ?? this.active,
     );
   }
 
@@ -550,6 +551,8 @@ class PlayerTrade {
     required this.commissionInr,
     required this.commissionCollected,
     required this.tradedAt,
+    this.kind = TradeKind.sell,
+    this.auctionPoints = 0,
     this.notes = '',
   });
 
@@ -558,11 +561,40 @@ class PlayerTrade {
   final String playerName;
   final String fromTeamId;
   final String toTeamId;
+  /// Legacy INR sale (0 when using auction-points-only window).
   final int salePriceInr;
   final int commissionInr;
   final bool commissionCollected;
   final DateTime tradedAt;
+  final TradeKind kind;
+  /// Bidding points released / paid / transferred.
+  final int auctionPoints;
   final String notes;
+
+  PlayerTrade copyWith({
+    String? fromTeamId,
+    String? toTeamId,
+    TradeKind? kind,
+    int? auctionPoints,
+    int? salePriceInr,
+    int? commissionInr,
+    bool? commissionCollected,
+    String? notes,
+  }) =>
+      PlayerTrade(
+        id: id,
+        playerId: playerId,
+        playerName: playerName,
+        fromTeamId: fromTeamId ?? this.fromTeamId,
+        toTeamId: toTeamId ?? this.toTeamId,
+        salePriceInr: salePriceInr ?? this.salePriceInr,
+        commissionInr: commissionInr ?? this.commissionInr,
+        commissionCollected: commissionCollected ?? this.commissionCollected,
+        tradedAt: tradedAt,
+        kind: kind ?? this.kind,
+        auctionPoints: auctionPoints ?? this.auctionPoints,
+        notes: notes ?? this.notes,
+      );
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -574,6 +606,8 @@ class PlayerTrade {
         'commissionInr': commissionInr,
         'commissionCollected': commissionCollected,
         'tradedAt': tradedAt.toIso8601String(),
+        'kind': kind.name,
+        'auctionPoints': auctionPoints,
         'notes': notes,
       };
 
@@ -583,13 +617,20 @@ class PlayerTrade {
         playerName: json['playerName'] as String,
         fromTeamId: json['fromTeamId'] as String,
         toTeamId: json['toTeamId'] as String,
-        salePriceInr: json['salePriceInr'] as int,
-        commissionInr: json['commissionInr'] as int,
+        salePriceInr: json['salePriceInr'] as int? ?? 0,
+        commissionInr: json['commissionInr'] as int? ?? 0,
         commissionCollected: json['commissionCollected'] as bool? ?? false,
         tradedAt: DateTime.parse(json['tradedAt'] as String),
+        kind: TradeKind.values.firstWhere(
+          (k) => k.name == (json['kind'] as String? ?? 'sell'),
+          orElse: () => TradeKind.sell,
+        ),
+        auctionPoints: json['auctionPoints'] as int? ?? 0,
         notes: json['notes'] as String? ?? '',
       );
 }
+
+enum TradeKind { release, buy, sell }
 
 enum EligibilityReason { lifetime, subscription, weeklyPaid, unpaid, guest }
 

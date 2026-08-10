@@ -10,6 +10,7 @@ import '../../services/fpl_store.dart';
 import '../../widgets/all_time_leaders.dart';
 import '../../widgets/app_brand.dart';
 import '../../widgets/fpl_nav_scaffold.dart';
+import '../../widgets/home_auction_purses.dart';
 import '../../widgets/home_points_table.dart';
 import '../../widgets/schedule_list.dart';
 import '../admin/match_detail_screen.dart';
@@ -338,6 +339,8 @@ class _PlayerHome extends StatelessWidget {
           const SizedBox(height: 16),
           HomePointsTable(cloudEnabled: store.cloudEnabled),
           const SizedBox(height: 16),
+          HomeAuctionPurses(store: store),
+          const SizedBox(height: 16),
           SeasonLeaders(cloudEnabled: store.cloudEnabled),
           const SizedBox(height: 16),
           AllTimeLeaders(cloudEnabled: store.cloudEnabled),
@@ -493,6 +496,10 @@ class _MyTeam extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          if (me.teamId != kTeamGuest && me.teamId != kTeamFreeAgent) ...[
+            TeamAuctionPurseCard(teamId: me.teamId, store: store),
+            const SizedBox(height: 12),
+          ],
           for (final p in list)
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -505,18 +512,23 @@ class _MyTeam extends StatelessWidget {
                       p.id == me.id ? FontWeight.w700 : FontWeight.w400,
                 ),
               ),
-              subtitle: p.isLifetimeMember
-                  ? const Text(
-                      'Lifetime',
-                      style: TextStyle(color: Colors.amber, fontSize: 12),
-                    )
-                  : Text(
-                      'Tap for stats',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.35),
-                        fontSize: 11,
+              subtitle: Text(
+                p.isLifetimeMember
+                    ? 'Lifetime'
+                    : auctionSubtitleFor(
+                        store: store,
+                        teamId: me.teamId,
+                        playerId: p.id,
+                        playerName: p.name,
+                        isCaptain: p.isCaptain,
                       ),
-                    ),
+                style: TextStyle(
+                  color: p.isLifetimeMember
+                      ? Colors.amber
+                      : Colors.white.withValues(alpha: 0.45),
+                  fontSize: 12,
+                ),
+              ),
               trailing: const Icon(Icons.chevron_right, color: Colors.white24),
               onTap: () => Navigator.push(
                 context,
