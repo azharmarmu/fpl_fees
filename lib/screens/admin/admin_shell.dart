@@ -827,8 +827,9 @@ Future<void> _uploadSeason2Stats(BuildContext context, FplStore store) async {
         style: TextStyle(color: Colors.white),
       ),
       content: const Text(
-        'Writes seasons/s2 + merges Week 1 leaderboards into statPlayers. '
-        'Preserves existing Season 1 career data. Sign in as Firebase admin first.',
+        'Writes seasons/s2 + merges current Season 2 leaderboards into '
+        'statPlayers. Preserves existing Season 1 career data. '
+        'Sign in as Firebase admin first.',
         style: TextStyle(color: Colors.white70),
       ),
       actions: [

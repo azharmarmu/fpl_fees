@@ -21,7 +21,8 @@ class StatLeader {
   final String? playerId;
 }
 
-/// Season 2 top batter & bowler (assets, or Firestore `seasons.s2` when uploaded).
+/// Season 2 top batter & bowler from bundled CSVs (updated each deploy).
+/// Firestore career docs can lag until admin re-uploads — do not prefer them here.
 class SeasonLeaders extends StatelessWidget {
   const SeasonLeaders({super.key, this.cloudEnabled = false});
 
@@ -30,16 +31,15 @@ class SeasonLeaders extends StatelessWidget {
   static Future<({StatLeader runs, StatLeader wickets})?> load({
     bool cloudEnabled = false,
   }) async {
-    if (cloudEnabled) {
-      try {
-        final fromCloud = await _fromFirestoreSeason('s2');
-        if (fromCloud != null) return fromCloud;
-      } catch (_) {}
-    }
     try {
       return await _fromSeason2Assets();
     } catch (_) {
-      return null;
+      if (!cloudEnabled) return null;
+      try {
+        return await _fromFirestoreSeason('s2');
+      } catch (_) {
+        return null;
+      }
     }
   }
 
@@ -140,7 +140,8 @@ class SeasonLeaders extends StatelessWidget {
   }
 }
 
-/// Most runs & most wickets across seasons (Firestore when available, else S1 CSVs).
+/// Most runs & wickets across seasons from bundled CSVs (S1 + S2).
+/// Firestore career docs can lag until admin re-uploads.
 class AllTimeLeaders extends StatelessWidget {
   const AllTimeLeaders({super.key, this.cloudEnabled = false});
 
@@ -149,13 +150,82 @@ class AllTimeLeaders extends StatelessWidget {
   static Future<({StatLeader runs, StatLeader wickets})> load({
     bool cloudEnabled = false,
   }) async {
-    if (cloudEnabled) {
-      try {
-        final fromCloud = await _fromFirestore();
-        if (fromCloud != null) return fromCloud;
-      } catch (_) {}
+    try {
+      return await _fromBundledAssets();
+    } catch (_) {
+      if (cloudEnabled) {
+        try {
+          final fromCloud = await _fromFirestore();
+          if (fromCloud != null) return fromCloud;
+        } catch (_) {}
+      }
+      return _fromSeason1Assets();
     }
-    return _fromSeason1Assets();
+  }
+
+  /// Aggregate S1 + S2 leaderboard CSVs by player id / name.
+  static Future<({StatLeader runs, StatLeader wickets})>
+      _fromBundledAssets() async {
+    final s1 = await Season1Loader.load();
+    final s2 = await Season2Loader.load();
+
+    final runsByKey = <String, StatLeader>{};
+    final wktsByKey = <String, StatLeader>{};
+
+    void addRuns(String id, String name, String team, int runs) {
+      if (runs <= 0) return;
+      final key = id.isNotEmpty ? id : name.toLowerCase();
+      final prev = runsByKey[key];
+      final teams = <String>{
+        if (prev != null && prev.teamLabel.isNotEmpty)
+          ...prev.teamLabel.split(' · '),
+        if (team.isNotEmpty) team,
+      };
+      runsByKey[key] = StatLeader(
+        name: name,
+        teamLabel: teams.join(' · '),
+        value: (prev?.value ?? 0) + runs,
+        playerId: id.isNotEmpty ? id : prev?.playerId,
+      );
+    }
+
+    void addWkts(String id, String name, String team, int wickets) {
+      if (wickets <= 0) return;
+      final key = id.isNotEmpty ? id : name.toLowerCase();
+      final prev = wktsByKey[key];
+      final teams = <String>{
+        if (prev != null && prev.teamLabel.isNotEmpty)
+          ...prev.teamLabel.split(' · '),
+        if (team.isNotEmpty) team,
+      };
+      wktsByKey[key] = StatLeader(
+        name: name,
+        teamLabel: teams.join(' · '),
+        value: (prev?.value ?? 0) + wickets,
+        playerId: id.isNotEmpty ? id : prev?.playerId,
+      );
+    }
+
+    for (final r in s1.batting) {
+      addRuns(r.playerId, r.name, r.teamName, r.runs);
+    }
+    for (final r in s2.batting) {
+      addRuns(r.playerId, r.name, r.teamName, r.runs);
+    }
+    for (final r in s1.bowling) {
+      addWkts(r.playerId, r.name, r.teamName, r.wickets);
+    }
+    for (final r in s2.bowling) {
+      addWkts(r.playerId, r.name, r.teamName, r.wickets);
+    }
+
+    if (runsByKey.isEmpty || wktsByKey.isEmpty) {
+      throw StateError('Bundled all-time leaderboards empty');
+    }
+
+    final topRuns = runsByKey.values.reduce((a, b) => a.value >= b.value ? a : b);
+    final topWkts = wktsByKey.values.reduce((a, b) => a.value >= b.value ? a : b);
+    return (runs: topRuns, wickets: topWkts);
   }
 
   static Future<({StatLeader runs, StatLeader wickets})>
