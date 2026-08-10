@@ -446,63 +446,53 @@ void main() {
       );
     });
 
-    test('trade window opens and GB releases return auction points', () async {
+    test('trade window open with clean post-auction baseline', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
       expect(store.tradeOpen, isTrue);
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);
-      expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
-      final purse = store.auctionPurseLive(kTeamGb);
-      expect(purse.spent, 3250);
-      expect(purse.left, 6750);
-      expect(store.freeAgents().map((p) => p.id), containsAll([
-        'aslam_hashim',
-        'syed_molana',
-      ]));
+      expect(store.trades, isEmpty);
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
+      expect(store.playerById('syed_molana')!.teamId, kTeamGb);
+      expect(store.playerById('faizal')!.teamId, kTeamOx);
+      expect(store.playerById('fazil_farook')!.teamId, kTeamOx);
+      expect(store.auctionPurseLive(kTeamGb).spent, 9500);
+      expect(store.auctionPurseLive(kTeamGb).left, 500);
+      expect(store.auctionPurseLive(kTeamOx).spent, 4300);
+      expect(store.auctionPurseLive(kTeamOx).left, 5700);
+      expect(store.freeAgents(), isEmpty);
     });
 
-    test('buy free agent spends auction points', () async {
+    test('release then undo restores squad and purse', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
       final aslam = store.playerById('aslam_hashim')!;
-      await store.recordBuy(
-        player: aslam,
-        toTeamId: kTeamOx,
-        auctionPoints: 1000,
-      );
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamOx);
-      expect(store.auctionPurseLive(kTeamOx).spent, 5300);
-      expect(store.auctionPurseLive(kTeamOx).left, 4700);
-    });
-
-    test('undo release restores squad and purse', () async {
-      SharedPreferences.setMockInitialValues({});
-      final store = FplStore();
-      await store.init();
-      final release = store.trades.firstWhere((t) => t.id == 's2_release_aslam_hashim');
+      await store.recordRelease(player: aslam);
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);
+      expect(store.auctionPurseLive(kTeamGb).spent, 3300);
+      expect(store.auctionPurseLive(kTeamGb).left, 6700);
+      final release = store.trades.first;
       expect(store.canUndoTrade(release), isTrue);
       await store.undoTrade(release.id);
       expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
-      expect(store.auctionPurseLive(kTeamGb).spent, 9450);
-      expect(store.suppressedSeedTrades, contains('s2_release_aslam_hashim'));
-      // Re-init must not re-seed undone release.
-      await store.init();
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
-      expect(store.trades.any((t) => t.id == 's2_release_aslam_hashim'), isFalse);
+      expect(store.auctionPurseLive(kTeamGb).spent, 9500);
+      expect(store.trades, isEmpty);
     });
 
-    test('undo buy returns player to free agency', () async {
+    test('buy free agent spends auction points; undo returns to FA', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
       final aslam = store.playerById('aslam_hashim')!;
+      await store.recordRelease(player: aslam);
       await store.recordBuy(
-        player: aslam,
+        player: store.playerById('aslam_hashim')!,
         toTeamId: kTeamOx,
-        auctionPoints: 1000,
+        auctionPoints: 4000,
       );
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamOx);
+      expect(store.auctionPurseLive(kTeamOx).spent, 8300);
       final buy = store.trades.firstWhere((t) => t.kind == TradeKind.buy);
       await store.undoTrade(buy.id);
       expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);

@@ -305,7 +305,8 @@ class FplStore extends ChangeNotifier {
     return true;
   }
 
-  /// Open trade window + seed known releases (GB: Aslam Hashim, Syed Molana).
+  /// Keep trade window open and wipe mistaken auto-seeded trades once.
+  /// Restores post-auction squads so the user can re-enter deals cleanly.
   bool _ensureTradeWindowAndReleases() {
     var changed = false;
     if (!tradeOpen) {
@@ -313,59 +314,38 @@ class FplStore extends ChangeNotifier {
       changed = true;
     }
 
-    const planned = <(String id, String playerId, int points)>[
-      ('s2_release_aslam_hashim', 'aslam_hashim', 6200),
-      ('s2_release_syed_molana', 'syed_molana', 50),
-    ];
+    const wipeFlag = 's2_trades_wiped_v1';
+    if (suppressedSeedTrades.contains(wipeFlag)) return changed;
 
-    for (final row in planned) {
-      final tradeId = row.$1;
-      final playerId = row.$2;
-      final points = row.$3;
-      if (suppressedSeedTrades.contains(tradeId)) continue;
-
-      if (trades.any((t) => t.id == tradeId)) {
-        // Still ensure roster reflects release.
-        final i = players.indexWhere((p) => p.id == playerId);
-        if (i >= 0 && players[i].teamId != kTeamFreeAgent) {
-          players[i] = players[i].copyWith(
-            teamId: kTeamFreeAgent,
-            teamName: kTeamNames[kTeamFreeAgent]!,
-          );
-          changed = true;
-        }
-        continue;
-      }
-      final p = playerById(playerId);
-      if (p == null) continue;
-      if (p.teamId != kTeamGb && p.teamId != kTeamFreeAgent) continue;
-      trades.insert(
-        0,
-        PlayerTrade(
-          id: tradeId,
-          playerId: p.id,
-          playerName: p.name,
-          fromTeamId: kTeamGb,
-          toTeamId: kTeamFreeAgent,
-          salePriceInr: 0,
-          commissionInr: 0,
-          commissionCollected: false,
-          tradedAt: DateTime(2026, 8, 10),
-          kind: TradeKind.release,
-          auctionPoints: points,
-          notes: 'Trade window release',
-        ),
-      );
-      final i = players.indexWhere((x) => x.id == p.id);
-      if (i >= 0) {
-        players[i] = players[i].copyWith(
-          teamId: kTeamFreeAgent,
-          teamName: kTeamNames[kTeamFreeAgent]!,
-        );
-      }
+    if (trades.isNotEmpty) {
+      trades.clear();
       changed = true;
     }
-    return changed;
+
+    final seedById = {for (final p in buildSeedPlayers()) p.id: p};
+    for (var i = 0; i < players.length; i++) {
+      final seed = seedById[players[i].id];
+      if (seed == null) continue;
+      if (players[i].teamId == seed.teamId &&
+          players[i].teamName == seed.teamName) {
+        continue;
+      }
+      players[i] = players[i].copyWith(
+        teamId: seed.teamId,
+        teamName: seed.teamName,
+      );
+      changed = true;
+    }
+
+    suppressedSeedTrades.addAll({
+      wipeFlag,
+      's2_release_aslam_hashim',
+      's2_release_syed_molana',
+      's2_trade_aslam_to_ox',
+      's2_trade_faizal_to_gb',
+      's2_trade_fazil_to_gb',
+    });
+    return true;
   }
 
   /// Current auction cost per player id (seed + trade history).
@@ -1262,6 +1242,9 @@ class FplStore extends ChangeNotifier {
     const seedIds = {
       's2_release_aslam_hashim',
       's2_release_syed_molana',
+      's2_trade_aslam_to_ox',
+      's2_trade_faizal_to_gb',
+      's2_trade_fazil_to_gb',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);
