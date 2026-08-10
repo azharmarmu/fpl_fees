@@ -148,6 +148,8 @@ class _TradesScreenState extends State<TradesScreen> {
         await _recordBuy(context);
       case TradeKind.sell:
         await _recordSell(context);
+      case TradeKind.package:
+        break;
     }
   }
 
@@ -485,9 +487,13 @@ class _TradeTile extends StatelessWidget {
       TradeKind.release => 'Released',
       TradeKind.buy => 'Bought',
       TradeKind.sell => 'Sold',
+      TradeKind.package => 'Package',
     };
     final from = kTeamNames[trade.fromTeamId] ?? trade.fromTeamId;
     final to = kTeamNames[trade.toTeamId] ?? trade.toTeamId;
+    final legs = trade.packageLegs.isEmpty
+        ? ''
+        : '\n+ ${trade.packageLegs.map((l) => l.playerName).join(' · ')} → ${kTeamNames[trade.packageLegs.first.toTeamId] ?? trade.packageLegs.first.toTeamId}';
     final pts = trade.auctionPoints > 0
         ? '${formatAuctionPoints(trade.auctionPoints)} pts'
         : trade.salePriceInr > 0
@@ -500,10 +506,10 @@ class _TradeTile extends StatelessWidget {
         style: const TextStyle(color: Colors.white),
       ),
       subtitle: Text(
-        '$kindLabel · $from → $to\n$pts',
+        '$kindLabel · $from → $to · $pts$legs',
         style: const TextStyle(color: Colors.white54),
       ),
-      isThreeLine: true,
+      isThreeLine: trade.isPackage,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

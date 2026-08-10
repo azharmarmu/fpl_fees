@@ -342,6 +342,9 @@ class FplStore extends ChangeNotifier {
         's2_trade_aslam_to_ox',
         's2_trade_faizal_to_gb',
         's2_trade_fazil_to_gb',
+        's2_t1_aslam_to_ox',
+        's2_t1_faizal_to_gb',
+        's2_t1_fazil_to_gb',
       });
       changed = true;
     }
@@ -350,120 +353,73 @@ class FplStore extends ChangeNotifier {
     return changed;
   }
 
-  /// Trade 1: OX buys Aslam from GB for 4000 pts + Faizal + Fazil Farook.
+  /// Trade 1: single package — OX gets Aslam for 4000 + Faizal + Fazil Farook.
   bool _ensureTrade1OxAslamPackage() {
-    if (suppressedSeedTrades.contains('s2_t1_aslam_to_ox')) return false;
+    if (suppressedSeedTrades.contains('s2_t1_package')) return false;
 
-    var changed = false;
-    const note = 'Trade 1: OX buys Aslam for 4000 + Faizal + Fazil Farook';
+    // Drop older 3-leg seed ids if present.
+    final legacyIds = {
+      's2_t1_aslam_to_ox',
+      's2_t1_faizal_to_gb',
+      's2_t1_fazil_to_gb',
+    };
+    final before = trades.length;
+    trades.removeWhere((t) => legacyIds.contains(t.id));
+    var changed = trades.length != before;
 
-    // Aslam GB → OX @ 4000
-    if (!trades.any((t) => t.id == 's2_t1_aslam_to_ox')) {
-      final aslam = playerById('aslam_hashim');
-      if (aslam != null && aslam.teamId == kTeamGb) {
-        trades.insert(
-          0,
-          PlayerTrade(
-            id: 's2_t1_aslam_to_ox',
-            playerId: aslam.id,
-            playerName: aslam.name,
-            fromTeamId: kTeamGb,
-            toTeamId: kTeamOx,
-            salePriceInr: 0,
-            commissionInr: 0,
-            commissionCollected: false,
-            tradedAt: DateTime(2026, 8, 10, 18, 0),
-            kind: TradeKind.sell,
-            auctionPoints: 4000,
-            notes: note,
-          ),
-        );
-        final i = players.indexWhere((p) => p.id == aslam.id);
-        if (i >= 0) {
-          players[i] = players[i].copyWith(
-            teamId: kTeamOx,
-            teamName: kTeamNames[kTeamOx]!,
-          );
-        }
-        changed = true;
-      }
-    } else {
+    if (trades.any((t) => t.id == 's2_t1_package')) {
       changed |= _forceTeam('aslam_hashim', kTeamOx);
+      changed |= _forceTeam('faizal', kTeamGb);
+      changed |= _forceTeam('fazil_farook', kTeamGb);
+      return changed;
     }
 
-    // Faizal OX → GB @ 0 (throw-in)
-    if (!suppressedSeedTrades.contains('s2_t1_faizal_to_gb')) {
-      if (!trades.any((t) => t.id == 's2_t1_faizal_to_gb')) {
-        final faizal = playerById('faizal');
-        if (faizal != null && faizal.teamId == kTeamOx) {
-          trades.insert(
-            0,
-            PlayerTrade(
-              id: 's2_t1_faizal_to_gb',
-              playerId: faizal.id,
-              playerName: faizal.name,
-              fromTeamId: kTeamOx,
-              toTeamId: kTeamGb,
-              salePriceInr: 0,
-              commissionInr: 0,
-              commissionCollected: false,
-              tradedAt: DateTime(2026, 8, 10, 18, 1),
-              kind: TradeKind.sell,
-              auctionPoints: 0,
-              notes: note,
-            ),
-          );
-          final i = players.indexWhere((p) => p.id == faizal.id);
-          if (i >= 0) {
-            players[i] = players[i].copyWith(
-              teamId: kTeamGb,
-              teamName: kTeamNames[kTeamGb]!,
-            );
-          }
-          changed = true;
-        }
-      } else {
-        changed |= _forceTeam('faizal', kTeamGb);
-      }
-    }
+    final aslam = playerById('aslam_hashim');
+    final faizal = playerById('faizal');
+    final fazil = playerById('fazil_farook');
+    if (aslam == null || faizal == null || fazil == null) return changed;
 
-    // Fazil Farook OX → GB @ 0 (throw-in)
-    if (!suppressedSeedTrades.contains('s2_t1_fazil_to_gb')) {
-      if (!trades.any((t) => t.id == 's2_t1_fazil_to_gb')) {
-        final fazil = playerById('fazil_farook');
-        if (fazil != null && fazil.teamId == kTeamOx) {
-          trades.insert(
-            0,
-            PlayerTrade(
-              id: 's2_t1_fazil_to_gb',
-              playerId: fazil.id,
-              playerName: fazil.name,
-              fromTeamId: kTeamOx,
-              toTeamId: kTeamGb,
-              salePriceInr: 0,
-              commissionInr: 0,
-              commissionCollected: false,
-              tradedAt: DateTime(2026, 8, 10, 18, 2),
-              kind: TradeKind.sell,
-              auctionPoints: 0,
-              notes: note,
-            ),
-          );
-          final i = players.indexWhere((p) => p.id == fazil.id);
-          if (i >= 0) {
-            players[i] = players[i].copyWith(
-              teamId: kTeamGb,
-              teamName: kTeamNames[kTeamGb]!,
-            );
-          }
-          changed = true;
-        }
-      } else {
-        changed |= _forceTeam('fazil_farook', kTeamGb);
-      }
-    }
+    // Already applied on roster (e.g. partial legacy) — still record package.
+    final ready = (aslam.teamId == kTeamGb || aslam.teamId == kTeamOx) &&
+        (faizal.teamId == kTeamOx || faizal.teamId == kTeamGb) &&
+        (fazil.teamId == kTeamOx || fazil.teamId == kTeamGb);
+    if (!ready) return changed;
 
-    return changed;
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: 's2_t1_package',
+        playerId: aslam.id,
+        playerName: aslam.name,
+        fromTeamId: kTeamGb,
+        toTeamId: kTeamOx,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: DateTime(2026, 8, 10, 18),
+        kind: TradeKind.package,
+        auctionPoints: 4000,
+        packageLegs: const [
+          TradePackageLeg(
+            playerId: 'faizal',
+            playerName: 'Faizal',
+            fromTeamId: kTeamOx,
+            toTeamId: kTeamGb,
+          ),
+          TradePackageLeg(
+            playerId: 'fazil_farook',
+            playerName: 'Fazil Farook',
+            fromTeamId: kTeamOx,
+            toTeamId: kTeamGb,
+          ),
+        ],
+        notes: 'Trade 1: Aslam worth 4000 + Faizal + Fazil Farook',
+      ),
+    );
+    _forceTeam('aslam_hashim', kTeamOx);
+    _forceTeam('faizal', kTeamGb);
+    _forceTeam('fazil_farook', kTeamGb);
+    return true;
   }
 
   bool _forceTeam(String playerId, String teamId) {
@@ -476,9 +432,18 @@ class FplStore extends ChangeNotifier {
     return true;
   }
 
-  /// Current auction cost per player id (seed + trade history).
-  Map<String, int> auctionCostsByPlayerId() {
+  /// Auction book costs + sell-side sunk / cash credits.
+  /// Only [TradeKind.release] returns a player's auction cost to Left.
+  /// Sell/package: outgoing cost is sunk; cash [auctionPoints] credit the seller.
+  ({
+    Map<String, int> costs,
+    Map<String, int> sunk,
+    Map<String, int> credit,
+  }) _auctionLedger() {
     final costs = <String, int>{};
+    final sunk = <String, int>{};
+    final credit = <String, int>{};
+
     for (final seed in season2AuctionSeeds) {
       final byName = seed.initialCostsByName();
       for (final p in players) {
@@ -486,6 +451,22 @@ class FplStore extends ChangeNotifier {
         if (pts != null) costs[p.id] = pts;
       }
     }
+
+    void applyOutgoingSell({
+      required String playerId,
+      required String fromTeamId,
+      required int newCost,
+    }) {
+      final prev = costs[playerId] ?? 0;
+      if (fromTeamId != kTeamFreeAgent && fromTeamId != kTeamGuest) {
+        sunk[fromTeamId] = (sunk[fromTeamId] ?? 0) + prev;
+        if (newCost > 0) {
+          credit[fromTeamId] = (credit[fromTeamId] ?? 0) + newCost;
+        }
+      }
+      costs[playerId] = newCost;
+    }
+
     final chronological = [...trades]
       ..sort((a, b) => a.tradedAt.compareTo(b.tradedAt));
     for (final t in chronological) {
@@ -493,25 +474,49 @@ class FplStore extends ChangeNotifier {
         case TradeKind.release:
           costs[t.playerId] = 0;
         case TradeKind.buy:
-        case TradeKind.sell:
           costs[t.playerId] = t.auctionPoints;
+        case TradeKind.sell:
+          applyOutgoingSell(
+            playerId: t.playerId,
+            fromTeamId: t.fromTeamId,
+            newCost: t.auctionPoints,
+          );
+        case TradeKind.package:
+          applyOutgoingSell(
+            playerId: t.playerId,
+            fromTeamId: t.fromTeamId,
+            newCost: t.auctionPoints,
+          );
+          for (final leg in t.packageLegs) {
+            applyOutgoingSell(
+              playerId: leg.playerId,
+              fromTeamId: leg.fromTeamId,
+              newCost: leg.auctionPoints,
+            );
+          }
       }
     }
-    return costs;
+    return (costs: costs, sunk: sunk, credit: credit);
   }
+
+  /// Current auction cost per player id (seed + trade history).
+  Map<String, int> auctionCostsByPlayerId() => _auctionLedger().costs;
 
   int auctionCostFor(String playerId) =>
       auctionCostsByPlayerId()[playerId] ?? 0;
 
-  /// Live purse for a team after releases / buys / sells.
+  /// Live purse for a team after releases / buys / sells / packages.
   ({int spent, int left, int squadSize}) auctionPurseLive(String teamId) {
-    final costs = auctionCostsByPlayerId();
+    final ledger = _auctionLedger();
     final squad = playersForTeam(teamId);
-    var spent = 0;
+    var squadSpent = 0;
     for (final p in squad) {
       if (p.isCaptain) continue;
-      spent += costs[p.id] ?? 0;
+      squadSpent += ledger.costs[p.id] ?? 0;
     }
+    final sunk = ledger.sunk[teamId] ?? 0;
+    final credit = ledger.credit[teamId] ?? 0;
+    final spent = squadSpent + sunk - credit;
     return (
       spent: spent,
       left: kAuctionBudgetTotal - spent,
@@ -1327,17 +1332,27 @@ class FplStore extends ChangeNotifier {
   }
 
   /// Whether [trade] can be undone (must be the latest action on that player).
+  /// Whether [trade] can be undone (must be the latest action on every involved player).
   bool canUndoTrade(PlayerTrade trade) {
-    final latest = trades.cast<PlayerTrade?>().firstWhere(
-      (t) => t!.playerId == trade.playerId,
-      orElse: () => null,
-    );
-    if (latest == null || latest.id != trade.id) return false;
-    final p = playerById(trade.playerId);
-    if (p == null) return false;
+    final involved = trade.involvedPlayerIds.toSet();
+    for (final pid in involved) {
+      final latest = trades.cast<PlayerTrade?>().firstWhere(
+        (t) => t!.involvedPlayerIds.contains(pid),
+        orElse: () => null,
+      );
+      if (latest == null || latest.id != trade.id) return false;
+    }
+
     return switch (trade.kind) {
-      TradeKind.release => p.teamId == kTeamFreeAgent,
-      TradeKind.buy || TradeKind.sell => p.teamId == trade.toTeamId,
+      TradeKind.release =>
+        playerById(trade.playerId)?.teamId == kTeamFreeAgent,
+      TradeKind.buy || TradeKind.sell =>
+        playerById(trade.playerId)?.teamId == trade.toTeamId,
+      TradeKind.package =>
+        playerById(trade.playerId)?.teamId == trade.toTeamId &&
+            trade.packageLegs.every(
+              (leg) => playerById(leg.playerId)?.teamId == leg.toTeamId,
+            ),
     };
   }
 
@@ -1351,18 +1366,27 @@ class FplStore extends ChangeNotifier {
       );
     }
 
-    final restoreTeamId = switch (trade.kind) {
-      TradeKind.release => trade.fromTeamId,
-      TradeKind.buy => kTeamFreeAgent,
-      TradeKind.sell => trade.fromTeamId,
-    };
-
-    final i = players.indexWhere((p) => p.id == trade.playerId);
-    if (i >= 0) {
+    void restore(String playerId, String teamId) {
+      final i = players.indexWhere((p) => p.id == playerId);
+      if (i < 0) return;
       players[i] = players[i].copyWith(
-        teamId: restoreTeamId,
-        teamName: kTeamNames[restoreTeamId] ?? restoreTeamId,
+        teamId: teamId,
+        teamName: kTeamNames[teamId] ?? teamId,
       );
+    }
+
+    switch (trade.kind) {
+      case TradeKind.release:
+        restore(trade.playerId, trade.fromTeamId);
+      case TradeKind.buy:
+        restore(trade.playerId, kTeamFreeAgent);
+      case TradeKind.sell:
+        restore(trade.playerId, trade.fromTeamId);
+      case TradeKind.package:
+        restore(trade.playerId, trade.fromTeamId);
+        for (final leg in trade.packageLegs) {
+          restore(leg.playerId, leg.fromTeamId);
+        }
     }
 
     trades.removeAt(idx);
@@ -1376,6 +1400,7 @@ class FplStore extends ChangeNotifier {
       's2_t1_aslam_to_ox',
       's2_t1_faizal_to_gb',
       's2_t1_fazil_to_gb',
+      's2_t1_package',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);

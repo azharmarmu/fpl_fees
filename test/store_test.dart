@@ -458,13 +458,16 @@ void main() {
       expect(store.auctionCostFor('aslam_hashim'), 4000);
       expect(store.auctionCostFor('faizal'), 0);
       expect(store.auctionCostFor('fazil_farook'), 0);
-      // GB: 9500 − Aslam 6200 + throw-ins 0 = 3300
-      expect(store.auctionPurseLive(kTeamGb).spent, 3300);
-      expect(store.auctionPurseLive(kTeamGb).left, 6700);
-      // OX: 4300 − Faizal 300 − Fazil 1600 + Aslam 4000 = 6400
-      expect(store.auctionPurseLive(kTeamOx).spent, 6400);
-      expect(store.auctionPurseLive(kTeamOx).left, 3600);
-      expect(store.trades.length, 3);
+      // Only Release returns auction cost. Sell/package sinks old cost.
+      // OX: squad 6400 + sunk 1900 = 8300 · left 1700 (5700 − 4000)
+      expect(store.auctionPurseLive(kTeamOx).spent, 8300);
+      expect(store.auctionPurseLive(kTeamOx).left, 1700);
+      // GB: squad 3300 + sunk Aslam 6200 − credit 4000 = 5500 · left 4500
+      expect(store.auctionPurseLive(kTeamGb).spent, 5500);
+      expect(store.auctionPurseLive(kTeamGb).left, 4500);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 4000);
+      expect(store.trades, hasLength(1));
+      expect(store.trades.first.kind, TradeKind.package);
     });
 
     test('release then undo restores squad and purse', () async {
@@ -474,12 +477,13 @@ void main() {
       final molana = store.playerById('syed_molana')!;
       await store.recordRelease(player: molana);
       expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
-      expect(store.auctionPurseLive(kTeamGb).spent, 3250);
+      // Release returns Molana's 50: 5500 − 50 = 5450
+      expect(store.auctionPurseLive(kTeamGb).spent, 5450);
       final release = store.trades.first;
       expect(store.canUndoTrade(release), isTrue);
       await store.undoTrade(release.id);
       expect(store.playerById('syed_molana')!.teamId, kTeamGb);
-      expect(store.auctionPurseLive(kTeamGb).spent, 3300);
+      expect(store.auctionPurseLive(kTeamGb).spent, 5500);
     });
 
     test('buy free agent spends auction points; undo returns to FA', () async {

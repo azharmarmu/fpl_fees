@@ -540,6 +540,39 @@ class ScheduledFixture {
       );
 }
 
+class TradePackageLeg {
+  const TradePackageLeg({
+    required this.playerId,
+    required this.playerName,
+    required this.fromTeamId,
+    required this.toTeamId,
+    this.auctionPoints = 0,
+  });
+
+  final String playerId;
+  final String playerName;
+  final String fromTeamId;
+  final String toTeamId;
+  final int auctionPoints;
+
+  Map<String, dynamic> toJson() => {
+        'playerId': playerId,
+        'playerName': playerName,
+        'fromTeamId': fromTeamId,
+        'toTeamId': toTeamId,
+        'auctionPoints': auctionPoints,
+      };
+
+  factory TradePackageLeg.fromJson(Map<String, dynamic> json) =>
+      TradePackageLeg(
+        playerId: json['playerId'] as String,
+        playerName: json['playerName'] as String,
+        fromTeamId: json['fromTeamId'] as String,
+        toTeamId: json['toTeamId'] as String,
+        auctionPoints: json['auctionPoints'] as int? ?? 0,
+      );
+}
+
 class PlayerTrade {
   const PlayerTrade({
     required this.id,
@@ -553,6 +586,7 @@ class PlayerTrade {
     required this.tradedAt,
     this.kind = TradeKind.sell,
     this.auctionPoints = 0,
+    this.packageLegs = const [],
     this.notes = '',
   });
 
@@ -567,9 +601,20 @@ class PlayerTrade {
   final bool commissionCollected;
   final DateTime tradedAt;
   final TradeKind kind;
-  /// Bidding points released / paid / transferred.
+  /// Bidding points released / paid / transferred (cash leg).
   final int auctionPoints;
+  /// Extra players in a package deal (throw-ins, etc.).
+  final List<TradePackageLeg> packageLegs;
   final String notes;
+
+  bool get isPackage => kind == TradeKind.package || packageLegs.isNotEmpty;
+
+  Iterable<String> get involvedPlayerIds sync* {
+    yield playerId;
+    for (final leg in packageLegs) {
+      yield leg.playerId;
+    }
+  }
 
   PlayerTrade copyWith({
     String? fromTeamId,
@@ -579,6 +624,7 @@ class PlayerTrade {
     int? salePriceInr,
     int? commissionInr,
     bool? commissionCollected,
+    List<TradePackageLeg>? packageLegs,
     String? notes,
   }) =>
       PlayerTrade(
@@ -593,6 +639,7 @@ class PlayerTrade {
         tradedAt: tradedAt,
         kind: kind ?? this.kind,
         auctionPoints: auctionPoints ?? this.auctionPoints,
+        packageLegs: packageLegs ?? this.packageLegs,
         notes: notes ?? this.notes,
       );
 
@@ -608,6 +655,7 @@ class PlayerTrade {
         'tradedAt': tradedAt.toIso8601String(),
         'kind': kind.name,
         'auctionPoints': auctionPoints,
+        'packageLegs': packageLegs.map((e) => e.toJson()).toList(),
         'notes': notes,
       };
 
@@ -626,11 +674,15 @@ class PlayerTrade {
           orElse: () => TradeKind.sell,
         ),
         auctionPoints: json['auctionPoints'] as int? ?? 0,
+        packageLegs: [
+          for (final e in (json['packageLegs'] as List? ?? const []))
+            TradePackageLeg.fromJson(Map<String, dynamic>.from(e as Map)),
+        ],
         notes: json['notes'] as String? ?? '',
       );
 }
 
-enum TradeKind { release, buy, sell }
+enum TradeKind { release, buy, sell, package }
 
 enum EligibilityReason { lifetime, subscription, weeklyPaid, unpaid, guest }
 
