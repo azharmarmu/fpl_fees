@@ -566,15 +566,18 @@ class StatPlayersRepository {
         resolvedName = r.name;
         team = r.teamName;
         teams.add(r.teamName);
+        final prev = batting;
         batting = CareerBatting(
-          matches: r.matches,
-          innings: r.innings,
-          runs: r.runs,
-          highest: r.highest,
+          matches: (prev?.matches ?? 0) + r.matches,
+          innings: (prev?.innings ?? 0) + r.innings,
+          runs: (prev?.runs ?? 0) + r.runs,
+          highest: prev == null
+              ? r.highest
+              : (prev.highest >= r.highest ? prev.highest : r.highest),
           average: r.average,
           strikeRate: r.strikeRate,
-          fours: r.fours,
-          sixes: r.sixes,
+          fours: (prev?.fours ?? 0) + r.fours,
+          sixes: (prev?.sixes ?? 0) + r.sixes,
         );
       }
     }
@@ -583,15 +586,18 @@ class StatPlayersRepository {
         id ??= r.playerId;
         resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
         teams.add(r.teamName);
+        final prev = bowling;
         bowling = CareerBowling(
-          matches: r.matches,
-          innings: r.innings,
-          wickets: r.wickets,
+          matches: (prev?.matches ?? 0) + r.matches,
+          innings: (prev?.innings ?? 0) + r.innings,
+          wickets: (prev?.wickets ?? 0) + r.wickets,
           overs: r.overs,
-          maidens: r.maidens,
-          runs: r.runs,
+          maidens: (prev?.maidens ?? 0) + r.maidens,
+          runs: (prev?.runs ?? 0) + r.runs,
           economy: r.economy,
-          best: r.best,
+          best: prev == null
+              ? r.best
+              : (prev.best >= r.best ? prev.best : r.best),
         );
       }
     }
@@ -600,12 +606,13 @@ class StatPlayersRepository {
         id ??= r.playerId;
         resolvedName = resolvedName.isEmpty ? r.name : resolvedName;
         teams.add(r.teamName);
+        final prev = fielding;
         fielding = CareerFielding(
-          matches: r.matches,
-          catches: r.catches,
-          runOuts: r.runOuts,
-          stumpings: r.stumpings,
-          totalDismissals: r.totalDismissals,
+          matches: (prev?.matches ?? 0) + r.matches,
+          catches: (prev?.catches ?? 0) + r.catches,
+          runOuts: (prev?.runOuts ?? 0) + r.runOuts,
+          stumpings: (prev?.stumpings ?? 0) + r.stumpings,
+          totalDismissals: (prev?.totalDismissals ?? 0) + r.totalDismissals,
         );
       }
     }
@@ -618,12 +625,15 @@ class StatPlayersRepository {
             nameKey(r.name).contains(key) ||
             key.contains(nameKey(r.name))) {
           teams.add(r.teamName);
+          final prev = mvp;
           mvp = CareerMvp(
-            matches: r.matches,
-            battingPts: r.battingPts,
-            bowlingPts: r.bowlingPts,
-            fieldingPts: r.fieldingPts,
-            total: r.total,
+            matches: prev == null
+                ? r.matches
+                : (prev.matches >= r.matches ? prev.matches : r.matches),
+            battingPts: (prev?.battingPts ?? 0) + r.battingPts,
+            bowlingPts: (prev?.bowlingPts ?? 0) + r.bowlingPts,
+            fieldingPts: (prev?.fieldingPts ?? 0) + r.fieldingPts,
+            total: (prev?.total ?? 0) + r.total,
           );
           if (resolvedName.isEmpty) resolvedName = r.name;
         }

@@ -1,3 +1,6 @@
+import 'dart:collection';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Farm Premier League Season 1 archive (23 Jul 2025 – 26 Jul 2026).
@@ -209,6 +212,8 @@ class Season1Loader {
   }
 
   /// Shared CricHeroes CSV parser (Season 1 / Season 2 exports share columns).
+  /// Collapses mid-season team switches into one row per player so awards
+  /// (best batter / bowler / fielder / MVP) use full season totals.
   static Future<Season1Archive> loadFromAssetPaths({
     required String battingAsset,
     required String bowlingAsset,
@@ -220,10 +225,10 @@ class Season1Loader {
     final fieldingCsv = await rootBundle.loadString(fieldingAsset);
     final mvpCsv = await rootBundle.loadString(mvpAsset);
 
-    final batting = _parseBatting(battingCsv);
-    final bowling = _parseBowling(bowlingCsv);
-    final fielding = _parseFielding(fieldingCsv);
-    final mvp = _parseMvp(mvpCsv);
+    final batting = _mergeBatting(_parseBatting(battingCsv));
+    final bowling = _mergeBowling(_parseBowling(bowlingCsv));
+    final fielding = _mergeFielding(_parseFielding(fieldingCsv));
+    final mvp = _mergeMvp(_parseMvp(mvpCsv));
 
     final heroes = <Season1Hero>[
       if (mvp.isNotEmpty)
@@ -267,6 +272,225 @@ class Season1Loader {
       mvp: mvp,
       heroes: heroes,
     );
+  }
+
+  static String _nameKey(String name) =>
+      name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+  static String _teamLabel(Set<String> teams, String fallback) {
+    if (teams.isEmpty) return fallback;
+    // Last team seen ≈ current club after a trade.
+    return teams.last;
+  }
+
+  /// Sum bat rows that share [playerId] (CricHeroes id survives team change).
+  @visibleForTesting
+  static List<Season1BattingRow> mergeBattingForTest(
+    List<Season1BattingRow> rows,
+  ) =>
+      _mergeBatting(rows);
+
+  @visibleForTesting
+  static List<Season1BowlingRow> mergeBowlingForTest(
+    List<Season1BowlingRow> rows,
+  ) =>
+      _mergeBowling(rows);
+
+  @visibleForTesting
+  static List<Season1MvpRow> mergeMvpForTest(List<Season1MvpRow> rows) =>
+      _mergeMvp(rows);
+
+  static List<Season1BattingRow> _mergeBatting(List<Season1BattingRow> rows) {
+    final order = <String>[];
+    final map = <String, Season1BattingRow>{};
+    final teams = <String, Set<String>>{};
+    final balls = <String, int>{};
+    final outs = <String, int>{};
+
+    for (final r in rows) {
+      final id = r.playerId.isNotEmpty ? r.playerId : 'n:${_nameKey(r.name)}';
+      if (!map.containsKey(id)) order.add(id);
+      teams.putIfAbsent(id, () => <String>{});
+      if (r.teamName.isNotEmpty) teams[id]!.add(r.teamName);
+
+      final prev = map[id];
+      if (prev == null) {
+        map[id] = r;
+        // Recover balls from SR when possible for later merge accuracy.
+        if (r.strikeRate > 0 && r.runs > 0) {
+          balls[id] = (r.runs * 100 / r.strikeRate).round();
+        }
+        if (r.average > 0 && r.runs > 0) {
+          final o = (r.runs / r.average).round();
+          outs[id] = o > 0 ? o : 0;
+        }
+        continue;
+      }
+
+      final runs = prev.runs + r.runs;
+      final innings = prev.innings + r.innings;
+      final matches = prev.matches + r.matches;
+      final fours = prev.fours + r.fours;
+      final sixes = prev.sixes + r.sixes;
+      final highest = prev.highest >= r.highest ? prev.highest : r.highest;
+
+      var b = balls[id] ?? 0;
+      if (r.strikeRate > 0 && r.runs > 0) {
+        b += (r.runs * 100 / r.strikeRate).round();
+      }
+      balls[id] = b;
+
+      var o = outs[id] ?? 0;
+      if (r.average > 0 && r.runs > 0) {
+        o += (r.runs / r.average).round();
+      }
+      outs[id] = o;
+
+      final avg = o > 0 ? runs / o : (innings > 0 ? runs / innings : 0.0);
+      final sr = b > 0 ? runs * 100 / b : 0.0;
+
+      map[id] = Season1BattingRow(
+        playerId: prev.playerId.isNotEmpty ? prev.playerId : r.playerId,
+        name: r.name.isNotEmpty ? r.name : prev.name,
+        teamName: _teamLabel(teams[id]!, r.teamName),
+        matches: matches,
+        innings: innings,
+        runs: runs,
+        highest: highest,
+        average: double.parse(avg.toStringAsFixed(2)),
+        strikeRate: double.parse(sr.toStringAsFixed(2)),
+        fours: fours,
+        sixes: sixes,
+      );
+    }
+
+    final merged = [for (final id in order) map[id]!];
+    merged.sort((a, b) => b.runs.compareTo(a.runs));
+    return merged;
+  }
+
+  static int _oversToBalls(String overs) {
+    final parts = overs.trim().split('.');
+    final ov = int.tryParse(parts.isNotEmpty ? parts[0] : '') ?? 0;
+    final b = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+    return ov * 6 + b.clamp(0, 5);
+  }
+
+  static String _ballsToOvers(int balls) => '${balls ~/ 6}.${balls % 6}';
+
+  static List<Season1BowlingRow> _mergeBowling(List<Season1BowlingRow> rows) {
+    final order = <String>[];
+    final map = <String, Season1BowlingRow>{};
+    final teams = <String, Set<String>>{};
+
+    for (final r in rows) {
+      final id = r.playerId.isNotEmpty ? r.playerId : 'n:${_nameKey(r.name)}';
+      if (!map.containsKey(id)) order.add(id);
+      teams.putIfAbsent(id, () => <String>{});
+      if (r.teamName.isNotEmpty) teams[id]!.add(r.teamName);
+
+      final prev = map[id];
+      if (prev == null) {
+        map[id] = r;
+        continue;
+      }
+
+      final wickets = prev.wickets + r.wickets;
+      final runs = prev.runs + r.runs;
+      final balls = _oversToBalls(prev.overs) + _oversToBalls(r.overs);
+      final overs = _ballsToOvers(balls);
+      final economy = balls > 0 ? runs / (balls / 6.0) : 0.0;
+
+      map[id] = Season1BowlingRow(
+        playerId: prev.playerId.isNotEmpty ? prev.playerId : r.playerId,
+        name: r.name.isNotEmpty ? r.name : prev.name,
+        teamName: _teamLabel(teams[id]!, r.teamName),
+        matches: prev.matches + r.matches,
+        innings: prev.innings + r.innings,
+        wickets: wickets,
+        overs: overs,
+        maidens: prev.maidens + r.maidens,
+        runs: runs,
+        economy: double.parse(economy.toStringAsFixed(2)),
+        best: prev.best >= r.best ? prev.best : r.best,
+      );
+    }
+
+    final merged = [for (final id in order) map[id]!];
+    merged.sort((a, b) {
+      final w = b.wickets.compareTo(a.wickets);
+      if (w != 0) return w;
+      return a.economy.compareTo(b.economy);
+    });
+    return merged;
+  }
+
+  static List<Season1FieldingRow> _mergeFielding(List<Season1FieldingRow> rows) {
+    final order = <String>[];
+    final map = <String, Season1FieldingRow>{};
+    final teams = <String, Set<String>>{};
+
+    for (final r in rows) {
+      final id = r.playerId.isNotEmpty ? r.playerId : 'n:${_nameKey(r.name)}';
+      if (!map.containsKey(id)) order.add(id);
+      teams.putIfAbsent(id, () => <String>{});
+      if (r.teamName.isNotEmpty) teams[id]!.add(r.teamName);
+
+      final prev = map[id];
+      if (prev == null) {
+        map[id] = r;
+        continue;
+      }
+
+      map[id] = Season1FieldingRow(
+        playerId: prev.playerId.isNotEmpty ? prev.playerId : r.playerId,
+        name: r.name.isNotEmpty ? r.name : prev.name,
+        teamName: _teamLabel(teams[id]!, r.teamName),
+        matches: prev.matches + r.matches,
+        catches: prev.catches + r.catches,
+        runOuts: prev.runOuts + r.runOuts,
+        stumpings: prev.stumpings + r.stumpings,
+        totalDismissals: prev.totalDismissals + r.totalDismissals,
+      );
+    }
+
+    final merged = [for (final id in order) map[id]!];
+    merged.sort((a, b) => b.totalDismissals.compareTo(a.totalDismissals));
+    return merged;
+  }
+
+  static List<Season1MvpRow> _mergeMvp(List<Season1MvpRow> rows) {
+    final order = <String>[];
+    final map = <String, Season1MvpRow>{};
+    final teams = <String, LinkedHashSet<String>>{};
+
+    for (final r in rows) {
+      final id = _nameKey(r.name);
+      if (id.isEmpty) continue;
+      if (!map.containsKey(id)) order.add(id);
+      teams.putIfAbsent(id, LinkedHashSet<String>.new);
+      if (r.teamName.isNotEmpty) teams[id]!.add(r.teamName);
+
+      final prev = map[id];
+      if (prev == null) {
+        map[id] = r;
+        continue;
+      }
+
+      map[id] = Season1MvpRow(
+        name: r.name.isNotEmpty ? r.name : prev.name,
+        teamName: _teamLabel(teams[id]!, r.teamName),
+        matches: prev.matches >= r.matches ? prev.matches : r.matches,
+        battingPts: prev.battingPts + r.battingPts,
+        bowlingPts: prev.bowlingPts + r.bowlingPts,
+        fieldingPts: prev.fieldingPts + r.fieldingPts,
+        total: prev.total + r.total,
+      );
+    }
+
+    final merged = [for (final id in order) map[id]!];
+    merged.sort((a, b) => b.total.compareTo(a.total));
+    return merged;
   }
 
   static List<List<String>> _rows(String csv) {

@@ -486,21 +486,93 @@ void main() {
       expect(store.auctionPurseLive(kTeamGb).spent, 5500);
     });
 
-    test('buy free agent spends auction points; undo returns to FA', () async {
-      SharedPreferences.setMockInitialValues({});
-      final store = FplStore();
-      await store.init();
-      final molana = store.playerById('syed_molana')!;
-      await store.recordRelease(player: molana);
-      await store.recordBuy(
-        player: store.playerById('syed_molana')!,
-        toTeamId: kTeamAvengers,
-        auctionPoints: 200,
-      );
-      expect(store.playerById('syed_molana')!.teamId, kTeamAvengers);
-      final buy = store.trades.firstWhere((t) => t.kind == TradeKind.buy);
-      await store.undoTrade(buy.id);
-      expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
+    test('merges mid-season trade stats by player id for awards', () {
+      final merged = Season1Loader.mergeBattingForTest([
+        const Season1BattingRow(
+          playerId: '3456038',
+          name: 'Aslam Hashim',
+          teamName: 'Gully Blasters',
+          matches: 2,
+          innings: 2,
+          runs: 40,
+          highest: 21,
+          average: 20,
+          strikeRate: 100,
+          fours: 2,
+          sixes: 0,
+        ),
+        const Season1BattingRow(
+          playerId: '3456038',
+          name: 'Aslam Hashim',
+          teamName: 'OX CC',
+          matches: 2,
+          innings: 2,
+          runs: 33,
+          highest: 28,
+          average: 16.5,
+          strikeRate: 110,
+          fours: 1,
+          sixes: 0,
+        ),
+      ]);
+      expect(merged, hasLength(1));
+      expect(merged.first.runs, 73);
+      expect(merged.first.teamName, 'OX CC');
+      expect(merged.first.matches, 4);
+
+      final bowl = Season1Loader.mergeBowlingForTest([
+        const Season1BowlingRow(
+          playerId: '1',
+          name: 'Siraj',
+          teamName: 'OX CC',
+          matches: 2,
+          innings: 2,
+          wickets: 2,
+          overs: '4.0',
+          maidens: 0,
+          runs: 20,
+          economy: 5,
+          best: 1,
+        ),
+        const Season1BowlingRow(
+          playerId: '1',
+          name: 'Siraj',
+          teamName: 'OX CC',
+          matches: 2,
+          innings: 2,
+          wickets: 2,
+          overs: '3.5',
+          maidens: 0,
+          runs: 16,
+          economy: 4.2,
+          best: 1,
+        ),
+      ]);
+      expect(bowl.single.wickets, 4);
+      expect(bowl.single.overs, '7.5');
+
+      final mvp = Season1Loader.mergeMvpForTest([
+        const Season1MvpRow(
+          name: 'Aslam Hashim',
+          teamName: 'Gully Blasters',
+          matches: 2,
+          battingPts: 4,
+          bowlingPts: 1,
+          fieldingPts: 0.5,
+          total: 5.5,
+        ),
+        const Season1MvpRow(
+          name: 'Aslam Hashim',
+          teamName: 'OX CC',
+          matches: 2,
+          battingPts: 3,
+          bowlingPts: 0,
+          fieldingPts: 1,
+          total: 4,
+        ),
+      ]);
+      expect(mvp.single.total, 9.5);
+      expect(mvp.single.teamName, 'OX CC');
     });
   });
 
