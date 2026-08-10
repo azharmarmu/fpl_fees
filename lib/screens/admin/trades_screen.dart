@@ -88,12 +88,56 @@ class _TradesScreenState extends State<TradesScreen> {
                   ),
                 )
               else
-                for (final t in store.trades) _TradeTile(trade: t),
+                for (final t in store.trades)
+                  _TradeTile(
+                    trade: t,
+                    canUndo: store.canUndoTrade(t),
+                    onUndo: () => _undo(context, t),
+                  ),
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _undo(BuildContext context, PlayerTrade trade) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2E20),
+        title: const Text('Undo this action?', style: TextStyle(color: Colors.white)),
+        content: Text(
+          '${trade.playerName} will move back and auction points recalculate.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Undo'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    try {
+      await widget.store.undoTrade(trade.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Undid ${trade.playerName}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+      }
+    }
   }
 
   Future<void> _openAction(BuildContext context, TradeKind kind) async {
@@ -425,8 +469,15 @@ class _TradesScreenState extends State<TradesScreen> {
 }
 
 class _TradeTile extends StatelessWidget {
-  const _TradeTile({required this.trade});
+  const _TradeTile({
+    required this.trade,
+    required this.canUndo,
+    required this.onUndo,
+  });
+
   final PlayerTrade trade;
+  final bool canUndo;
+  final VoidCallback onUndo;
 
   @override
   Widget build(BuildContext context) {
@@ -453,9 +504,21 @@ class _TradeTile extends StatelessWidget {
         style: const TextStyle(color: Colors.white54),
       ),
       isThreeLine: true,
-      trailing: Text(
-        DateFormat('d MMM').format(trade.tradedAt),
-        style: const TextStyle(color: Colors.white38, fontSize: 12),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            DateFormat('d MMM').format(trade.tradedAt),
+            style: const TextStyle(color: Colors.white38, fontSize: 12),
+          ),
+          if (canUndo) ...[
+            const SizedBox(width: 4),
+            TextButton(
+              onPressed: onUndo,
+              child: const Text('Undo', style: TextStyle(fontSize: 12)),
+            ),
+          ],
+        ],
       ),
     );
   }

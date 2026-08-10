@@ -476,6 +476,38 @@ void main() {
       expect(store.auctionPurseLive(kTeamOx).spent, 5300);
       expect(store.auctionPurseLive(kTeamOx).left, 4700);
     });
+
+    test('undo release restores squad and purse', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      final release = store.trades.firstWhere((t) => t.id == 's2_release_aslam_hashim');
+      expect(store.canUndoTrade(release), isTrue);
+      await store.undoTrade(release.id);
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
+      expect(store.auctionPurseLive(kTeamGb).spent, 9450);
+      expect(store.suppressedSeedTrades, contains('s2_release_aslam_hashim'));
+      // Re-init must not re-seed undone release.
+      await store.init();
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
+      expect(store.trades.any((t) => t.id == 's2_release_aslam_hashim'), isFalse);
+    });
+
+    test('undo buy returns player to free agency', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      final aslam = store.playerById('aslam_hashim')!;
+      await store.recordBuy(
+        player: aslam,
+        toTeamId: kTeamOx,
+        auctionPoints: 1000,
+      );
+      final buy = store.trades.firstWhere((t) => t.kind == TradeKind.buy);
+      await store.undoTrade(buy.id);
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);
+      expect(store.auctionPurseLive(kTeamOx).spent, 4300);
+    });
   });
 
   group('structured scorecard', () {

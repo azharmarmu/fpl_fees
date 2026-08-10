@@ -116,6 +116,10 @@ class FirestoreSync {
           return ScheduledFixture.fromJson(m);
         }).toList(),
         tradeOpen: cfg['tradeOpen'] as bool? ?? false,
+        suppressedSeedTrades: [
+          for (final e in (cfg['suppressedSeedTrades'] as List? ?? const []))
+            '$e',
+        ],
         selectedWeekId: cfg['selectedWeekId'] as String? ?? '',
         weeklyFee: (cfg['weeklyFee'] as num?)?.toInt() ?? kWeeklyFee,
         subscriptionFee:
@@ -245,6 +249,7 @@ class FirestoreSync {
     required List<PlayerTrade> trades,
     required List<ScheduledFixture> fixtures,
     required bool tradeOpen,
+    List<String> suppressedSeedTrades = const [],
     required String selectedWeekId,
     int weeklyFee = kWeeklyFee,
     int subscriptionFee = kSubscriptionFee,
@@ -279,6 +284,7 @@ class FirestoreSync {
         _config,
         {
           'tradeOpen': tradeOpen,
+          'suppressedSeedTrades': suppressedSeedTrades,
           'selectedWeekId': selectedWeekId,
           'weeklyFee': weeklyFee,
           'subscriptionFee': subscriptionFee,
@@ -316,6 +322,24 @@ class FirestoreSync {
       n = 0;
       for (final d in remoteGuests.docs) {
         if (!guestIds.contains(d.id)) {
+          deleteBatch ??= _db.batch();
+          deleteBatch.delete(d.reference);
+          n++;
+          if (n >= 400) {
+            await deleteBatch.commit();
+            deleteBatch = null;
+            n = 0;
+          }
+        }
+      }
+      if (deleteBatch != null) await deleteBatch.commit();
+
+      final remoteTrades = await _trades.get();
+      final tradeIds = trades.map((t) => t.id).toSet();
+      deleteBatch = null;
+      n = 0;
+      for (final d in remoteTrades.docs) {
+        if (!tradeIds.contains(d.id)) {
           deleteBatch ??= _db.batch();
           deleteBatch.delete(d.reference);
           n++;
@@ -392,6 +416,7 @@ class CloudSnapshot {
     required this.trades,
     this.fixtures = const [],
     required this.tradeOpen,
+    this.suppressedSeedTrades = const [],
     required this.selectedWeekId,
     this.weeklyFee = kWeeklyFee,
     this.subscriptionFee = kSubscriptionFee,
@@ -406,6 +431,7 @@ class CloudSnapshot {
   final List<PlayerTrade> trades;
   final List<ScheduledFixture> fixtures;
   final bool tradeOpen;
+  final List<String> suppressedSeedTrades;
   final String selectedWeekId;
   final int weeklyFee;
   final int subscriptionFee;

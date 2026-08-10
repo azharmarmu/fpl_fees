@@ -37,6 +37,8 @@ class FplStore extends ChangeNotifier {
   List<PlayerTrade> trades = [];
   List<ScheduledFixture> fixtures = [];
   bool tradeOpen = false;
+  /// Seeded release ids that were undone — do not re-apply on migrate.
+  final Set<String> suppressedSeedTrades = {};
   String selectedWeekId = '';
   int weeklyFee = kWeeklyFee;
   int subscriptionFee = kSubscriptionFee;
@@ -65,6 +67,9 @@ class FplStore extends ChangeNotifier {
       fixtures = snap.fixtures;
     }
     tradeOpen = snap.tradeOpen;
+    suppressedSeedTrades
+      ..clear()
+      ..addAll(snap.suppressedSeedTrades);
     weeklyFee = _sanitizeFee(snap.weeklyFee, kWeeklyFee);
     subscriptionFee = _sanitizeFee(snap.subscriptionFee, kSubscriptionFee);
     guestFee = _sanitizeFee(snap.guestFee, kGuestFee);
@@ -179,6 +184,12 @@ class FplStore extends ChangeNotifier {
           .map(ScheduledFixture.fromJson)
           .toList();
       tradeOpen = map['tradeOpen'] as bool? ?? false;
+      suppressedSeedTrades
+        ..clear()
+        ..addAll(
+          ((map['suppressedSeedTrades'] as List?) ?? const [])
+              .map((e) => '$e'),
+        );
       selectedWeekId = map['selectedWeekId'] as String? ?? _defaultWeekId();
       weeklyFee = _sanitizeFee(
         (map['weeklyFee'] as num?)?.toInt() ?? kWeeklyFee,
@@ -311,6 +322,8 @@ class FplStore extends ChangeNotifier {
       final tradeId = row.$1;
       final playerId = row.$2;
       final points = row.$3;
+      if (suppressedSeedTrades.contains(tradeId)) continue;
+
       if (trades.any((t) => t.id == tradeId)) {
         // Still ensure roster reflects release.
         final i = players.indexWhere((p) => p.id == playerId);
@@ -618,6 +631,7 @@ class FplStore extends ChangeNotifier {
         'trades': trades.map((e) => e.toJson()).toList(),
         'fixtures': fixtures.map((e) => e.toJson()).toList(),
         'tradeOpen': tradeOpen,
+        'suppressedSeedTrades': suppressedSeedTrades.toList(),
         'selectedWeekId': selectedWeekId,
         'weeklyFee': weeklyFee,
         'subscriptionFee': subscriptionFee,
@@ -654,6 +668,7 @@ class FplStore extends ChangeNotifier {
         trades: trades,
         fixtures: fixtures,
         tradeOpen: tradeOpen,
+        suppressedSeedTrades: suppressedSeedTrades.toList(),
         selectedWeekId: selectedWeekId,
         weeklyFee: weeklyFee,
         subscriptionFee: subscriptionFee,
@@ -928,6 +943,7 @@ class FplStore extends ChangeNotifier {
           trades: trades,
           fixtures: fixtures,
           tradeOpen: tradeOpen,
+          suppressedSeedTrades: suppressedSeedTrades.toList(),
           selectedWeekId: selectedWeekId,
           weeklyFee: weeklyFee,
           subscriptionFee: subscriptionFee,
@@ -1198,6 +1214,59 @@ class FplStore extends ChangeNotifier {
 
   Future<void> addMatch(MatchScorecard match) async {
     matches.insert(0, match);
+    await _persist();
+    notifyListeners();
+  }
+
+  /// Whether [trade] can be undone (must be the latest action on that player).
+  bool canUndoTrade(PlayerTrade trade) {
+    final latest = trades.cast<PlayerTrade?>().firstWhere(
+      (t) => t!.playerId == trade.playerId,
+      orElse: () => null,
+    );
+    if (latest == null || latest.id != trade.id) return false;
+    final p = playerById(trade.playerId);
+    if (p == null) return false;
+    return switch (trade.kind) {
+      TradeKind.release => p.teamId == kTeamFreeAgent,
+      TradeKind.buy || TradeKind.sell => p.teamId == trade.toTeamId,
+    };
+  }
+
+  Future<void> undoTrade(String tradeId) async {
+    final idx = trades.indexWhere((t) => t.id == tradeId);
+    if (idx < 0) throw StateError('Trade not found');
+    final trade = trades[idx];
+    if (!canUndoTrade(trade)) {
+      throw StateError(
+        'Cannot undo — a later trade moved this player, or roster changed',
+      );
+    }
+
+    final restoreTeamId = switch (trade.kind) {
+      TradeKind.release => trade.fromTeamId,
+      TradeKind.buy => kTeamFreeAgent,
+      TradeKind.sell => trade.fromTeamId,
+    };
+
+    final i = players.indexWhere((p) => p.id == trade.playerId);
+    if (i >= 0) {
+      players[i] = players[i].copyWith(
+        teamId: restoreTeamId,
+        teamName: kTeamNames[restoreTeamId] ?? restoreTeamId,
+      );
+    }
+
+    trades.removeAt(idx);
+
+    const seedIds = {
+      's2_release_aslam_hashim',
+      's2_release_syed_molana',
+    };
+    if (seedIds.contains(trade.id)) {
+      suppressedSeedTrades.add(trade.id);
+    }
+
     await _persist();
     notifyListeners();
   }
