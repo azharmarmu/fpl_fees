@@ -305,8 +305,7 @@ class FplStore extends ChangeNotifier {
     return true;
   }
 
-  /// Keep trade window open and wipe mistaken auto-seeded trades once.
-  /// Restores post-auction squads so the user can re-enter deals cleanly.
+  /// Keep trade window open, wipe mistaken auto-seeds once, then apply confirmed deals.
   bool _ensureTradeWindowAndReleases() {
     var changed = false;
     if (!tradeOpen) {
@@ -315,36 +314,165 @@ class FplStore extends ChangeNotifier {
     }
 
     const wipeFlag = 's2_trades_wiped_v1';
-    if (suppressedSeedTrades.contains(wipeFlag)) return changed;
-
-    if (trades.isNotEmpty) {
-      trades.clear();
-      changed = true;
-    }
-
-    final seedById = {for (final p in buildSeedPlayers()) p.id: p};
-    for (var i = 0; i < players.length; i++) {
-      final seed = seedById[players[i].id];
-      if (seed == null) continue;
-      if (players[i].teamId == seed.teamId &&
-          players[i].teamName == seed.teamName) {
-        continue;
+    if (!suppressedSeedTrades.contains(wipeFlag)) {
+      if (trades.isNotEmpty) {
+        trades.clear();
+        changed = true;
       }
-      players[i] = players[i].copyWith(
-        teamId: seed.teamId,
-        teamName: seed.teamName,
-      );
+
+      final seedById = {for (final p in buildSeedPlayers()) p.id: p};
+      for (var i = 0; i < players.length; i++) {
+        final seed = seedById[players[i].id];
+        if (seed == null) continue;
+        if (players[i].teamId == seed.teamId &&
+            players[i].teamName == seed.teamName) {
+          continue;
+        }
+        players[i] = players[i].copyWith(
+          teamId: seed.teamId,
+          teamName: seed.teamName,
+        );
+        changed = true;
+      }
+
+      suppressedSeedTrades.addAll({
+        wipeFlag,
+        's2_release_aslam_hashim',
+        's2_release_syed_molana',
+        's2_trade_aslam_to_ox',
+        's2_trade_faizal_to_gb',
+        's2_trade_fazil_to_gb',
+      });
       changed = true;
     }
 
-    suppressedSeedTrades.addAll({
-      wipeFlag,
-      's2_release_aslam_hashim',
-      's2_release_syed_molana',
-      's2_trade_aslam_to_ox',
-      's2_trade_faizal_to_gb',
-      's2_trade_fazil_to_gb',
-    });
+    if (_ensureTrade1OxAslamPackage()) changed = true;
+    return changed;
+  }
+
+  /// Trade 1: OX buys Aslam from GB for 4000 pts + Faizal + Fazil Farook.
+  bool _ensureTrade1OxAslamPackage() {
+    if (suppressedSeedTrades.contains('s2_t1_aslam_to_ox')) return false;
+
+    var changed = false;
+    const note = 'Trade 1: OX buys Aslam for 4000 + Faizal + Fazil Farook';
+
+    // Aslam GB → OX @ 4000
+    if (!trades.any((t) => t.id == 's2_t1_aslam_to_ox')) {
+      final aslam = playerById('aslam_hashim');
+      if (aslam != null && aslam.teamId == kTeamGb) {
+        trades.insert(
+          0,
+          PlayerTrade(
+            id: 's2_t1_aslam_to_ox',
+            playerId: aslam.id,
+            playerName: aslam.name,
+            fromTeamId: kTeamGb,
+            toTeamId: kTeamOx,
+            salePriceInr: 0,
+            commissionInr: 0,
+            commissionCollected: false,
+            tradedAt: DateTime(2026, 8, 10, 18, 0),
+            kind: TradeKind.sell,
+            auctionPoints: 4000,
+            notes: note,
+          ),
+        );
+        final i = players.indexWhere((p) => p.id == aslam.id);
+        if (i >= 0) {
+          players[i] = players[i].copyWith(
+            teamId: kTeamOx,
+            teamName: kTeamNames[kTeamOx]!,
+          );
+        }
+        changed = true;
+      }
+    } else {
+      changed |= _forceTeam('aslam_hashim', kTeamOx);
+    }
+
+    // Faizal OX → GB @ 0 (throw-in)
+    if (!suppressedSeedTrades.contains('s2_t1_faizal_to_gb')) {
+      if (!trades.any((t) => t.id == 's2_t1_faizal_to_gb')) {
+        final faizal = playerById('faizal');
+        if (faizal != null && faizal.teamId == kTeamOx) {
+          trades.insert(
+            0,
+            PlayerTrade(
+              id: 's2_t1_faizal_to_gb',
+              playerId: faizal.id,
+              playerName: faizal.name,
+              fromTeamId: kTeamOx,
+              toTeamId: kTeamGb,
+              salePriceInr: 0,
+              commissionInr: 0,
+              commissionCollected: false,
+              tradedAt: DateTime(2026, 8, 10, 18, 1),
+              kind: TradeKind.sell,
+              auctionPoints: 0,
+              notes: note,
+            ),
+          );
+          final i = players.indexWhere((p) => p.id == faizal.id);
+          if (i >= 0) {
+            players[i] = players[i].copyWith(
+              teamId: kTeamGb,
+              teamName: kTeamNames[kTeamGb]!,
+            );
+          }
+          changed = true;
+        }
+      } else {
+        changed |= _forceTeam('faizal', kTeamGb);
+      }
+    }
+
+    // Fazil Farook OX → GB @ 0 (throw-in)
+    if (!suppressedSeedTrades.contains('s2_t1_fazil_to_gb')) {
+      if (!trades.any((t) => t.id == 's2_t1_fazil_to_gb')) {
+        final fazil = playerById('fazil_farook');
+        if (fazil != null && fazil.teamId == kTeamOx) {
+          trades.insert(
+            0,
+            PlayerTrade(
+              id: 's2_t1_fazil_to_gb',
+              playerId: fazil.id,
+              playerName: fazil.name,
+              fromTeamId: kTeamOx,
+              toTeamId: kTeamGb,
+              salePriceInr: 0,
+              commissionInr: 0,
+              commissionCollected: false,
+              tradedAt: DateTime(2026, 8, 10, 18, 2),
+              kind: TradeKind.sell,
+              auctionPoints: 0,
+              notes: note,
+            ),
+          );
+          final i = players.indexWhere((p) => p.id == fazil.id);
+          if (i >= 0) {
+            players[i] = players[i].copyWith(
+              teamId: kTeamGb,
+              teamName: kTeamNames[kTeamGb]!,
+            );
+          }
+          changed = true;
+        }
+      } else {
+        changed |= _forceTeam('fazil_farook', kTeamGb);
+      }
+    }
+
+    return changed;
+  }
+
+  bool _forceTeam(String playerId, String teamId) {
+    final i = players.indexWhere((p) => p.id == playerId);
+    if (i < 0 || players[i].teamId == teamId) return false;
+    players[i] = players[i].copyWith(
+      teamId: teamId,
+      teamName: kTeamNames[teamId] ?? teamId,
+    );
     return true;
   }
 
@@ -1245,6 +1373,9 @@ class FplStore extends ChangeNotifier {
       's2_trade_aslam_to_ox',
       's2_trade_faizal_to_gb',
       's2_trade_fazil_to_gb',
+      's2_t1_aslam_to_ox',
+      's2_t1_faizal_to_gb',
+      's2_t1_fazil_to_gb',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);

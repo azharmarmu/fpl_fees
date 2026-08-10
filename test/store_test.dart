@@ -446,57 +446,57 @@ void main() {
       );
     });
 
-    test('trade window open with clean post-auction baseline', () async {
+    test('trade window open with Trade 1 OX–GB package applied', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
       expect(store.tradeOpen, isTrue);
-      expect(store.trades, isEmpty);
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
+      expect(store.playerById('aslam_hashim')!.teamId, kTeamOx);
       expect(store.playerById('syed_molana')!.teamId, kTeamGb);
-      expect(store.playerById('faizal')!.teamId, kTeamOx);
-      expect(store.playerById('fazil_farook')!.teamId, kTeamOx);
-      expect(store.auctionPurseLive(kTeamGb).spent, 9500);
-      expect(store.auctionPurseLive(kTeamGb).left, 500);
-      expect(store.auctionPurseLive(kTeamOx).spent, 4300);
-      expect(store.auctionPurseLive(kTeamOx).left, 5700);
-      expect(store.freeAgents(), isEmpty);
+      expect(store.playerById('faizal')!.teamId, kTeamGb);
+      expect(store.playerById('fazil_farook')!.teamId, kTeamGb);
+      expect(store.auctionCostFor('aslam_hashim'), 4000);
+      expect(store.auctionCostFor('faizal'), 0);
+      expect(store.auctionCostFor('fazil_farook'), 0);
+      // GB: 9500 − Aslam 6200 + throw-ins 0 = 3300
+      expect(store.auctionPurseLive(kTeamGb).spent, 3300);
+      expect(store.auctionPurseLive(kTeamGb).left, 6700);
+      // OX: 4300 − Faizal 300 − Fazil 1600 + Aslam 4000 = 6400
+      expect(store.auctionPurseLive(kTeamOx).spent, 6400);
+      expect(store.auctionPurseLive(kTeamOx).left, 3600);
+      expect(store.trades.length, 3);
     });
 
     test('release then undo restores squad and purse', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
-      final aslam = store.playerById('aslam_hashim')!;
-      await store.recordRelease(player: aslam);
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);
-      expect(store.auctionPurseLive(kTeamGb).spent, 3300);
-      expect(store.auctionPurseLive(kTeamGb).left, 6700);
+      final molana = store.playerById('syed_molana')!;
+      await store.recordRelease(player: molana);
+      expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
+      expect(store.auctionPurseLive(kTeamGb).spent, 3250);
       final release = store.trades.first;
       expect(store.canUndoTrade(release), isTrue);
       await store.undoTrade(release.id);
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamGb);
-      expect(store.auctionPurseLive(kTeamGb).spent, 9500);
-      expect(store.trades, isEmpty);
+      expect(store.playerById('syed_molana')!.teamId, kTeamGb);
+      expect(store.auctionPurseLive(kTeamGb).spent, 3300);
     });
 
     test('buy free agent spends auction points; undo returns to FA', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
-      final aslam = store.playerById('aslam_hashim')!;
-      await store.recordRelease(player: aslam);
+      final molana = store.playerById('syed_molana')!;
+      await store.recordRelease(player: molana);
       await store.recordBuy(
-        player: store.playerById('aslam_hashim')!,
-        toTeamId: kTeamOx,
-        auctionPoints: 4000,
+        player: store.playerById('syed_molana')!,
+        toTeamId: kTeamAvengers,
+        auctionPoints: 200,
       );
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamOx);
-      expect(store.auctionPurseLive(kTeamOx).spent, 8300);
+      expect(store.playerById('syed_molana')!.teamId, kTeamAvengers);
       final buy = store.trades.firstWhere((t) => t.kind == TradeKind.buy);
       await store.undoTrade(buy.id);
-      expect(store.playerById('aslam_hashim')!.teamId, kTeamFreeAgent);
-      expect(store.auctionPurseLive(kTeamOx).spent, 4300);
+      expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
     });
   });
 
