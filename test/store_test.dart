@@ -396,6 +396,54 @@ void main() {
       expect(Season2Meta.totalMatches, 6);
     });
 
+    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 2 + scorecards',
+        () async {
+      Season2Loader.clearCache();
+      final data = await Season2Loader.load();
+
+      Season1BattingRow bat(String name) =>
+          data.batting.firstWhere((r) => r.name == name);
+      Season1BowlingRow bowl(String name) =>
+          data.bowling.firstWhere((r) => r.name == name);
+
+      // CricHeroes Week 2 CSV (tournament 2143348) + scorecard sums.
+      expect(bat('Aslam Hashim').runs, 54);
+      expect(bat('Aslam Hashim').innings, 4);
+      expect(bat('Aslam Hashim').playerId, '3456038');
+      expect(bowl('Aslam Hashim').wickets, 1);
+      // Post Trade 1 display team.
+      expect(bat('Aslam Hashim').teamName, 'OX CC');
+
+      expect(bat('Faizal').runs, 12);
+      expect(bat('Faizal').playerId, '27379139');
+      expect(bowl('Faizal').wickets, 0);
+      expect(bat('Faizal').teamName, 'Gully Blasters');
+
+      expect(bat('Fazil Farook').runs, 0);
+      expect(bat('Fazil Farook').playerId, '41754588');
+      expect(bowl('Fazil Farook').wickets, 1);
+      expect(bat('Fazil Farook').teamName, 'Gully Blasters');
+    });
+
+    test('Aslam and Aslam Hashim stay separate in career stats', () async {
+      expect(StatPlayersRepository.nameMatch('Aslam', 'Aslam Hashim'), isFalse);
+
+      final hashim = await StatPlayersRepository.fromBundledAssets(
+        name: 'Aslam Hashim',
+      );
+      final aslam = await StatPlayersRepository.fromSeason1Assets(
+        name: 'Aslam',
+      );
+      expect(hashim, isNotNull);
+      expect(aslam, isNotNull);
+      expect(hashim!.id, '3456038');
+      expect(aslam!.id, '45134281');
+      expect(hashim.seasons['s2']!.batting!.runs, 54);
+      expect(aslam.seasons['s1']!.batting!.runs, 97);
+      // Must not pull Hashim's S2 into OX Aslam.
+      expect(aslam.seasons['s2']?.batting?.runs ?? 0, 0);
+    });
+
     test('seeds six Sunday scorecards with innings', () {
       final matches = buildSeason2SeedMatches();
       expect(matches, hasLength(6));
@@ -446,11 +494,12 @@ void main() {
       );
     });
 
-    test('trade window open with Trade 1 OX–GB package applied', () async {
+    test('trade window open with Trade 1 + Trade 2 packages applied', () async {
       SharedPreferences.setMockInitialValues({});
       final store = FplStore();
       await store.init();
       expect(store.tradeOpen, isTrue);
+      // Trade 1
       expect(store.playerById('aslam_hashim')!.teamId, kTeamOx);
       expect(store.playerById('syed_molana')!.teamId, kTeamGb);
       expect(store.playerById('faizal')!.teamId, kTeamGb);
@@ -458,16 +507,23 @@ void main() {
       expect(store.auctionCostFor('aslam_hashim'), 4000);
       expect(store.auctionCostFor('faizal'), 0);
       expect(store.auctionCostFor('fazil_farook'), 0);
+      // Trade 2
+      expect(store.playerById('munaf_cpm')!.teamId, kTeamAvengers);
+      expect(store.playerById('mashood_a_c')!.teamId, kTeamGb);
+      expect(store.auctionCostFor('munaf_cpm'), 3000);
+      expect(store.auctionCostFor('mashood_a_c'), 0);
       // Only Release returns auction cost. Sell/package sinks old cost.
-      // OX: squad 6400 + sunk 1900 = 8300 · left 1700 (5700 − 4000)
+      // OX: unchanged from Trade 1 · left 1700
       expect(store.auctionPurseLive(kTeamOx).spent, 8300);
       expect(store.auctionPurseLive(kTeamOx).left, 1700);
-      // GB: squad 3300 + sunk Aslam 6200 − credit 4000 = 5500 · left 4500
-      expect(store.auctionPurseLive(kTeamGb).spent, 5500);
-      expect(store.auctionPurseLive(kTeamGb).left, 4500);
-      expect(store.auctionPurseLive(kTeamAvengers).left, 4000);
-      expect(store.trades, hasLength(1));
-      expect(store.trades.first.kind, TradeKind.package);
+      // GB: squad 3300 + sunk 6200 − credit 7000 = 2500 · left 7500
+      expect(store.auctionPurseLive(kTeamGb).spent, 2500);
+      expect(store.auctionPurseLive(kTeamGb).left, 7500);
+      // Avengers: squad 8800 + sunk Mash 200 = 9000 · left 1000
+      expect(store.auctionPurseLive(kTeamAvengers).spent, 9000);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 1000);
+      expect(store.trades, hasLength(2));
+      expect(store.trades.every((t) => t.kind == TradeKind.package), isTrue);
     });
 
     test('release then undo restores squad and purse', () async {
@@ -477,13 +533,13 @@ void main() {
       final molana = store.playerById('syed_molana')!;
       await store.recordRelease(player: molana);
       expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
-      // Release returns Molana's 50: 5500 − 50 = 5450
-      expect(store.auctionPurseLive(kTeamGb).spent, 5450);
+      // Release returns Molana's 50: 2500 − 50 = 2450 (post Trade 1+2)
+      expect(store.auctionPurseLive(kTeamGb).spent, 2450);
       final release = store.trades.first;
       expect(store.canUndoTrade(release), isTrue);
       await store.undoTrade(release.id);
       expect(store.playerById('syed_molana')!.teamId, kTeamGb);
-      expect(store.auctionPurseLive(kTeamGb).spent, 5500);
+      expect(store.auctionPurseLive(kTeamGb).spent, 2500);
     });
 
     test('merges mid-season trade stats by player id for awards', () {

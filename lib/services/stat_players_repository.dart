@@ -189,16 +189,8 @@ class StatPlayersRepository {
 
     for (final r in archive.mvp) {
       final key = nameKey(r.name);
+      // Exact name only — never merge Aslam ↔ Aslam Hashim via substring.
       var id = idByName[key];
-      // Fuzzy: MVP names sometimes differ slightly (MONIZ vs Moniz Babs).
-      if (id == null) {
-        for (final e in idByName.entries) {
-          if (e.key.contains(key) || key.contains(e.key)) {
-            id = e.value;
-            break;
-          }
-        }
-      }
       id ??= idFromName(r.name);
       final p = ensure(id: id, name: r.name, teamName: r.teamName);
       patchS1(
@@ -387,14 +379,6 @@ class StatPlayersRepository {
     for (final r in archive.mvp) {
       final key = nameKey(r.name);
       var id = idByName[key];
-      if (id == null) {
-        for (final e in idByName.entries) {
-          if (e.key.contains(key) || key.contains(e.key)) {
-            id = e.value;
-            break;
-          }
-        }
-      }
       id ??= idFromName(r.name);
       ensure(id: id, name: r.name, teamName: r.teamName);
       patch(
@@ -479,19 +463,13 @@ class StatPlayersRepository {
     return ids.length;
   }
 
-  static bool _nameMatch(String a, String b) {
+  /// Exact match only (after normalize). Do NOT prefix-match:
+  /// "Aslam" and "Aslam Hashim" are different CricHeroes players.
+  static bool nameMatch(String a, String b) {
     final x = nameKey(a);
     final y = nameKey(b);
     if (x.isEmpty || y.isEmpty) return false;
-    if (x == y) return true;
-    // "Moniz Babs" ↔ "MONIZ", "Mohammed Ali Mc" ↔ "Mohammed Ali MC"
-    if (x.startsWith(y) || y.startsWith(x)) return true;
-    final xt = x.split(' ');
-    final yt = y.split(' ');
-    if (xt.isNotEmpty && yt.isNotEmpty && xt.first == yt.first && xt.first.length >= 4) {
-      return true;
-    }
-    return false;
+    return x == y;
   }
 
   /// Local fallback when Firestore has no doc yet (from bundled CSVs).
@@ -558,7 +536,7 @@ class StatPlayersRepository {
     bool hitName(String rowName) =>
         nameQuery != null &&
         nameQuery.isNotEmpty &&
-        _nameMatch(rowName, nameQuery);
+        nameMatch(rowName, nameQuery);
 
     for (final r in data.batting) {
       if (hitId(r.playerId) || hitName(r.name)) {
@@ -620,10 +598,8 @@ class StatPlayersRepository {
     final key = nameKey(resolvedName.isEmpty ? (name ?? '') : resolvedName);
     if (key.isNotEmpty) {
       for (final r in data.mvp) {
-        if (_nameMatch(r.name, key) ||
-            nameKey(r.name) == key ||
-            nameKey(r.name).contains(key) ||
-            key.contains(nameKey(r.name))) {
+        // Exact name only — never substring (Aslam ≠ Aslam Hashim).
+        if (nameMatch(r.name, key)) {
           teams.add(r.teamName);
           final prev = mvp;
           mvp = CareerMvp(

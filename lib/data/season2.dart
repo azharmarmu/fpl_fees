@@ -1,7 +1,9 @@
 import 'season1.dart';
+import 'season2_stats.dart';
 
 /// Farm Premier League Season 2 (2 Aug 2026 – 27 Dec 2026).
-/// Leaderboards from CricHeroes CSV exports; points from official table.
+/// Leaderboards from CricHeroes CSV exports + scorecard cross-check;
+/// points from official table.
 class Season2Meta {
   static const title = 'Farm Premier League';
   static const seasonLabel = 'Season 2';
@@ -60,11 +62,13 @@ class Season2Loader {
   static Future<Season1Archive> load() async {
     final hit = _cached;
     if (hit != null) return hit;
-    return _cached = await Season1Loader.loadFromAssetPaths(
+    final csv = await Season1Loader.loadFromAssetPaths(
       battingAsset: 'assets/season2/batting_leaderboard.csv',
       bowlingAsset: 'assets/season2/bowling_leaderboard.csv',
       fieldingAsset: 'assets/season2/fielding_leaderboard.csv',
       mvpAsset: 'assets/season2/mvp_leaderboard.csv',
     );
+    // Bat/bowl verified against structured scorecards; teams reflect trades.
+    return _cached = season2ArchiveWithScorecardTruth(csv);
   }
 }

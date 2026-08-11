@@ -350,6 +350,7 @@ class FplStore extends ChangeNotifier {
     }
 
     if (_ensureTrade1OxAslamPackage()) changed = true;
+    if (_ensureTrade2AvengersMunafPackage()) changed = true;
     return changed;
   }
 
@@ -419,6 +420,54 @@ class FplStore extends ChangeNotifier {
     _forceTeam('aslam_hashim', kTeamOx);
     _forceTeam('faizal', kTeamGb);
     _forceTeam('fazil_farook', kTeamGb);
+    return true;
+  }
+
+  /// Trade 2: Avengers get Munaf for 3000 + Mashood A C (throw-in).
+  bool _ensureTrade2AvengersMunafPackage() {
+    if (suppressedSeedTrades.contains('s2_t2_package')) return false;
+
+    if (trades.any((t) => t.id == 's2_t2_package')) {
+      var changed = _forceTeam('munaf_cpm', kTeamAvengers);
+      changed |= _forceTeam('mashood_a_c', kTeamGb);
+      return changed;
+    }
+
+    final munaf = playerById('munaf_cpm');
+    final mash = playerById('mashood_a_c');
+    if (munaf == null || mash == null) return false;
+
+    final ready = (munaf.teamId == kTeamGb || munaf.teamId == kTeamAvengers) &&
+        (mash.teamId == kTeamAvengers || mash.teamId == kTeamGb);
+    if (!ready) return false;
+
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: 's2_t2_package',
+        playerId: munaf.id,
+        playerName: munaf.name,
+        fromTeamId: kTeamGb,
+        toTeamId: kTeamAvengers,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: DateTime(2026, 8, 11, 15, 45),
+        kind: TradeKind.package,
+        auctionPoints: 3000,
+        packageLegs: const [
+          TradePackageLeg(
+            playerId: 'mashood_a_c',
+            playerName: 'Mashood A C',
+            fromTeamId: kTeamAvengers,
+            toTeamId: kTeamGb,
+          ),
+        ],
+        notes: 'Trade 2: Munaf worth 3000 + Mashood A C',
+      ),
+    );
+    _forceTeam('munaf_cpm', kTeamAvengers);
+    _forceTeam('mashood_a_c', kTeamGb);
     return true;
   }
 
@@ -1401,6 +1450,7 @@ class FplStore extends ChangeNotifier {
       's2_t1_faizal_to_gb',
       's2_t1_fazil_to_gb',
       's2_t1_package',
+      's2_t2_package',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);

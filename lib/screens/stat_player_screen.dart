@@ -31,25 +31,29 @@ class _StatPlayerScreenState extends State<StatPlayerScreen> {
   }
 
   Future<CareerPlayer?> _load() async {
-    final repo = StatPlayersRepository();
-    if (widget.cloudEnabled) {
-      try {
-        if (widget.playerId != null && widget.playerId!.isNotEmpty) {
-          final remote = await repo.getById(widget.playerId!);
-          if (remote != null) return remote;
-        }
-        if (widget.playerName != null && widget.playerName!.isNotEmpty) {
-          final byName = await repo.getByName(widget.playerName!);
-          if (byName != null) return byName;
-        }
-      } catch (_) {
-        // Fall through to assets.
-      }
-    }
-    return StatPlayersRepository.fromBundledAssets(
+    // Bundled CricHeroes exports + scorecards are the source of truth.
+    // Firestore often lags (Week 1 upload) and used to blur Aslam / Aslam Hashim.
+    final local = await StatPlayersRepository.fromBundledAssets(
       playerId: widget.playerId,
       name: widget.playerName,
     );
+    if (local != null) return local;
+
+    if (!widget.cloudEnabled) return null;
+    final repo = StatPlayersRepository();
+    try {
+      if (widget.playerId != null && widget.playerId!.isNotEmpty) {
+        final remote = await repo.getById(widget.playerId!);
+        if (remote != null) return remote;
+      }
+      if (widget.playerName != null && widget.playerName!.isNotEmpty) {
+        final byName = await repo.getByName(widget.playerName!);
+        if (byName != null) return byName;
+      }
+    } catch (_) {
+      // No cloud stats.
+    }
+    return null;
   }
 
   @override
