@@ -22,6 +22,9 @@ String? season2CurrentTeamName(String playerName) {
   // Trade 2 package (see FplStore._ensureTrade2AvengersMunafPackage).
   byName[_nk('Munaf Cpm')] = kTeamNames[kTeamAvengers]!;
   byName[_nk('Mashood A C')] = kTeamNames[kTeamGb]!;
+  // Releases → free agent (see FplStore._ensureReleaseArifAndFarziii).
+  byName[_nk('Arif PVH')] = kTeamNames[kTeamFreeAgent]!;
+  byName[_nk('Farziii')] = kTeamNames[kTeamFreeAgent]!;
   return byName[key];
 }
 

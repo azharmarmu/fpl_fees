@@ -512,18 +512,29 @@ void main() {
       expect(store.playerById('mashood_a_c')!.teamId, kTeamGb);
       expect(store.auctionCostFor('munaf_cpm'), 3000);
       expect(store.auctionCostFor('mashood_a_c'), 0);
-      // Only Release returns auction cost. Sell/package sinks old cost.
-      // OX: unchanged from Trade 1 · left 1700
-      expect(store.auctionPurseLive(kTeamOx).spent, 8300);
-      expect(store.auctionPurseLive(kTeamOx).left, 1700);
-      // GB: squad 3300 + sunk 6200 − credit 7000 = 2500 · left 7500
+      // Releases → free agents (auction cost returned to Left)
+      expect(store.playerById('arif_pvh')!.teamId, kTeamFreeAgent);
+      expect(store.playerById('farziii')!.teamId, kTeamFreeAgent);
+      expect(store.auctionCostFor('arif_pvh'), 0);
+      expect(store.auctionCostFor('farziii'), 0);
+      // OX: Trade 1 then Farziii release 250 · spent 8050 · left 1950
+      expect(store.auctionPurseLive(kTeamOx).spent, 8050);
+      expect(store.auctionPurseLive(kTeamOx).left, 1950);
+      // GB: unchanged · left 7500
       expect(store.auctionPurseLive(kTeamGb).spent, 2500);
       expect(store.auctionPurseLive(kTeamGb).left, 7500);
-      // Avengers: squad 8800 + sunk Mash 200 = 9000 · left 1000
-      expect(store.auctionPurseLive(kTeamAvengers).spent, 9000);
-      expect(store.auctionPurseLive(kTeamAvengers).left, 1000);
-      expect(store.trades, hasLength(2));
-      expect(store.trades.every((t) => t.kind == TradeKind.package), isTrue);
+      // Avengers: Trade 2 then Arif release 50 · spent 8950 · left 1050
+      expect(store.auctionPurseLive(kTeamAvengers).spent, 8950);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 1050);
+      expect(store.trades, hasLength(4));
+      expect(
+        store.trades.where((t) => t.kind == TradeKind.package),
+        hasLength(2),
+      );
+      expect(
+        store.trades.where((t) => t.kind == TradeKind.release),
+        hasLength(2),
+      );
     });
 
     test('release then undo restores squad and purse', () async {

@@ -351,6 +351,7 @@ class FplStore extends ChangeNotifier {
 
     if (_ensureTrade1OxAslamPackage()) changed = true;
     if (_ensureTrade2AvengersMunafPackage()) changed = true;
+    if (_ensureReleaseArifAndFarziii()) changed = true;
     return changed;
   }
 
@@ -468,6 +469,65 @@ class FplStore extends ChangeNotifier {
     );
     _forceTeam('munaf_cpm', kTeamAvengers);
     _forceTeam('mashood_a_c', kTeamGb);
+    return true;
+  }
+
+  /// Releases: Arif PVH (Avengers) and Farziii (OX) → free agents.
+  bool _ensureReleaseArifAndFarziii() {
+    var changed = false;
+    changed |= _ensureSeedRelease(
+      id: 's2_release_arif_pvh',
+      playerId: 'arif_pvh',
+      fromTeamId: kTeamAvengers,
+      tradedAt: DateTime(2026, 8, 14, 17, 30),
+      notes: 'Released by Farm Avengers',
+    );
+    changed |= _ensureSeedRelease(
+      id: 's2_release_farziii',
+      playerId: 'farziii',
+      fromTeamId: kTeamOx,
+      tradedAt: DateTime(2026, 8, 14, 17, 31),
+      notes: 'Released by OX CC',
+    );
+    return changed;
+  }
+
+  bool _ensureSeedRelease({
+    required String id,
+    required String playerId,
+    required String fromTeamId,
+    required DateTime tradedAt,
+    String notes = '',
+  }) {
+    if (suppressedSeedTrades.contains(id)) return false;
+
+    if (trades.any((t) => t.id == id)) {
+      return _forceTeam(playerId, kTeamFreeAgent);
+    }
+
+    final p = playerById(playerId);
+    if (p == null) return false;
+    if (p.teamId != fromTeamId && p.teamId != kTeamFreeAgent) return false;
+
+    final pts = auctionCostFor(playerId);
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: id,
+        playerId: p.id,
+        playerName: p.name,
+        fromTeamId: fromTeamId,
+        toTeamId: kTeamFreeAgent,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: tradedAt,
+        kind: TradeKind.release,
+        auctionPoints: pts,
+        notes: notes,
+      ),
+    );
+    _forceTeam(playerId, kTeamFreeAgent);
     return true;
   }
 
@@ -1451,6 +1511,8 @@ class FplStore extends ChangeNotifier {
       's2_t1_fazil_to_gb',
       's2_t1_package',
       's2_t2_package',
+      's2_release_arif_pvh',
+      's2_release_farziii',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);
