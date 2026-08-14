@@ -19,10 +19,10 @@ void main() {
   });
 
   group('seed', () {
-    test('builds 51 players and season Sundays', () {
+    test('builds 57 players and season Sundays', () {
       final players = buildSeedPlayers();
       final weeks = buildSeasonWeeks();
-      expect(players.length, 51);
+      expect(players.length, 57);
       expect(weeks.first.id, '2026-08-02');
       expect(weeks.last.id, '2026-12-27');
       expect(weeks.where((w) => w.isVpl), hasLength(1));
@@ -512,29 +512,35 @@ void main() {
       expect(store.playerById('mashood_a_c')!.teamId, kTeamGb);
       expect(store.auctionCostFor('munaf_cpm'), 3000);
       expect(store.auctionCostFor('mashood_a_c'), 0);
-      // Releases → free agents (auction cost returned to Left)
+      // Releases then mini auction
       expect(store.playerById('arif_pvh')!.teamId, kTeamFreeAgent);
-      expect(store.playerById('farziii')!.teamId, kTeamFreeAgent);
+      expect(store.playerById('farziii')!.teamId, kTeamGb);
       expect(store.auctionCostFor('arif_pvh'), 0);
-      expect(store.auctionCostFor('farziii'), 0);
-      // OX: Trade 1 then Farziii release 250 · spent 8050 · left 1950
-      expect(store.auctionPurseLive(kTeamOx).spent, 8050);
-      expect(store.auctionPurseLive(kTeamOx).left, 1950);
-      // GB: unchanged · left 7500
-      expect(store.auctionPurseLive(kTeamGb).spent, 2500);
-      expect(store.auctionPurseLive(kTeamGb).left, 7500);
-      // Avengers: Trade 2 then Arif release 50 · spent 8950 · left 1050
-      expect(store.auctionPurseLive(kTeamAvengers).spent, 8950);
-      expect(store.auctionPurseLive(kTeamAvengers).left, 1050);
-      expect(store.trades, hasLength(4));
-      expect(
-        store.trades.where((t) => t.kind == TradeKind.package),
-        hasLength(2),
-      );
-      expect(
-        store.trades.where((t) => t.kind == TradeKind.release),
-        hasLength(2),
-      );
+      expect(store.auctionCostFor('farziii'), 100);
+      expect(store.playerById('ejaz')!.teamId, kTeamGb);
+      expect(store.playerById('imran')!.teamId, kTeamGb);
+      expect(store.playerById('anju')!.teamId, kTeamGb);
+      expect(store.playerById('sadam')!.teamId, kTeamOx);
+      expect(store.playerById('gopi')!.teamId, kTeamAvengers);
+      expect(store.playerById('arif_kvh')!.teamId, kTeamAvengers);
+      expect(store.auctionCostFor('ejaz'), 1950);
+      expect(store.auctionCostFor('imran'), 1050);
+      expect(store.auctionCostFor('anju'), 1050);
+      expect(store.auctionCostFor('sadam'), 1950);
+      expect(store.auctionCostFor('gopi'), 500);
+      expect(store.auctionCostFor('arif_kvh'), 550);
+      // OX: left 1950 − SADAM 1950 = 0
+      expect(store.auctionPurseLive(kTeamOx).spent, 10000);
+      expect(store.auctionPurseLive(kTeamOx).left, 0);
+      // GB: left 7500 − 4150 mini = 3350
+      expect(store.auctionPurseLive(kTeamGb).spent, 6650);
+      expect(store.auctionPurseLive(kTeamGb).left, 3350);
+      // Avengers: left 1050 − 1050 mini = 0
+      expect(store.auctionPurseLive(kTeamAvengers).spent, 10000);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 0);
+      expect(store.trades.where((t) => t.kind == TradeKind.package), hasLength(2));
+      expect(store.trades.where((t) => t.kind == TradeKind.release), hasLength(2));
+      expect(store.trades.where((t) => t.kind == TradeKind.buy), hasLength(7));
     });
 
     test('release then undo restores squad and purse', () async {
@@ -544,13 +550,13 @@ void main() {
       final molana = store.playerById('syed_molana')!;
       await store.recordRelease(player: molana);
       expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
-      // Release returns Molana's 50: 2500 − 50 = 2450 (post Trade 1+2)
-      expect(store.auctionPurseLive(kTeamGb).spent, 2450);
+      // Release returns Molana's 50: 6650 − 50 = 6600 (post mini auction)
+      expect(store.auctionPurseLive(kTeamGb).spent, 6600);
       final release = store.trades.first;
       expect(store.canUndoTrade(release), isTrue);
       await store.undoTrade(release.id);
       expect(store.playerById('syed_molana')!.teamId, kTeamGb);
-      expect(store.auctionPurseLive(kTeamGb).spent, 2500);
+      expect(store.auctionPurseLive(kTeamGb).spent, 6650);
     });
 
     test('merges mid-season trade stats by player id for awards', () {

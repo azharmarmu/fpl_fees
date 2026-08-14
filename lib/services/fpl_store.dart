@@ -352,6 +352,7 @@ class FplStore extends ChangeNotifier {
     if (_ensureTrade1OxAslamPackage()) changed = true;
     if (_ensureTrade2AvengersMunafPackage()) changed = true;
     if (_ensureReleaseArifAndFarziii()) changed = true;
+    if (_ensureMiniAuction()) changed = true;
     return changed;
   }
 
@@ -528,6 +529,111 @@ class FplStore extends ChangeNotifier {
       ),
     );
     _forceTeam(playerId, kTeamFreeAgent);
+    return true;
+  }
+
+  /// Mini auction (14 Aug 2026): 6 new + Farziii re-buy; Arif PVH unsold.
+  bool _ensureMiniAuction() {
+    if (suppressedSeedTrades.contains('s2_mini_auction')) return false;
+    var changed = false;
+    final at = DateTime(2026, 8, 14, 18);
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_ejaz_gb',
+      playerId: 'ejaz',
+      toTeamId: kTeamGb,
+      auctionPoints: 1950,
+      tradedAt: at,
+      notes: 'Mini auction',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_imran_gb',
+      playerId: 'imran',
+      toTeamId: kTeamGb,
+      auctionPoints: 1050,
+      tradedAt: at.add(const Duration(minutes: 1)),
+      notes: 'Mini auction',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_anju_gb',
+      playerId: 'anju',
+      toTeamId: kTeamGb,
+      auctionPoints: 1050,
+      tradedAt: at.add(const Duration(minutes: 2)),
+      notes: 'Mini auction',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_farziii_gb',
+      playerId: 'farziii',
+      toTeamId: kTeamGb,
+      auctionPoints: 100,
+      tradedAt: at.add(const Duration(minutes: 3)),
+      notes: 'Mini auction (re-buy after release)',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_sadam_ox',
+      playerId: 'sadam',
+      toTeamId: kTeamOx,
+      auctionPoints: 1950,
+      tradedAt: at.add(const Duration(minutes: 4)),
+      notes: 'Mini auction',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_gopi_avengers',
+      playerId: 'gopi',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 500,
+      tradedAt: at.add(const Duration(minutes: 5)),
+      notes: 'Mini auction',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini_arif_kvh_avengers',
+      playerId: 'arif_kvh',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 550,
+      tradedAt: at.add(const Duration(minutes: 6)),
+      notes: 'Mini auction',
+    );
+    // Keep Arif PVH as free agent (unsold).
+    changed |= _forceTeam('arif_pvh', kTeamFreeAgent);
+    return changed;
+  }
+
+  bool _ensureSeedBuy({
+    required String id,
+    required String playerId,
+    required String toTeamId,
+    required int auctionPoints,
+    required DateTime tradedAt,
+    String notes = '',
+  }) {
+    if (suppressedSeedTrades.contains(id)) return false;
+
+    if (trades.any((t) => t.id == id)) {
+      return _forceTeam(playerId, toTeamId);
+    }
+
+    final p = playerById(playerId);
+    if (p == null) return false;
+    if (p.teamId != kTeamFreeAgent && p.teamId != toTeamId) return false;
+
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: id,
+        playerId: p.id,
+        playerName: p.name,
+        fromTeamId: kTeamFreeAgent,
+        toTeamId: toTeamId,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: tradedAt,
+        kind: TradeKind.buy,
+        auctionPoints: auctionPoints,
+        notes: notes,
+      ),
+    );
+    _forceTeam(playerId, toTeamId);
     return true;
   }
 
@@ -1513,6 +1619,14 @@ class FplStore extends ChangeNotifier {
       's2_t2_package',
       's2_release_arif_pvh',
       's2_release_farziii',
+      's2_mini_auction',
+      's2_mini_ejaz_gb',
+      's2_mini_imran_gb',
+      's2_mini_anju_gb',
+      's2_mini_farziii_gb',
+      's2_mini_sadam_ox',
+      's2_mini_gopi_avengers',
+      's2_mini_arif_kvh_avengers',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);

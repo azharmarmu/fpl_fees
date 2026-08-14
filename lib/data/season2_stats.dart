@@ -24,7 +24,14 @@ String? season2CurrentTeamName(String playerName) {
   byName[_nk('Mashood A C')] = kTeamNames[kTeamGb]!;
   // Releases → free agent (see FplStore._ensureReleaseArifAndFarziii).
   byName[_nk('Arif PVH')] = kTeamNames[kTeamFreeAgent]!;
-  byName[_nk('Farziii')] = kTeamNames[kTeamFreeAgent]!;
+  // Mini auction buys (see FplStore._ensureMiniAuction).
+  byName[_nk('Ejaz')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Imran')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Anju')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Farziii')] = kTeamNames[kTeamGb]!;
+  byName[_nk('SADAM')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Gopi')] = kTeamNames[kTeamAvengers]!;
+  byName[_nk('Arif KVH')] = kTeamNames[kTeamAvengers]!;
   return byName[key];
 }
 

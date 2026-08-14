@@ -64,6 +64,13 @@ List<FplPlayer> buildSeedPlayers() {
     ('nowfal', 'Nowfal', kTeamOx, true, false),
     ('shanu', 'Shanu', kTeamOx, false, false),
     ('siraj', 'Siraj', kTeamOx, false, false),
+    // Mini auction entrants (start as free agents; buys applied in FplStore).
+    ('ejaz', 'Ejaz', kTeamFreeAgent, false, false),
+    ('imran', 'Imran', kTeamFreeAgent, false, false),
+    ('anju', 'Anju', kTeamFreeAgent, false, false),
+    ('sadam', 'SADAM', kTeamFreeAgent, false, false),
+    ('gopi', 'Gopi', kTeamFreeAgent, false, false),
+    ('arif_kvh', 'Arif KVH', kTeamFreeAgent, false, false),
     // Lifetime guest — plays as floating player; not fee'd, not on a squad tab.
     ('mulla', 'Mulla', kTeamGuest, true, false),
   ];
