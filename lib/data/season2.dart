@@ -9,48 +9,48 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 6;
+  static const totalMatches = 9;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 2 (9 Aug 2026).
+/// Points after League Week 3 (16 Aug 2026).
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 4,
-    won: 3,
-    lost: 1,
-    points: 6,
-    nrr: 0.736,
-    forScore: '235/40',
-    againstScore: '197/38.2',
-    last5: 'W-L-W-W',
+    played: 6,
+    won: 4,
+    lost: 2,
+    points: 8,
+    nrr: 0.481,
+    forScore: '392/60',
+    againstScore: '349/57.4',
+    last5: 'L-W-W-L-W',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 4,
+    played: 6,
     won: 3,
-    lost: 1,
+    lost: 3,
     points: 6,
-    nrr: 0.293,
-    forScore: '195/35.3',
-    againstScore: '208/40',
-    last5: 'W-W-W-L',
+    nrr: -0.404,
+    forScore: '318/55.3',
+    againstScore: '368/60',
+    last5: 'W-W-L-L-L',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 4,
-    won: 0,
+    played: 6,
+    won: 2,
     lost: 4,
-    points: 0,
-    nrr: -1.060,
-    forScore: '203/40',
-    againstScore: '228/37.1',
-    last5: 'L-L-L-L',
+    points: 4,
+    nrr: -0.090,
+    forScore: '333/59.2',
+    againstScore: '326/57.1',
+    last5: 'L-L-L-W-W',
   ),
 ];
 

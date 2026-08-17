@@ -30,8 +30,12 @@ String? season2CurrentTeamName(String playerName) {
   byName[_nk('Anju')] = kTeamNames[kTeamGb]!;
   byName[_nk('Farziii')] = kTeamNames[kTeamGb]!;
   byName[_nk('SADAM')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Sadam')] = kTeamNames[kTeamOx]!;
   byName[_nk('Gopi')] = kTeamNames[kTeamAvengers]!;
+  byName[_nk('Gopinath')] = kTeamNames[kTeamAvengers]!;
   byName[_nk('Arif KVH')] = kTeamNames[kTeamAvengers]!;
+  // CricHeroes spellings vs auction names.
+  byName[_nk('Ajaz')] = kTeamNames[kTeamGb]!;
   return byName[key];
 }
 
