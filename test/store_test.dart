@@ -383,22 +383,24 @@ void main() {
   });
 
   group('season2', () {
-    test('loads Week 3 leaderboards and points', () async {
+    test('loads Week 4 leaderboards and points', () async {
       Season2Loader.clearCache();
       final data = await Season2Loader.load();
       expect(data.batting, isNotEmpty);
       expect(data.batting.first.name, 'Azhar Marmu');
-      expect(data.batting.first.runs, 135);
+      expect(data.batting.first.runs, 201);
       expect(data.bowling.first.name, 'Siraj');
+      expect(data.bowling.first.wickets, 7);
       expect(data.mvp.first.name, 'Azhar Marmu');
       expect(season2Standings.first.teamName, 'Gully Blasters');
-      expect(season2Standings.first.points, 8);
-      expect(season2Standings[2].points, 4);
+      expect(season2Standings.first.points, 10);
+      expect(season2Standings[1].points, 8);
+      expect(season2Standings[2].points, 6);
       expect(season2Standings.length, 3);
-      expect(Season2Meta.totalMatches, 9);
+      expect(Season2Meta.totalMatches, 12);
     });
 
-    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 3 + scorecards',
+    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 4 + scorecards',
         () async {
       Season2Loader.clearCache();
       final data = await Season2Loader.load();
@@ -416,7 +418,7 @@ void main() {
 
       expect(bat('Faizal').runs, 12);
       expect(bat('Faizal').playerId, '27379139');
-      expect(bowl('Faizal').wickets, 0);
+      expect(bowl('Faizal').wickets, 1);
       expect(bat('Faizal').teamName, 'Gully Blasters');
 
       expect(bat('Fazil Farook').runs, 0);
@@ -444,9 +446,9 @@ void main() {
       expect(aslam.seasons['s2']?.batting?.runs ?? 0, 0);
     });
 
-    test('seeds nine Sunday scorecards with innings', () {
+    test('seeds twelve Sunday scorecards with innings', () {
       final matches = buildSeason2SeedMatches();
-      expect(matches, hasLength(9));
+      expect(matches, hasLength(12));
       expect(
         matches.map((m) => m.id),
         containsAll([
@@ -459,6 +461,9 @@ void main() {
           'ch_26678906',
           'ch_26680511',
           'ch_26681579',
+          'ch_26787322',
+          'ch_26788610',
+          'ch_26789418',
         ]),
       );
       for (final m in matches) {
