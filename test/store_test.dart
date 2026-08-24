@@ -398,6 +398,15 @@ void main() {
       expect(season2Standings[2].points, 6);
       expect(season2Standings.length, 3);
       expect(Season2Meta.totalMatches, 12);
+      expect(season2WeekAwards, hasLength(4));
+      expect(season2WeekAwards[0].bestPlayerName, 'MONIZ');
+      expect(season2WeekAwards[0].bestTeamName, 'OX CC');
+      expect(season2WeekAwards[1].bestPlayerName, 'M S Rusfi');
+      expect(season2WeekAwards[1].bestTeamName, 'Gully Blasters');
+      expect(season2WeekAwards[2].bestPlayerName, 'Azhar Marmu');
+      expect(season2WeekAwards[2].bestTeamName, 'Farm Avengers CC');
+      expect(season2WeekAwards[3].bestPlayerName, 'Azhar Marmu');
+      expect(season2WeekAwards[3].bestTeamName, 'Gully Blasters');
     });
 
     test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 4 + scorecards',

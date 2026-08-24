@@ -14,6 +14,7 @@ import '../../widgets/app_brand.dart';
 import '../../widgets/fpl_nav_scaffold.dart';
 import '../../widgets/home_auction_purses.dart';
 import '../../widgets/home_points_table.dart';
+import '../../widgets/home_week_awards.dart';
 import '../../widgets/schedule_list.dart';
 import 'add_match_screen.dart';
 import 'eligible_screen.dart';
@@ -163,6 +164,8 @@ class _Dashboard extends StatelessWidget {
           HomeWeekSchedule(store: store),
           const SizedBox(height: 16),
           HomePointsTable(cloudEnabled: store.cloudEnabled),
+          const SizedBox(height: 16),
+          HomeWeekAwards(cloudEnabled: store.cloudEnabled),
           const SizedBox(height: 16),
           HomeAuctionPurses(store: store),
           const SizedBox(height: 16),

@@ -29,16 +29,19 @@ const _seasons = <_SeasonOption>[
   ),
 ];
 
-/// Tournament stats with season switcher (batting, bowling, fielding, MVP, points).
+/// Tournament stats with season switcher (batting, bowling, fielding, MVP, points, weekly).
 class TournamentStatsScreen extends StatefulWidget {
   const TournamentStatsScreen({
     super.key,
     this.cloudEnabled = false,
     this.initialSeasonId = 's2',
+    this.initialTabIndex = 0,
   });
 
   final bool cloudEnabled;
   final String initialSeasonId;
+  /// 0 Batting … 4 Points · 5 Weekly (Season 2).
+  final int initialTabIndex;
 
   @override
   State<TournamentStatsScreen> createState() => _TournamentStatsScreenState();
@@ -51,6 +54,7 @@ class _TournamentBundle {
     required this.bowling,
     required this.fielding,
     required this.mvp,
+    this.weekAwards = const [],
   });
 
   final List<Season1Standing> standings;
@@ -58,13 +62,15 @@ class _TournamentBundle {
   final List<Season1BowlingRow> bowling;
   final List<Season1FieldingRow> fielding;
   final List<Season1MvpRow> mvp;
+  final List<Season2WeekAward> weekAwards;
 
   bool get isEmpty =>
       standings.isEmpty &&
       batting.isEmpty &&
       bowling.isEmpty &&
       fielding.isEmpty &&
-      mvp.isEmpty;
+      mvp.isEmpty &&
+      weekAwards.isEmpty;
 }
 
 class _TournamentStatsScreenState extends State<TournamentStatsScreen>
@@ -76,7 +82,11 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 5, vsync: this);
+    _tabs = TabController(
+      length: 6,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 5),
+    );
     _seasonId = _seasons.any((s) => s.id == widget.initialSeasonId)
         ? widget.initialSeasonId
         : 's2';
@@ -107,6 +117,7 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
       bowling: a.bowling,
       fielding: a.fielding,
       mvp: a.mvp,
+      weekAwards: season2WeekAwards,
     );
   }
 
@@ -173,6 +184,7 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
                   Tab(text: 'Fielding'),
                   Tab(text: 'MVP'),
                   Tab(text: 'Points'),
+                  Tab(text: 'Weekly'),
                 ],
               ),
             ],
@@ -257,6 +269,10 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
                     _FieldingTab(rows: data.fielding, onOpenPlayer: openPlayer),
                     _MvpTab(rows: data.mvp, onOpenPlayer: openPlayer),
                     _PointsTab(standings: data.standings),
+                    _WeeklyTab(
+                      awards: data.weekAwards,
+                      onOpenPlayer: openPlayer,
+                    ),
                   ],
                 );
               },
@@ -264,6 +280,121 @@ class _TournamentStatsScreenState extends State<TournamentStatsScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _WeeklyTab extends StatelessWidget {
+  const _WeeklyTab({required this.awards, required this.onOpenPlayer});
+
+  final List<Season2WeekAward> awards;
+  final void Function({String? id, String? name}) onOpenPlayer;
+
+  @override
+  Widget build(BuildContext context) {
+    if (awards.isEmpty) {
+      return const Center(
+        child: Text(
+          'Week awards are tracked in Season 2 only.',
+          style: TextStyle(color: Colors.white54),
+        ),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          'WEEK AWARDS',
+          style: GoogleFonts.bebasNeue(
+            fontSize: 24,
+            color: const Color(0xFFB8F27A),
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Best team by results · best player by CricHeroes MVP that week.',
+          style: TextStyle(color: Colors.white38, fontSize: 12),
+        ),
+        const SizedBox(height: 12),
+        for (final a in awards)
+          Card(
+            color: const Color(0xFF1A2E20),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'WEEK ${a.weekIndex}',
+                        style: GoogleFonts.bebasNeue(
+                          fontSize: 22,
+                          color: const Color(0xFFB8F27A),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        a.dateLabel,
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'BEST TEAM',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  Text(
+                    a.bestTeamName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    a.bestTeamSummary,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'BEST PLAYER',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => onOpenPlayer(name: a.bestPlayerName),
+                    child: Text(
+                      a.bestPlayerName,
+                      style: const TextStyle(
+                        color: Color(0xFFB8F27A),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${a.bestPlayerTeamName} · ${a.bestPlayerSummary}',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
