@@ -530,25 +530,26 @@ void main() {
       expect(store.playerById('anju')!.teamId, kTeamGb);
       expect(store.playerById('sadam')!.teamId, kTeamOx);
       expect(store.playerById('gopi')!.teamId, kTeamAvengers);
-      expect(store.playerById('arif_kvh')!.teamId, kTeamAvengers);
+      expect(store.playerById('arif_kvh')!.teamId, kTeamGb);
       expect(store.auctionCostFor('ejaz'), 1950);
       expect(store.auctionCostFor('imran'), 1050);
       expect(store.auctionCostFor('anju'), 1050);
       expect(store.auctionCostFor('sadam'), 1950);
       expect(store.auctionCostFor('gopi'), 500);
-      expect(store.auctionCostFor('arif_kvh'), 550);
+      expect(store.auctionCostFor('arif_kvh'), 300);
       // OX: left 1950 − SADAM 1950 = 0
       expect(store.auctionPurseLive(kTeamOx).spent, 10000);
       expect(store.auctionPurseLive(kTeamOx).left, 0);
-      // GB: left 7500 − 4150 mini = 3350
-      expect(store.auctionPurseLive(kTeamGb).spent, 6650);
-      expect(store.auctionPurseLive(kTeamGb).left, 3350);
-      // Avengers: left 1050 − 1050 mini = 0
-      expect(store.auctionPurseLive(kTeamAvengers).spent, 10000);
-      expect(store.auctionPurseLive(kTeamAvengers).left, 0);
+      // GB: mini 6650 + Arif KVH 300 = 6950
+      expect(store.auctionPurseLive(kTeamGb).spent, 6950);
+      expect(store.auctionPurseLive(kTeamGb).left, 3050);
+      // Avengers: Arif KVH sell credits 300 → left 300
+      expect(store.auctionPurseLive(kTeamAvengers).spent, 9700);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 300);
       expect(store.trades.where((t) => t.kind == TradeKind.package), hasLength(2));
       expect(store.trades.where((t) => t.kind == TradeKind.release), hasLength(2));
       expect(store.trades.where((t) => t.kind == TradeKind.buy), hasLength(7));
+      expect(store.trades.where((t) => t.kind == TradeKind.sell), hasLength(1));
     });
 
     test('release then undo restores squad and purse', () async {

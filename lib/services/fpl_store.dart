@@ -353,6 +353,7 @@ class FplStore extends ChangeNotifier {
     if (_ensureTrade2AvengersMunafPackage()) changed = true;
     if (_ensureReleaseArifAndFarziii()) changed = true;
     if (_ensureMiniAuction()) changed = true;
+    if (_ensureTrade3ArifKvhToGb()) changed = true;
     return changed;
   }
 
@@ -598,6 +599,20 @@ class FplStore extends ChangeNotifier {
     return changed;
   }
 
+  /// Trade 3: Avengers sell Arif KVH to GB for 300 auction points.
+  bool _ensureTrade3ArifKvhToGb() {
+    if (suppressedSeedTrades.contains('s2_t3_arif_kvh_gb')) return false;
+    return _ensureSeedSell(
+      id: 's2_t3_arif_kvh_gb',
+      playerId: 'arif_kvh',
+      fromTeamId: kTeamAvengers,
+      toTeamId: kTeamGb,
+      auctionPoints: 300,
+      tradedAt: DateTime(2026, 8, 24, 12),
+      notes: 'Trade 3: Arif KVH sold to GB for 300',
+    );
+  }
+
   bool _ensureSeedBuy({
     required String id,
     required String playerId,
@@ -629,6 +644,46 @@ class FplStore extends ChangeNotifier {
         commissionCollected: false,
         tradedAt: tradedAt,
         kind: TradeKind.buy,
+        auctionPoints: auctionPoints,
+        notes: notes,
+      ),
+    );
+    _forceTeam(playerId, toTeamId);
+    return true;
+  }
+
+  bool _ensureSeedSell({
+    required String id,
+    required String playerId,
+    required String fromTeamId,
+    required String toTeamId,
+    required int auctionPoints,
+    required DateTime tradedAt,
+    String notes = '',
+  }) {
+    if (suppressedSeedTrades.contains(id)) return false;
+
+    if (trades.any((t) => t.id == id)) {
+      return _forceTeam(playerId, toTeamId);
+    }
+
+    final p = playerById(playerId);
+    if (p == null) return false;
+    if (p.teamId != fromTeamId && p.teamId != toTeamId) return false;
+
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: id,
+        playerId: p.id,
+        playerName: p.name,
+        fromTeamId: fromTeamId,
+        toTeamId: toTeamId,
+        salePriceInr: 0,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: tradedAt,
+        kind: TradeKind.sell,
         auctionPoints: auctionPoints,
         notes: notes,
       ),
@@ -1627,6 +1682,7 @@ class FplStore extends ChangeNotifier {
       's2_mini_sadam_ox',
       's2_mini_gopi_avengers',
       's2_mini_arif_kvh_avengers',
+      's2_t3_arif_kvh_gb',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);
