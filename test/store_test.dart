@@ -383,22 +383,22 @@ void main() {
   });
 
   group('season2', () {
-    test('loads Week 4 leaderboards and points', () async {
+    test('loads Week 5 leaderboards and points', () async {
       Season2Loader.clearCache();
       final data = await Season2Loader.load();
       expect(data.batting, isNotEmpty);
       expect(data.batting.first.name, 'Azhar Marmu');
-      expect(data.batting.first.runs, 201);
-      expect(data.bowling.first.name, 'Siraj');
-      expect(data.bowling.first.wickets, 7);
+      expect(data.batting.first.runs, 221);
+      expect(data.bowling.first.name, 'Afzal Afu');
+      expect(data.bowling.first.wickets, 8);
       expect(data.mvp.first.name, 'Azhar Marmu');
       expect(season2Standings.first.teamName, 'Gully Blasters');
-      expect(season2Standings.first.points, 10);
-      expect(season2Standings[1].points, 8);
-      expect(season2Standings[2].points, 6);
+      expect(season2Standings.first.points, 12);
+      expect(season2Standings[1].points, 10);
+      expect(season2Standings[2].points, 8);
       expect(season2Standings.length, 3);
-      expect(Season2Meta.totalMatches, 12);
-      expect(season2WeekAwards, hasLength(4));
+      expect(Season2Meta.totalMatches, 15);
+      expect(season2WeekAwards, hasLength(5));
       expect(season2WeekAwards[0].bestPlayerName, 'MONIZ');
       expect(season2WeekAwards[0].bestTeamName, 'OX CC');
       expect(season2WeekAwards[1].bestPlayerName, 'M S Rusfi');
@@ -407,9 +407,11 @@ void main() {
       expect(season2WeekAwards[2].bestTeamName, 'Farm Avengers CC');
       expect(season2WeekAwards[3].bestPlayerName, 'Azhar Marmu');
       expect(season2WeekAwards[3].bestTeamName, 'Gully Blasters');
+      expect(season2WeekAwards[4].bestPlayerName, 'Sadam');
+      expect(season2WeekAwards[4].bestTeamName, 'OX CC');
     });
 
-    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 4 + scorecards',
+    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 5 + scorecards',
         () async {
       Season2Loader.clearCache();
       final data = await Season2Loader.load();
@@ -419,13 +421,13 @@ void main() {
       Season1BowlingRow bowl(String name) =>
           data.bowling.firstWhere((r) => r.name == name);
 
-      expect(bat('Aslam Hashim').runs, 76);
-      expect(bat('Aslam Hashim').innings, 6);
+      expect(bat('Aslam Hashim').runs, 131);
+      expect(bat('Aslam Hashim').innings, 8);
       expect(bat('Aslam Hashim').playerId, '3456038');
       expect(bowl('Aslam Hashim').wickets, 1);
       expect(bat('Aslam Hashim').teamName, 'OX CC');
 
-      expect(bat('Faizal').runs, 12);
+      expect(bat('Faizal').runs, 21);
       expect(bat('Faizal').playerId, '27379139');
       expect(bowl('Faizal').wickets, 1);
       expect(bat('Faizal').teamName, 'Gully Blasters');
@@ -449,15 +451,15 @@ void main() {
       expect(aslam, isNotNull);
       expect(hashim!.id, '3456038');
       expect(aslam!.id, '45134281');
-      expect(hashim.seasons['s2']!.batting!.runs, 76);
+      expect(hashim.seasons['s2']!.batting!.runs, 131);
       expect(aslam.seasons['s1']!.batting!.runs, 97);
       // Must not pull Hashim's S2 into OX Aslam.
       expect(aslam.seasons['s2']?.batting?.runs ?? 0, 0);
     });
 
-    test('seeds twelve Sunday scorecards with innings', () {
+    test('seeds fifteen Sunday scorecards with innings', () {
       final matches = buildSeason2SeedMatches();
-      expect(matches, hasLength(12));
+      expect(matches, hasLength(15));
       expect(
         matches.map((m) => m.id),
         containsAll([
@@ -473,6 +475,9 @@ void main() {
           'ch_26787322',
           'ch_26788610',
           'ch_26789418',
+          'ch_26900723',
+          'ch_26902077',
+          'ch_26903018',
         ]),
       );
       for (final m in matches) {
@@ -568,13 +573,13 @@ void main() {
       final molana = store.playerById('syed_molana')!;
       await store.recordRelease(player: molana);
       expect(store.playerById('syed_molana')!.teamId, kTeamFreeAgent);
-      // Release returns Molana's 50: 6650 − 50 = 6600 (post mini auction)
-      expect(store.auctionPurseLive(kTeamGb).spent, 6600);
+      // Release returns Molana's 50: 6950 − 50 = 6900 (post Trade 3)
+      expect(store.auctionPurseLive(kTeamGb).spent, 6900);
       final release = store.trades.first;
       expect(store.canUndoTrade(release), isTrue);
       await store.undoTrade(release.id);
       expect(store.playerById('syed_molana')!.teamId, kTeamGb);
-      expect(store.auctionPurseLive(kTeamGb).spent, 6650);
+      expect(store.auctionPurseLive(kTeamGb).spent, 6950);
     });
 
     test('merges mid-season trade stats by player id for awards', () {

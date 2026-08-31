@@ -9,48 +9,48 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 12;
+  static const totalMatches = 15;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 4 (23 Aug 2026).
+/// Points after League Week 5 (30 Aug 2026).
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 8,
-    won: 5,
-    lost: 3,
-    points: 10,
-    nrr: 0.527,
-    forScore: '527/80',
-    againstScore: '463/76.4',
-    last5: 'W-L-W-W-L',
+    played: 10,
+    won: 6,
+    lost: 4,
+    points: 12,
+    nrr: 0.373,
+    forScore: '625/98.2',
+    againstScore: '553/92.3',
+    last5: 'W-W-L-L-W',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 8,
-    won: 4,
-    lost: 4,
-    points: 8,
-    nrr: -0.248,
-    forScore: '449/74.5',
-    againstScore: '502/80',
-    last5: 'L-L-L-L-W',
+    played: 10,
+    won: 5,
+    lost: 5,
+    points: 10,
+    nrr: -0.145,
+    forScore: '567/94.5',
+    againstScore: '609/99.1',
+    last5: 'L-L-W-W-L',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 8,
-    won: 3,
-    lost: 5,
-    points: 6,
-    nrr: -0.285,
-    forScore: '444/78.3',
-    againstScore: '455/76.4',
-    last5: 'L-W-W-L-W',
+    played: 10,
+    won: 4,
+    lost: 6,
+    points: 8,
+    nrr: -0.215,
+    forScore: '526/93.3',
+    againstScore: '556/95.0',
+    last5: 'W-L-W-W-L',
   ),
 ];
 
@@ -118,6 +118,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'Azhar Marmu',
     bestPlayerTeamName: 'Gully Blasters',
     bestPlayerSummary: 'MVP +6.6 · 50',
+  ),
+  Season2WeekAward(
+    weekIndex: 5,
+    weekId: '2026-08-30',
+    dateLabel: '30 Aug 2026',
+    bestTeamName: 'OX CC',
+    bestTeamSummary: '1–1 · best NRR',
+    bestPlayerName: 'Sadam',
+    bestPlayerTeamName: 'OX CC',
+    bestPlayerSummary: 'MVP +6.7',
   ),
 ];
 
