@@ -394,8 +394,17 @@ void main() {
       expect(data.mvp.first.name, 'Azhar Marmu');
       expect(season2Standings.first.teamName, 'Gully Blasters');
       expect(season2Standings.first.points, 12);
+      expect(season2Standings.first.nrr, 0.282);
+      expect(season2Standings.first.forScore, '625/100');
+      expect(season2Standings.first.againstScore, '553/92.4');
       expect(season2Standings[1].points, 10);
+      expect(season2Standings[1].nrr, -0.153);
+      expect(season2Standings[1].forScore, '567/95.3');
+      expect(season2Standings[1].againstScore, '609/100');
       expect(season2Standings[2].points, 8);
+      expect(season2Standings[2].nrr, -0.146);
+      expect(season2Standings[2].forScore, '526/94.2');
+      expect(season2Standings[2].againstScore, '556/97.1');
       expect(season2Standings.length, 3);
       expect(Season2Meta.totalMatches, 15);
       expect(season2WeekAwards, hasLength(5));
