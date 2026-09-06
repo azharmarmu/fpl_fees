@@ -1,5 +1,5 @@
 player_id,name,team_id,team_name,total_match,innings,total_runs,highest_run,average,not_out,strike_rate,ball_faced,batting_hand,4s,6s,50s,100s
-13346088,Azhar Marmu,10521995,Gully Blasters,12,12,236,50,23.60,2,117.41,201,RHB,17,2,1,0
+13346088,Azhar Marmu,10521995,Gully Blasters,12,12,238,50,23.80,2,119.00,200,RHB,16,3,1,0
 3456038,Aslam Hashim,10521995,Gully Blasters,10,10,145,36,16.11,1,88.41,164,RHB,9,0,0,0
 33116981,Bava Kvs,14305848,Farm Avengers CC,12,12,132,31,14.67,3,91.67,144,RHB,5,2,0,0
 23802583,M S Rusfi,14305848,Farm Avengers CC,12,11,117,25,13.00,2,88.64,132,RHB,1,4,0,0

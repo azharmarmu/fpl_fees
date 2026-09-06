@@ -1152,7 +1152,7 @@ List<MatchScorecard> buildSeason2Week6Matches() {
       teamAName: kTeamNames[kTeamOx]!,
       teamBName: kTeamNames[kTeamGb]!,
       teamAScore: '33/6 (8)',
-      teamBScore: '34/2 (6.2)',
+      teamBScore: '35/2 (6.2)',
       resultText: 'Gully Blasters won by 8 wickets',
       tossText: 'OX CC opted to bat',
       ground: 'Farm MCK, Vellore',
@@ -1185,13 +1185,13 @@ List<MatchScorecard> buildSeason2Week6Matches() {
         MatchInnings(
           battingTeamId: kTeamGb,
           battingTeamName: kTeamNames[kTeamGb]!,
-          runs: 34,
+          runs: 35,
           wickets: 2,
           overs: '6.2',
           batting: [
             _bat('Anju', 'c Aslam Hashim b Sadam', 4, 4),
             _bat('Faizal', 'b Siraj', 3, 7),
-            _bat('Azhar Marmu', 'not out', 8, 11, fours: 1),
+            _bat('Azhar Marmu', 'not out', 10, 11, fours: 1),
             _bat('Ajaz', 'not out', 15, 18),
           ],
           bowling: [
@@ -1199,7 +1199,7 @@ List<MatchScorecard> buildSeason2Week6Matches() {
             _bowl('Anas', '2', 0, 7, 0),
             _bowl('Siraj', '1', 0, 3, 1),
             _bowl('Aslam Hashim', '1', 0, 9, 0),
-            _bowl('Giftson T', '0.2', 0, 9, 0),
+            _bowl('Giftson T', '0.2', 0, 10, 0),
           ],
         ),
       ],
