@@ -383,33 +383,33 @@ void main() {
   });
 
   group('season2', () {
-    test('loads Week 6 leaderboards and points', () async {
+    test('loads Week 7 leaderboards and points', () async {
       Season2Loader.clearCache();
       final data = await Season2Loader.load();
       expect(data.batting, isNotEmpty);
       expect(data.batting.first.name, 'Azhar Marmu');
-      expect(data.batting.first.runs, 238);
+      expect(data.batting.first.runs, 277);
       expect(data.bowling.first.name, 'M S Rusfi');
-      expect(data.bowling.first.wickets, 11);
-      expect(data.mvp.first.name, 'Azhar Marmu');
+      expect(data.bowling.first.wickets, 13);
+      expect(data.mvp.first.name, 'M S Rusfi');
       expect(season2Standings.first.teamName, 'Gully Blasters');
-      expect(season2Standings.first.points, 16);
-      expect(season2Standings.first.nrr, 0.483);
-      expect(season2Standings.first.forScore, '717/116.2');
-      expect(season2Standings.first.againstScore, '640/112.4');
-      expect(season2Standings[1].teamName, 'Farm Avengers CC');
-      expect(season2Standings[1].points, 10);
-      expect(season2Standings[1].nrr, 0.239);
-      expect(season2Standings[1].forScore, '646/114.2');
-      expect(season2Standings[1].againstScore, '634/117.1');
-      expect(season2Standings[2].teamName, 'OX CC');
+      expect(season2Standings.first.points, 18);
+      expect(season2Standings.first.nrr, 0.598);
+      expect(season2Standings.first.forScore, '844/136.2');
+      expect(season2Standings.first.againstScore, '742/132.4');
+      expect(season2Standings[1].teamName, 'OX CC');
+      expect(season2Standings[1].points, 14);
+      expect(season2Standings[1].nrr, -0.502);
+      expect(season2Standings[1].forScore, '734/135.3');
+      expect(season2Standings[1].againstScore, '807/136.2');
+      expect(season2Standings[2].teamName, 'Farm Avengers CC');
       expect(season2Standings[2].points, 10);
-      expect(season2Standings[2].nrr, -0.727);
-      expect(season2Standings[2].forScore, '621/115.3');
-      expect(season2Standings[2].againstScore, '710/116.2');
+      expect(season2Standings[2].nrr, -0.098);
+      expect(season2Standings[2].forScore, '736/134.2');
+      expect(season2Standings[2].againstScore, '765/137.1');
       expect(season2Standings.length, 3);
-      expect(Season2Meta.totalMatches, 18);
-      expect(season2WeekAwards, hasLength(6));
+      expect(Season2Meta.totalMatches, 21);
+      expect(season2WeekAwards, hasLength(7));
       expect(season2WeekAwards[0].bestPlayerName, 'MONIZ');
       expect(season2WeekAwards[0].bestTeamName, 'OX CC');
       expect(season2WeekAwards[1].bestPlayerName, 'M S Rusfi');
@@ -422,9 +422,11 @@ void main() {
       expect(season2WeekAwards[4].bestTeamName, 'OX CC');
       expect(season2WeekAwards[5].bestPlayerName, 'M S Rusfi');
       expect(season2WeekAwards[5].bestTeamName, 'Gully Blasters');
+      expect(season2WeekAwards[6].bestPlayerName, 'Munaf Cpm');
+      expect(season2WeekAwards[6].bestTeamName, 'OX CC');
     });
 
-    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 6 + scorecards',
+    test('Aslam Hashim / Faizal / Fazil match CricHeroes Week 7 + scorecards',
         () async {
       Season2Loader.clearCache();
       final data = await Season2Loader.load();
@@ -434,8 +436,8 @@ void main() {
       Season1BowlingRow bowl(String name) =>
           data.bowling.firstWhere((r) => r.name == name);
 
-      expect(bat('Aslam Hashim').runs, 145);
-      expect(bat('Aslam Hashim').innings, 10);
+      expect(bat('Aslam Hashim').runs, 154);
+      expect(bat('Aslam Hashim').innings, 12);
       expect(bat('Aslam Hashim').playerId, '3456038');
       expect(bowl('Aslam Hashim').wickets, 1);
       expect(bat('Aslam Hashim').teamName, 'OX CC');
@@ -464,15 +466,15 @@ void main() {
       expect(aslam, isNotNull);
       expect(hashim!.id, '3456038');
       expect(aslam!.id, '45134281');
-      expect(hashim.seasons['s2']!.batting!.runs, 145);
+      expect(hashim.seasons['s2']!.batting!.runs, 154);
       expect(aslam.seasons['s1']!.batting!.runs, 97);
       // Must not pull Hashim's S2 into OX Aslam.
       expect(aslam.seasons['s2']?.batting?.runs ?? 0, 0);
     });
 
-    test('seeds eighteen Sunday scorecards with innings', () {
+    test('seeds twenty-one Sunday scorecards with innings', () {
       final matches = buildSeason2SeedMatches();
-      expect(matches, hasLength(18));
+      expect(matches, hasLength(21));
       expect(
         matches.map((m) => m.id),
         containsAll([
@@ -494,6 +496,9 @@ void main() {
           'ch_27015307',
           'ch_27016971',
           'ch_27017564',
+          'ch_27122948',
+          'ch_27124310',
+          'ch_27125177',
         ]),
       );
       for (final m in matches) {

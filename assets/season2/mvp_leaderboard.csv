@@ -1,45 +1,48 @@
 Player Name,Team Name,Player Role,Bowling Style,Batting Hand,Matches,Batting,Bowling,Fielding,Total
-Azhar Marmu,Gully Blasters,All-Rounder,Right-arm medium,RHB,12,24.078,2.601,4.928,31.607
-M S Rusfi,Farm Avengers CC,None,Right-arm medium,RHB,12,11.830,16.201,3.388,31.419
+M S Rusfi,Farm Avengers CC,None,Right-arm medium,RHB,14,14.742,20.298,3.388,38.428
+Azhar Marmu,Gully Blasters,All-Rounder,Right-arm medium,RHB,13,27.985,2.765,4.928,35.678
+Sadam,OX CC,None,Right-arm fast,RHB,9,9.067,9.777,3.958,22.802
+Aslam Hashim,Gully Blasters,All-Rounder,Right-arm medium,RHB,12,15.484,1.392,3.950,20.826
 MONIZ,OX CC,,Right-arm fast,RHB,10,11.145,7.112,2.520,20.777
-Siraj,OX CC,All-Rounder,Right-arm medium,RHB,12,2.341,13.970,2.520,18.831
-Aslam Hashim,Gully Blasters,All-Rounder,Right-arm medium,RHB,10,14.584,1.256,1.570,17.410
-Mohammed Razee,Farm Avengers CC,,Right-arm medium,RHB,12,9.052,1.417,6.328,16.797
-Sadam,OX CC,None,Right-arm fast,RHB,7,7.967,5.045,3.678,16.690
+Mohammed Razee,Farm Avengers CC,,Right-arm medium,RHB,14,9.352,4.078,6.832,20.262
+Siraj,OX CC,All-Rounder,Right-arm medium,RHB,14,2.542,13.848,2.520,18.910
+yousuf ka 3star,Farm Avengers CC,,Left-arm medium,LHB,13,4.972,11.198,1.680,17.850
+Anju,Gully Blasters,,Left-arm medium,RHB,10,13.826,1.305,1.820,16.951
+Bava Kvs,Farm Avengers CC,,Right-arm fast,RHB,13,14.527,0.117,2.184,16.828
 Syed Molana,Gully Blasters,,Right-arm medium,RHB,7,6.518,7.839,2.240,16.597
-Mansoor Vk,Farm Avengers CC,,Right-arm medium,RHB,12,4.521,9.612,1.644,15.777
-Bava Kvs,Farm Avengers CC,,Right-arm fast,RHB,11,13.225,0.117,2.184,15.526
-Anju,Gully Blasters,,Left-arm medium,RHB,8,11.226,1.366,1.820,14.412
-yousuf ka 3star,Farm Avengers CC,,Left-arm medium,LHB,11,4.672,9.610,0.000,14.282
-Mohammed Ali MC,Gully Blasters,All-Rounder,Left-arm medium,RHB,10,4.869,8.235,1.130,14.234
-Afzal Afu,Farm Avengers CC,,Right-arm medium,RHB,12,1.104,11.528,0.990,13.622
-Anas,OX CC,,Right-arm medium,RHB,12,6.189,5.041,1.680,12.910
-Niyaz,Farm Avengers CC,,Right-arm medium,RHB,9,9.317,1.135,2.044,12.496
-Shanu,OX CC,,Right-arm medium,RHB,8,3.505,0.138,6.104,9.747
-Ajaz,Gully Blasters,,Right-arm medium,RHB,8,5.406,3.304,0.980,9.690
+Mohammed Ali MC,Gully Blasters,All-Rounder,Left-arm medium,RHB,12,5.869,9.545,1.130,16.544
+Mansoor Vk,Farm Avengers CC,,Right-arm medium,RHB,14,4.921,9.529,2.018,16.468
+Munaf Cpm,Gully Blasters,,Right-arm medium,RHB,12,6.368,8.830,0.280,15.478
+Shanu,OX CC,,Right-arm medium,RHB,10,6.899,0.138,7.644,14.681
+Ajaz,Gully Blasters,,Right-arm medium,RHB,10,6.320,6.349,0.980,13.649
+Niyaz,Farm Avengers CC,,Right-arm medium,RHB,11,10.441,1.135,2.044,13.620
+Anas,OX CC,,Right-arm medium,RHB,14,6.620,5.224,1.680,13.524
+Afzal Afu,Farm Avengers CC,,Right-arm medium,RHB,14,1.104,11.385,0.990,13.479
+Anas Jr,Gully Blasters,,Right-arm medium,LHB,13,0.400,7.348,2.110,9.858
+MD Zabeer,Gully Blasters,All-Rounder,Right-arm fast,RHB,10,1.403,3.172,3.892,8.467
 Nasir Thala,OX CC,,Right-arm medium,RHB,7,6.496,1.387,0.430,8.313
-Munaf Cpm,Gully Blasters,,Right-arm medium,RHB,10,4.103,3.325,0.000,7.428
-MD Zabeer,Gully Blasters,All-Rounder,Right-arm fast,RHB,8,1.100,2.790,3.108,6.998
 MD Saif,Gully Blasters,All-Rounder,Right-arm fast,RHB,6,0.100,6.013,0.430,6.543
-Nowfal,OX CC,,Left-arm fast,RHB,8,3.072,2.213,0.000,5.285
-Anas Jr,Gully Blasters,,Right-arm medium,LHB,11,0.400,4.490,0.280,5.170
-Faizal,OX CC,,Right-arm medium,RHB,9,3.083,1.337,0.000,4.420
+Nowfal,OX CC,,Left-arm fast,RHB,10,4.185,2.097,0.000,6.282
+Immu,Gully Blasters,,Right-arm medium,RHB,4,2.033,3.197,0.000,5.230
+Faizal,OX CC,,Right-arm medium,RHB,10,3.083,1.337,0.280,4.700
 Praveen,Farm Avengers CC,,Right-arm fast,RHB,4,0.000,2.923,1.298,4.221
-Immu,Gully Blasters,,Right-arm medium,RHB,2,0.707,3.155,0.000,3.862
+Mohammad Hamza,OX CC,,Right-arm fast,RHB,9,0.303,2.651,1.120,4.074
+Jaseer S,OX CC,,Left-arm fast,RHB,9,3.602,0.106,0.000,3.708
+Giftson. T,OX CC,,Right-arm medium,RHB,3,3.551,-0.053,0.000,3.498
 Irshad Ali,Gully Blasters,,Right-arm medium,RHB,7,1.904,1.386,0.000,3.290
-Jaseer S,OX CC,,Left-arm fast,RHB,7,2.600,0.106,0.000,2.706
+Mohammed Arif,Gully Blasters,Middle-order batter,Right-arm medium,RHB,3,1.500,1.218,0.280,2.998
 Imthiyas,OX CC,Top-order batter,Left-arm medium,LHB,2,0.800,1.903,0.000,2.703
 Syed Shibli,Farm Avengers CC,None,Right-arm fast,RHB,4,0.900,1.699,0.000,2.599
-Mohammad Hamza,OX CC,,Right-arm fast,RHB,7,0.303,0.475,1.120,1.898
+Mufeed,Farm Avengers CC,,Right-arm fast,,6,0.000,1.283,1.260,2.543
 Gopinath,Farm Avengers CC,,Right-arm Off Break,RHB,4,0.704,0.106,0.990,1.800
-Mufeed,Farm Avengers CC,,Right-arm fast,,4,0.000,0.268,1.260,1.528
-Giftson. T,OX CC,,Right-arm medium,RHB,2,1.551,-0.053,0.000,1.498
-Mohammed Arif,Gully Blasters,Middle-order batter,Right-arm medium,RHB,2,1.200,0.000,0.280,1.480
+Gokul,Gully Blasters,All-Rounder,Right-arm medium,RHB,1,1.302,0.000,0.000,1.302
 Mubarak,OX CC,,Right-arm fast,RHB,1,0.000,1.074,0.000,1.074
 Fazil Farook,OX CC,,Right-arm fast,RHB,2,0.000,1.016,0.000,1.016
 Mulla,Gully Blasters,,Right-arm fast,RHB,2,0.502,-0.075,0.430,0.857
+Mashood A C,Gully Blasters,,Right-arm Leg Break,RHB,2,0.000,0.164,0.280,0.444
 Likith,Gully Blasters,,,,1,0.200,0.000,0.000,0.200
 Sabith Zakan,Farm Avengers CC,,,RHB,1,0.102,0.000,0.000,0.102
 Mohammed Rahoof,Farm Avengers CC,,,RHB,1,0.100,0.000,0.000,0.100
 Abishek k,Gully Blasters,,Right-arm fast,LHB,2,0.100,-0.108,0.000,-0.008
+Farziii,OX CC,,Right-arm fast,RHB,2,0.101,-0.142,0.000,-0.041
 Yeshwanth ,OX CC,,,RHB,2,0.000,-0.102,0.000,-0.102

@@ -9,48 +9,48 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 18;
+  static const totalMatches = 21;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 6 (6 Sep 2026) — from CricHeroes points table.
+/// Points after League Week 7 (13 Sep 2026) — from CricHeroes points table.
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 12,
-    won: 8,
-    lost: 4,
-    points: 16,
-    nrr: 0.483,
-    forScore: '717/116.2',
-    againstScore: '640/112.4',
-    last5: 'L-L-W-W-W',
+    played: 14,
+    won: 9,
+    lost: 5,
+    points: 18,
+    nrr: 0.598,
+    forScore: '844/136.2',
+    againstScore: '742/132.4',
+    last5: 'W-W-W-W-L',
   ),
   Season1Standing(
     rank: 2,
-    teamName: 'Farm Avengers CC',
-    played: 12,
-    won: 5,
+    teamName: 'OX CC',
+    played: 14,
+    won: 7,
     lost: 7,
-    points: 10,
-    nrr: 0.239,
-    forScore: '646/114.2',
-    againstScore: '634/117.1',
-    last5: 'W-W-L-L-W',
+    points: 14,
+    nrr: -0.502,
+    forScore: '734/135.3',
+    againstScore: '807/136.2',
+    last5: 'L-L-L-W-W',
   ),
   Season1Standing(
     rank: 3,
-    teamName: 'OX CC',
-    played: 12,
+    teamName: 'Farm Avengers CC',
+    played: 14,
     won: 5,
-    lost: 7,
+    lost: 9,
     points: 10,
-    nrr: -0.727,
-    forScore: '621/115.3',
-    againstScore: '710/116.2',
-    last5: 'W-W-L-L-L',
+    nrr: -0.098,
+    forScore: '736/134.2',
+    againstScore: '765/137.1',
+    last5: 'L-L-W-L-L',
   ),
 ];
 
@@ -138,6 +138,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'M S Rusfi',
     bestPlayerTeamName: 'Farm Avengers CC',
     bestPlayerSummary: 'MVP +9.6',
+  ),
+  Season2WeekAward(
+    weekIndex: 7,
+    weekId: '2026-09-13',
+    dateLabel: '13 Sep 2026',
+    bestTeamName: 'OX CC',
+    bestTeamSummary: '2–0',
+    bestPlayerName: 'Munaf Cpm',
+    bestPlayerTeamName: 'Farm Avengers CC',
+    bestPlayerSummary: 'MVP +8.1',
   ),
 ];
 
