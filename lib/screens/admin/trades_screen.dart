@@ -149,6 +149,7 @@ class _TradesScreenState extends State<TradesScreen> {
       case TradeKind.sell:
         await _recordSell(context);
       case TradeKind.package:
+      case TradeKind.purseTopUp:
         break;
     }
   }
@@ -488,17 +489,21 @@ class _TradeTile extends StatelessWidget {
       TradeKind.buy => 'Bought',
       TradeKind.sell => 'Sold',
       TradeKind.package => 'Package',
+      TradeKind.purseTopUp => 'Points top-up',
     };
     final from = kTeamNames[trade.fromTeamId] ?? trade.fromTeamId;
     final to = kTeamNames[trade.toTeamId] ?? trade.toTeamId;
     final legs = trade.packageLegs.isEmpty
         ? ''
         : '\n+ ${trade.packageLegs.map((l) => l.playerName).join(' · ')} → ${kTeamNames[trade.packageLegs.first.toTeamId] ?? trade.packageLegs.first.toTeamId}';
-    final pts = trade.auctionPoints > 0
+    final pts = trade.kind == TradeKind.purseTopUp
         ? '${formatAuctionPoints(trade.auctionPoints)} pts'
-        : trade.salePriceInr > 0
-            ? '₹${trade.salePriceInr}'
-            : '0 pts';
+            '${trade.salePriceInr > 0 ? ' · ₹${trade.salePriceInr}' : ''}'
+        : trade.auctionPoints > 0
+            ? '${formatAuctionPoints(trade.auctionPoints)} pts'
+            : trade.salePriceInr > 0
+                ? '₹${trade.salePriceInr}'
+                : '0 pts';
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(

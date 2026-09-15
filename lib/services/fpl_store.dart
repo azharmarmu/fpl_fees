@@ -354,6 +354,7 @@ class FplStore extends ChangeNotifier {
     if (_ensureReleaseArifAndFarziii()) changed = true;
     if (_ensureMiniAuction()) changed = true;
     if (_ensureTrade3ArifKvhToGb()) changed = true;
+    if (_ensureTrade4OxFarziiiFazil()) changed = true;
     return changed;
   }
 
@@ -613,6 +614,77 @@ class FplStore extends ChangeNotifier {
     );
   }
 
+  /// Trade 4: Anas (OX) buys ₹500 → 2000 pts, then Farziii (500) + Fazil Farook (750) from GB.
+  bool _ensureTrade4OxFarziiiFazil() {
+    var changed = false;
+    final topUpAt = DateTime(2026, 9, 12, 17);
+    final tradeAt = DateTime(2026, 9, 12, 18);
+
+    changed |= _ensureSeedPurseTopUp(
+      id: 's2_t4_ox_points_topup',
+      playerId: 'anas',
+      teamId: kTeamOx,
+      auctionPoints: 2000,
+      salePriceInr: 500,
+      tradedAt: topUpAt,
+      notes: 'Trade 4: Anas bought 2000 pts for ₹500',
+    );
+    changed |= _ensureSeedSell(
+      id: 's2_t4_farziii_to_ox',
+      playerId: 'farziii',
+      fromTeamId: kTeamGb,
+      toTeamId: kTeamOx,
+      auctionPoints: 500,
+      tradedAt: tradeAt,
+      notes: 'Trade 4: Farziii sold to OX for 500',
+    );
+    changed |= _ensureSeedSell(
+      id: 's2_t4_fazil_to_ox',
+      playerId: 'fazil_farook',
+      fromTeamId: kTeamGb,
+      toTeamId: kTeamOx,
+      auctionPoints: 750,
+      tradedAt: tradeAt.add(const Duration(minutes: 1)),
+      notes: 'Trade 4: Fazil Farook sold to OX for 750',
+    );
+    return changed;
+  }
+
+  bool _ensureSeedPurseTopUp({
+    required String id,
+    required String playerId,
+    required String teamId,
+    required int auctionPoints,
+    required DateTime tradedAt,
+    int salePriceInr = 0,
+    String notes = '',
+  }) {
+    if (suppressedSeedTrades.contains(id)) return false;
+    if (trades.any((t) => t.id == id)) return false;
+
+    final p = playerById(playerId);
+    if (p == null) return false;
+
+    trades.insert(
+      0,
+      PlayerTrade(
+        id: id,
+        playerId: p.id,
+        playerName: p.name,
+        fromTeamId: teamId,
+        toTeamId: teamId,
+        salePriceInr: salePriceInr,
+        commissionInr: 0,
+        commissionCollected: false,
+        tradedAt: tradedAt,
+        kind: TradeKind.purseTopUp,
+        auctionPoints: auctionPoints,
+        notes: notes,
+      ),
+    );
+    return true;
+  }
+
   bool _ensureSeedBuy({
     required String id,
     required String playerId,
@@ -763,6 +835,10 @@ class FplStore extends ChangeNotifier {
               fromTeamId: leg.fromTeamId,
               newCost: leg.auctionPoints,
             );
+          }
+        case TradeKind.purseTopUp:
+          if (t.toTeamId != kTeamFreeAgent && t.toTeamId != kTeamGuest) {
+            credit[t.toTeamId] = (credit[t.toTeamId] ?? 0) + t.auctionPoints;
           }
       }
     }
@@ -1623,6 +1699,8 @@ class FplStore extends ChangeNotifier {
             trade.packageLegs.every(
               (leg) => playerById(leg.playerId)?.teamId == leg.toTeamId,
             ),
+      TradeKind.purseTopUp =>
+        trades.isNotEmpty && trades.first.id == trade.id,
     };
   }
 
@@ -1657,6 +1735,8 @@ class FplStore extends ChangeNotifier {
         for (final leg in trade.packageLegs) {
           restore(leg.playerId, leg.fromTeamId);
         }
+      case TradeKind.purseTopUp:
+        break;
     }
 
     trades.removeAt(idx);
@@ -1683,6 +1763,9 @@ class FplStore extends ChangeNotifier {
       's2_mini_gopi_avengers',
       's2_mini_arif_kvh_avengers',
       's2_t3_arif_kvh_gb',
+      's2_t4_ox_points_topup',
+      's2_t4_farziii_to_ox',
+      's2_t4_fazil_to_ox',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);

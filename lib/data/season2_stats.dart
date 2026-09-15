@@ -35,6 +35,9 @@ String? season2CurrentTeamName(String playerName) {
   byName[_nk('Gopinath')] = kTeamNames[kTeamAvengers]!;
   byName[_nk('Arif KVH')] = kTeamNames[kTeamGb]!;
   // Trade 3 (see FplStore._ensureTrade3ArifKvhToGb).
+  // Trade 4 (see FplStore._ensureTrade4OxFarziiiFazil): Farziii + Fazil → OX.
+  byName[_nk('Farziii')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Fazil Farook')] = kTeamNames[kTeamOx]!;
   // CricHeroes spellings vs auction names.
   byName[_nk('Ajaz')] = kTeamNames[kTeamGb]!;
   return byName[key];

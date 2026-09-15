@@ -682,7 +682,7 @@ class PlayerTrade {
       );
 }
 
-enum TradeKind { release, buy, sell, package }
+enum TradeKind { release, buy, sell, package, purseTopUp }
 
 enum EligibilityReason { lifetime, subscription, weeklyPaid, unpaid, guest }
 
