@@ -9,48 +9,48 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 21;
+  static const totalMatches = 24;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 7 (13 Sep 2026) — from CricHeroes points table.
+/// Points after League Week 8 (20 Sep 2026) — from CricHeroes points table.
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 14,
-    won: 9,
-    lost: 5,
-    points: 18,
-    nrr: 0.598,
-    forScore: '844/136.2',
-    againstScore: '742/132.4',
-    last5: 'W-W-W-W-L',
+    played: 16,
+    won: 10,
+    lost: 6,
+    points: 20,
+    nrr: 0.657,
+    forScore: '913/153',
+    againstScore: '809/152.2',
+    last5: 'W-W-L-W-L',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 14,
-    won: 7,
-    lost: 7,
-    points: 14,
-    nrr: -0.502,
-    forScore: '734/135.3',
-    againstScore: '807/136.2',
-    last5: 'L-L-L-W-W',
+    played: 16,
+    won: 8,
+    lost: 8,
+    points: 16,
+    nrr: -0.489,
+    forScore: '814/155.1',
+    againstScore: '888/154.5',
+    last5: 'L-W-W-L-W',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 14,
-    won: 5,
-    lost: 9,
-    points: 10,
-    nrr: -0.098,
-    forScore: '736/134.2',
-    againstScore: '765/137.1',
-    last5: 'L-L-W-L-L',
+    played: 16,
+    won: 6,
+    lost: 10,
+    points: 12,
+    nrr: -0.161,
+    forScore: '805/152.5',
+    againstScore: '835/153.5',
+    last5: 'W-L-L-L-W',
   ),
 ];
 
@@ -148,6 +148,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'Munaf Cpm',
     bestPlayerTeamName: 'Farm Avengers CC',
     bestPlayerSummary: 'MVP +8.1',
+  ),
+  Season2WeekAward(
+    weekIndex: 8,
+    weekId: '2026-09-20',
+    dateLabel: '20 Sep 2026',
+    bestTeamName: 'Gully Blasters',
+    bestTeamSummary: '1–1 · best NRR',
+    bestPlayerName: 'MD Saif',
+    bestPlayerTeamName: 'Gully Blasters',
+    bestPlayerSummary: 'MVP +6.3 · 3/5',
   ),
 ];
 
