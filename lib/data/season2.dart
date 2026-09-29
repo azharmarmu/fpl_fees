@@ -9,48 +9,48 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 24;
+  static const totalMatches = 27;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 8 (20 Sep 2026) — from CricHeroes points table.
+/// Points after League Week 9 (27 Sep 2026) — from CricHeroes points table.
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 16,
+    played: 18,
     won: 10,
-    lost: 6,
+    lost: 8,
     points: 20,
-    nrr: 0.657,
-    forScore: '913/153',
-    againstScore: '809/152.2',
-    last5: 'W-W-L-W-L',
+    nrr: 0.361,
+    forScore: '994/173',
+    againstScore: '928/172.2',
+    last5: 'L-W-L-L-L',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 16,
-    won: 8,
+    played: 18,
+    won: 10,
     lost: 8,
-    points: 16,
-    nrr: -0.489,
-    forScore: '814/155.1',
-    againstScore: '888/154.5',
-    last5: 'L-W-W-L-W',
+    points: 20,
+    nrr: -0.325,
+    forScore: '930/175.1',
+    againstScore: '985/174.5',
+    last5: 'W-L-W-W-W',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 16,
-    won: 6,
-    lost: 10,
-    points: 12,
-    nrr: -0.161,
-    forScore: '805/152.5',
-    againstScore: '835/153.5',
-    last5: 'W-L-L-L-W',
+    played: 18,
+    won: 7,
+    lost: 11,
+    points: 14,
+    nrr: -0.033,
+    forScore: '915/172.5',
+    againstScore: '926/173.5',
+    last5: 'L-L-W-L-W',
   ),
 ];
 
@@ -158,6 +158,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'MD Saif',
     bestPlayerTeamName: 'Gully Blasters',
     bestPlayerSummary: 'MVP +6.3 · 3/5',
+  ),
+  Season2WeekAward(
+    weekIndex: 9,
+    weekId: '2026-09-27',
+    dateLabel: '27 Sep 2026',
+    bestTeamName: 'OX CC',
+    bestTeamSummary: '2–0',
+    bestPlayerName: 'Ajaz',
+    bestPlayerTeamName: 'Gully Blasters',
+    bestPlayerSummary: 'MVP +9.7 · 3/9 & 2/12',
   ),
 ];
 

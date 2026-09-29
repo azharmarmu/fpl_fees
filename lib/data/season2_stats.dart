@@ -38,6 +38,8 @@ String? season2CurrentTeamName(String playerName) {
   // Trade 4 (see FplStore._ensureTrade4OxFarziiiFazil): Farziii + Fazil → OX.
   byName[_nk('Farziii')] = kTeamNames[kTeamOx]!;
   byName[_nk('Fazil Farook')] = kTeamNames[kTeamOx]!;
+  // Trade 5 Week 9 loan then return (see FplStore._ensureTrade5RafiLoanWeek9).
+  byName[_nk('Mohammed Rafi')] = kTeamNames[kTeamAvengers]!;
   // CricHeroes spellings vs auction names.
   byName[_nk('Ajaz')] = kTeamNames[kTeamGb]!;
   return byName[key];

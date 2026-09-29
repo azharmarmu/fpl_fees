@@ -355,6 +355,7 @@ class FplStore extends ChangeNotifier {
     if (_ensureMiniAuction()) changed = true;
     if (_ensureTrade3ArifKvhToGb()) changed = true;
     if (_ensureTrade4OxFarziiiFazil()) changed = true;
+    if (_ensureTrade5RafiLoanWeek9()) changed = true;
     return changed;
   }
 
@@ -646,6 +647,30 @@ class FplStore extends ChangeNotifier {
       auctionPoints: 750,
       tradedAt: tradeAt.add(const Duration(minutes: 1)),
       notes: 'Trade 4: Fazil Farook sold to OX for 750',
+    );
+    return changed;
+  }
+
+  /// Trade 5: Week 9 loan — Mohammed Rafi Avengers → GB for 200, returned after the week.
+  bool _ensureTrade5RafiLoanWeek9() {
+    var changed = false;
+    changed |= _ensureSeedSell(
+      id: 's2_t5_rafi_loan_to_gb',
+      playerId: 'mohammed_rafi',
+      fromTeamId: kTeamAvengers,
+      toTeamId: kTeamGb,
+      auctionPoints: 200,
+      tradedAt: DateTime(2026, 9, 26, 18),
+      notes: 'Trade 5: Week 9 loan — Mohammed Rafi to GB for 200',
+    );
+    changed |= _ensureSeedSell(
+      id: 's2_t5_rafi_return_to_avengers',
+      playerId: 'mohammed_rafi',
+      fromTeamId: kTeamGb,
+      toTeamId: kTeamAvengers,
+      auctionPoints: 0,
+      tradedAt: DateTime(2026, 9, 28, 12),
+      notes: 'Trade 5: Loan ended — Mohammed Rafi returned to Avengers',
     );
     return changed;
   }
@@ -1766,6 +1791,8 @@ class FplStore extends ChangeNotifier {
       's2_t4_ox_points_topup',
       's2_t4_farziii_to_ox',
       's2_t4_fazil_to_ox',
+      's2_t5_rafi_loan_to_gb',
+      's2_t5_rafi_return_to_avengers',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);
