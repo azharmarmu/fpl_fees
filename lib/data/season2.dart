@@ -9,48 +9,49 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 27;
+  static const totalMatches = 30;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 9 (27 Sep 2026) — from CricHeroes points table.
+/// Points after League Week 10 (4 Oct 2026) — from CricHeroes points table.
+/// Week 10 matches reduced to 8 overs (light failure).
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 18,
-    won: 10,
+    played: 20,
+    won: 12,
     lost: 8,
-    points: 20,
-    nrr: 0.361,
-    forScore: '994/173',
-    againstScore: '928/172.2',
-    last5: 'L-W-L-L-L',
+    points: 24,
+    nrr: 0.436,
+    forScore: '1110/189',
+    againstScore: '1024/188.2',
+    last5: 'L-L-L-W-W',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 18,
-    won: 10,
-    lost: 8,
-    points: 20,
-    nrr: -0.325,
-    forScore: '930/175.1',
-    againstScore: '985/174.5',
-    last5: 'W-L-W-W-W',
+    played: 20,
+    won: 11,
+    lost: 9,
+    points: 22,
+    nrr: -0.182,
+    forScore: '1028/191.1',
+    againstScore: '1061/190.5',
+    last5: 'W-W-W-L-W',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 18,
+    played: 20,
     won: 7,
-    lost: 11,
+    lost: 13,
     points: 14,
-    nrr: -0.033,
-    forScore: '915/172.5',
-    againstScore: '926/173.5',
-    last5: 'L-L-W-L-W',
+    nrr: -0.252,
+    forScore: '967/188.5',
+    againstScore: '1020/189.5',
+    last5: 'W-L-W-L-L',
   ),
 ];
 
@@ -168,6 +169,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'Ajaz',
     bestPlayerTeamName: 'Gully Blasters',
     bestPlayerSummary: 'MVP +9.7 · 3/9 & 2/12',
+  ),
+  Season2WeekAward(
+    weekIndex: 10,
+    weekId: '2026-10-04',
+    dateLabel: '4 Oct 2026',
+    bestTeamName: 'Gully Blasters',
+    bestTeamSummary: '2–0 · 8-over day',
+    bestPlayerName: 'Azhar Marmu',
+    bestPlayerTeamName: 'Gully Blasters',
+    bestPlayerSummary: 'MVP +8.7 · 32* & 28*',
   ),
 ];
 
