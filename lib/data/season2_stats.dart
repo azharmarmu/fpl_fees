@@ -190,14 +190,30 @@ class _BowlAgg {
 /// Prefer scorecard bat/bowl + CSV field/MVP; stamp CH player ids & current teams.
 Season1Archive season2ArchiveWithScorecardTruth(Season1Archive csv) {
   final fromCards = season2StatsFromScorecards();
-  final idByName = <String, String>{
-    for (final r in csv.batting)
-      if (r.playerId.isNotEmpty) _nk(r.name): r.playerId,
-    for (final r in csv.bowling)
-      if (r.playerId.isNotEmpty) _nk(r.name): r.playerId,
-    for (final r in csv.fielding)
-      if (r.playerId.isNotEmpty) _nk(r.name): r.playerId,
-  };
+  // CricHeroes can export two different player_ids with the same display name
+  // (e.g. OX Anas vs a guest "Anas"). Prefer the id with more season volume so
+  // scorecard rows stamp onto the real career id used in Season 1 / all-time.
+  final idByName = <String, String>{};
+  final idWeight = <String, int>{};
+  void putId(String name, String playerId, int weight) {
+    if (playerId.isEmpty) return;
+    final key = _nk(name);
+    final prev = idWeight[key] ?? -1;
+    if (weight > prev) {
+      idByName[key] = playerId;
+      idWeight[key] = weight;
+    }
+  }
+
+  for (final r in csv.batting) {
+    putId(r.name, r.playerId, r.matches + r.innings + r.runs);
+  }
+  for (final r in csv.bowling) {
+    putId(r.name, r.playerId, r.matches + r.innings + r.wickets + r.runs);
+  }
+  for (final r in csv.fielding) {
+    putId(r.name, r.playerId, r.matches + r.totalDismissals);
+  }
 
   Season1BattingRow stampBat(Season1BattingRow r) => Season1BattingRow(
         playerId: idByName[_nk(r.name)] ?? r.playerId,

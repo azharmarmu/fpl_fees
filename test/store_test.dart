@@ -10,6 +10,7 @@ import 'package:fpl_fees/models/models.dart';
 import 'package:fpl_fees/services/contact_import.dart';
 import 'package:fpl_fees/services/fpl_store.dart';
 import 'package:fpl_fees/services/stat_players_repository.dart';
+import 'package:fpl_fees/widgets/all_time_leaders.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -386,6 +387,15 @@ void main() {
       expect(p.seasons['s1']!.bowling!.wickets, 30);
       expect(p.allTeams, contains('Gully Blasters'));
     });
+
+    test('all-time most wickets is Anas (S1+S2), not guest Anas id collision',
+        () async {
+      Season2Loader.clearCache();
+      final leaders = await AllTimeLeaders.load();
+      expect(leaders.wickets.name, 'Anas');
+      expect(leaders.wickets.playerId, '27519438');
+      expect(leaders.wickets.value, 55);
+    });
   });
 
   group('season2', () {
@@ -397,6 +407,10 @@ void main() {
       expect(data.batting.first.runs, 352);
       expect(data.bowling.first.name, 'M S Rusfi');
       expect(data.bowling.first.wickets, 18);
+      // Guest "Anas" (51435437) must not steal OX Anas's CricHeroes id.
+      final anasBowl = data.bowling.firstWhere((r) => r.name == 'Anas');
+      expect(anasBowl.playerId, '27519438');
+      expect(anasBowl.wickets, 6);
       expect(data.mvp.first.name, 'Azhar Marmu');
       expect(season2Standings.first.teamName, 'Gully Blasters');
       expect(season2Standings.first.points, 24);
