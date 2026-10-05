@@ -87,7 +87,7 @@ class HomeWeekSchedule extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
                 child: list.isEmpty
                     ? const Text(
-                        'No fixtures for this week (schedule covers Aug–Sep).',
+                        'No fixtures for this week.',
                         style: TextStyle(color: Colors.white38, fontSize: 13),
                       )
                     : Column(

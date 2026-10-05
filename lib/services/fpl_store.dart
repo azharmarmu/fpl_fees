@@ -1058,7 +1058,7 @@ class FplStore extends ChangeNotifier {
     return changed;
   }
 
-  /// Seed / merge Aug–Sep fixtures when missing (existing installs).
+  /// Seed / merge league fixtures when missing (existing installs).
   bool _ensureFixtures() {
     final seed = buildSeasonFixtures();
     if (fixtures.isEmpty) {

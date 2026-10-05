@@ -38,9 +38,9 @@ void main() {
       );
     });
 
-    test('Aug–Sep fixtures: 9 Sundays × 3 matches, rotating openers', () {
+    test('League Weeks 1–20 fixtures: 20 Sundays × 3 matches, rotating openers', () {
       final fixtures = buildSeasonFixtures();
-      expect(fixtures, hasLength(27));
+      expect(fixtures, hasLength(60));
       expect(fixtures.first.weekId, '2026-08-02');
       expect(fixtures.first.isOpening, isTrue);
       expect(fixtures.first.teamAId, kTeamOx);
@@ -48,12 +48,18 @@ void main() {
       final week2Open = fixtures.firstWhere((f) => f.id == '2026-08-09_1');
       expect(week2Open.teamAId, kTeamGb);
       expect(week2Open.teamBId, kTeamAvengers);
+      // Week 10 matches played order (GB open vs OX).
+      final week10Open = fixtures.firstWhere((f) => f.id == '2026-10-04_1');
+      expect(week10Open.teamAId, kTeamGb);
+      expect(week10Open.teamBId, kTeamOx);
+      expect(fixtures.any((f) => f.weekId == '2026-11-08'), isFalse);
+      expect(fixtures.last.weekId, '2026-12-20');
       // Each Sunday has slots 1–3 and every team appears twice.
       final byWeek = <String, List<ScheduledFixture>>{};
       for (final f in fixtures) {
         byWeek.putIfAbsent(f.weekId, () => []).add(f);
       }
-      expect(byWeek.keys, hasLength(9));
+      expect(byWeek.keys, hasLength(20));
       for (final list in byWeek.values) {
         expect(list.map((f) => f.slot).toSet(), {1, 2, 3});
         final counts = <String, int>{};

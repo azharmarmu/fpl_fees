@@ -123,11 +123,13 @@ List<LeagueWeek> buildSeasonWeeks() {
   return weeks;
 }
 
-/// First 2 months (Aug–Sep 2026): 3 matches / Sunday, each team plays 2.
+/// League Sundays Aug–Dec 2026 (skip VPL 8 Nov): 3 matches / Sunday, each team plays 2.
 /// Opening fixture rotates so every pairing (and team) gets 1st-match turns.
+/// Weeks 10–20 scheduled; Week 10 order matches played scorecards (8-over day).
 List<ScheduledFixture> buildSeasonFixtures() {
   // Each row: date, ordered pairings (slot 1 = opening).
   const days = <(int y, int m, int d, List<(String, String)>)>[
+    // Weeks 1–9 (Aug–Sep)
     (2026, 8, 2, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 8, 9, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 8, 16, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
@@ -137,6 +139,18 @@ List<ScheduledFixture> buildSeasonFixtures() {
     (2026, 9, 13, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 9, 20, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 9, 27, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
+    // Weeks 10–20 (Oct–Dec; skip 8 Nov VPL)
+    (2026, 10, 4, [(kTeamGb, kTeamOx), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
+    (2026, 10, 11, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
+    (2026, 10, 18, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
+    (2026, 10, 25, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
+    (2026, 11, 1, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers)]),
+    (2026, 11, 15, [(kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb)]),
+    (2026, 11, 22, [(kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers)]),
+    (2026, 11, 29, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
+    (2026, 12, 6, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
+    (2026, 12, 13, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
+    (2026, 12, 20, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers)]),
   ];
 
   final out = <ScheduledFixture>[];

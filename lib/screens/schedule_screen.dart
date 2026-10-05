@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/fpl_store.dart';
 import '../widgets/schedule_list.dart';
 
-/// Full Aug–Sep fixture list (separate from scorecards).
+/// Full league fixture list (separate from scorecards).
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key, required this.store});
 
@@ -32,7 +32,7 @@ class ScheduleScreen extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Text(
-                  'Aug–Sep · feed CricHeroes in this order (1st = opening)',
+                  'League Weeks 1–20 · feed CricHeroes in this order (1st = opening). VPL week skipped.',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               ),
