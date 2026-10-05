@@ -91,7 +91,9 @@ List<FplPlayer> buildSeedPlayers() {
 }
 
 List<LeagueWeek> buildSeasonWeeks() {
-  // Sundays 2 Aug 2026 – 27 Dec 2026; 8 Nov = Diwali / VPL placeholder
+  // Sundays 2 Aug 2026 – 27 Dec 2026.
+  // Non-league: 1 Nov (VPL pre-season / friendly), 8 Nov (VPL / Diwali).
+  // Exactly 20 FPL league Sundays → 40 matches per team (2 per Sunday).
   final weeks = <LeagueWeek>[];
   var d = DateTime(2026, 8, 2);
   final end = DateTime(2026, 12, 27);
@@ -99,8 +101,17 @@ List<LeagueWeek> buildSeasonWeeks() {
   while (!d.isAfter(end)) {
     final id =
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final isVplPreseason = d.year == 2026 && d.month == 11 && d.day == 1;
     final isVpl = d.year == 2026 && d.month == 11 && d.day == 8;
-    if (isVpl) {
+    if (isVplPreseason) {
+      weeks.add(LeagueWeek(
+        id: id,
+        date: d,
+        label: 'VPL Pre-season / Friendly',
+        isVpl: false,
+        isLeague: false,
+      ));
+    } else if (isVpl) {
       weeks.add(LeagueWeek(
         id: id,
         date: d,
@@ -123,9 +134,9 @@ List<LeagueWeek> buildSeasonWeeks() {
   return weeks;
 }
 
-/// League Sundays Aug–Dec 2026 (skip VPL 8 Nov): 3 matches / Sunday, each team plays 2.
-/// Opening fixture rotates so every pairing (and team) gets 1st-match turns.
-/// Weeks 10–20 scheduled; Week 10 order matches played scorecards (8-over day).
+/// League Sundays Aug–Dec 2026: 20 weeks × 3 matches (each team plays 2 → 40 total).
+/// Skips 1 Nov (friendly / VPL pre-season) and 8 Nov (VPL). Opening fixture rotates.
+/// Week 10 order matches played scorecards (8-over day).
 List<ScheduledFixture> buildSeasonFixtures() {
   // Each row: date, ordered pairings (slot 1 = opening).
   const days = <(int y, int m, int d, List<(String, String)>)>[
@@ -139,18 +150,18 @@ List<ScheduledFixture> buildSeasonFixtures() {
     (2026, 9, 13, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 9, 20, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 9, 27, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
-    // Weeks 10–20 (Oct–Dec; skip 8 Nov VPL)
+    // Weeks 10–20 (Oct–Dec; skip 1 Nov friendly + 8 Nov VPL)
     (2026, 10, 4, [(kTeamGb, kTeamOx), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 10, 11, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 10, 18, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
     (2026, 10, 25, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
-    (2026, 11, 1, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers)]),
     (2026, 11, 15, [(kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 11, 22, [(kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers)]),
     (2026, 11, 29, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 12, 6, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
     (2026, 12, 13, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 12, 20, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers)]),
+    (2026, 12, 27, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
   ];
 
   final out = <ScheduledFixture>[];

@@ -32,7 +32,7 @@ class ScheduleScreen extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Text(
-                  'League Weeks 1–20 · feed CricHeroes in this order (1st = opening). VPL week skipped.',
+                  'League Weeks 1–20 · 40 matches/team. Skip 1 Nov (friendly) & 8 Nov (VPL).',
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               ),

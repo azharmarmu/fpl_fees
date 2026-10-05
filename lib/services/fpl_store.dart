@@ -98,7 +98,7 @@ class FplStore extends ChangeNotifier {
             _backfillTeamNames() |
             _backfillMissingSeedPlayers() |
             _removeNonSquadGuests() |
-            _ensureFixtures() |
+            _ensureSeasonCalendar() |
             _ensureSeason2Scorecards() |
             _migrateWeek4GroundFeesToWeek1() |
             _ensureTradeWindowAndReleases();
@@ -108,7 +108,7 @@ class FplStore extends ChangeNotifier {
           await _persistLocal();
         }
       } else if (players.isNotEmpty) {
-        _ensureFixtures();
+        _ensureSeasonCalendar();
         _ensureSeason2Scorecards();
         _ensureTradeWindowAndReleases();
         await _pushCloud();
@@ -121,7 +121,7 @@ class FplStore extends ChangeNotifier {
             _backfillTeamNames() |
             _backfillMissingSeedPlayers() |
             _removeNonSquadGuests() |
-            _ensureFixtures() |
+            _ensureSeasonCalendar() |
             _ensureSeason2Scorecards() |
             _migrateWeek4GroundFeesToWeek1() |
             _ensureTradeWindowAndReleases();
@@ -209,7 +209,7 @@ class FplStore extends ChangeNotifier {
           _backfillTeamNames() |
           _backfillMissingSeedPlayers() |
           _removeNonSquadGuests() |
-          _ensureFixtures() |
+          _ensureSeasonCalendar() |
           _ensureSeason2Scorecards() |
           _migrateWeek4GroundFeesToWeek1() |
           _ensureTradeWindowAndReleases();
@@ -1056,6 +1056,53 @@ class FplStore extends ChangeNotifier {
     }
 
     return changed;
+  }
+
+  /// Resync week labels / league flags from seed (e.g. 1 Nov → non-league).
+  /// Preserves per-week fee overrides. Also drops fixtures on non-league Sundays.
+  bool _ensureSeasonCalendar() {
+    final seedWeeks = buildSeasonWeeks();
+    final byId = {for (final w in weeks) w.id: w};
+    var changed = false;
+    final next = <LeagueWeek>[];
+    for (final s in seedWeeks) {
+      final prev = byId[s.id];
+      if (prev == null) {
+        next.add(s);
+        changed = true;
+        continue;
+      }
+      final merged = LeagueWeek(
+        id: s.id,
+        date: s.date,
+        label: s.label,
+        isVpl: s.isVpl,
+        isLeague: s.isLeague,
+        weeklyFee: prev.weeklyFee,
+        guestFee: prev.guestFee,
+      );
+      if (prev.label != merged.label ||
+          prev.isVpl != merged.isVpl ||
+          prev.isLeague != merged.isLeague ||
+          prev.date != merged.date) {
+        changed = true;
+      }
+      next.add(merged);
+    }
+    if (weeks.length != next.length ||
+        weeks.map((w) => w.id).join() != next.map((w) => w.id).join()) {
+      changed = true;
+    }
+    weeks = next;
+
+    final leagueIds = {
+      for (final w in weeks)
+        if (w.isLeague) w.id,
+    };
+    final before = fixtures.length;
+    fixtures = fixtures.where((f) => leagueIds.contains(f.weekId)).toList();
+    if (fixtures.length != before) changed = true;
+    return changed | _ensureFixtures();
   }
 
   /// Seed / merge league fixtures when missing (existing installs).

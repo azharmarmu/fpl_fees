@@ -351,6 +351,25 @@ class FirestoreSync {
         }
       }
       if (deleteBatch != null) await deleteBatch.commit();
+
+      // Drop non-league fixtures removed locally (e.g. 1 Nov friendly week).
+      final remoteFixtures = await _fixtures.get();
+      final fixtureIds = fixtures.map((f) => f.id).toSet();
+      deleteBatch = null;
+      n = 0;
+      for (final d in remoteFixtures.docs) {
+        if (!fixtureIds.contains(d.id)) {
+          deleteBatch ??= _db.batch();
+          deleteBatch.delete(d.reference);
+          n++;
+          if (n >= 400) {
+            await deleteBatch.commit();
+            deleteBatch = null;
+            n = 0;
+          }
+        }
+      }
+      if (deleteBatch != null) await deleteBatch.commit();
     } catch (e, st) {
       debugPrint('Firestore push failed: $e\n$st');
       rethrow;

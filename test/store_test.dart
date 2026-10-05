@@ -26,7 +26,17 @@ void main() {
       expect(players.length, 57);
       expect(weeks.first.id, '2026-08-02');
       expect(weeks.last.id, '2026-12-27');
+      expect(weeks.where((w) => w.isLeague), hasLength(20));
+      expect(weeks.where((w) => !w.isLeague), hasLength(2));
       expect(weeks.where((w) => w.isVpl), hasLength(1));
+      expect(
+        weeks.firstWhere((w) => w.id == '2026-11-01').label,
+        'VPL Pre-season / Friendly',
+      );
+      expect(
+        weeks.firstWhere((w) => w.id == '2026-11-08').label,
+        'VPL Season 2 (Diwali week)',
+      );
       expect(players.where((p) => p.isLifetimeMember), hasLength(7));
       expect(
         players.firstWhere((p) => p.id == 'mohammed_ali_mc').isLifetimeMember,
@@ -53,25 +63,32 @@ void main() {
       final week10Open = fixtures.firstWhere((f) => f.id == '2026-10-04_1');
       expect(week10Open.teamAId, kTeamGb);
       expect(week10Open.teamBId, kTeamOx);
+      expect(fixtures.any((f) => f.weekId == '2026-11-01'), isFalse);
       expect(fixtures.any((f) => f.weekId == '2026-11-08'), isFalse);
-      expect(fixtures.last.weekId, '2026-12-20');
-      // Each Sunday has slots 1–3 and every team appears twice.
+      expect(fixtures.last.weekId, '2026-12-27');
+      // Each Sunday has slots 1–3 and every team appears twice → 40 matches/team.
       final byWeek = <String, List<ScheduledFixture>>{};
       for (final f in fixtures) {
         byWeek.putIfAbsent(f.weekId, () => []).add(f);
       }
       expect(byWeek.keys, hasLength(20));
+      final teamMatches = <String, int>{};
       for (final list in byWeek.values) {
         expect(list.map((f) => f.slot).toSet(), {1, 2, 3});
         final counts = <String, int>{};
         for (final f in list) {
           counts[f.teamAId] = (counts[f.teamAId] ?? 0) + 1;
           counts[f.teamBId] = (counts[f.teamBId] ?? 0) + 1;
+          teamMatches[f.teamAId] = (teamMatches[f.teamAId] ?? 0) + 1;
+          teamMatches[f.teamBId] = (teamMatches[f.teamBId] ?? 0) + 1;
         }
         expect(counts[kTeamOx], 2);
         expect(counts[kTeamGb], 2);
         expect(counts[kTeamAvengers], 2);
       }
+      expect(teamMatches[kTeamOx], 40);
+      expect(teamMatches[kTeamGb], 40);
+      expect(teamMatches[kTeamAvengers], 40);
     });
   });
 
