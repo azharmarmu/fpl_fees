@@ -1106,25 +1106,48 @@ class FplStore extends ChangeNotifier {
   }
 
   /// Seed / merge league fixtures when missing (existing installs).
+  /// Also rewrites pairings from seed when a Sunday's played order changes.
   bool _ensureFixtures() {
     final seed = buildSeasonFixtures();
     if (fixtures.isEmpty) {
       fixtures = List.of(seed);
       return true;
     }
-    final ids = fixtures.map((f) => f.id).toSet();
+    final byId = {for (final f in fixtures) f.id: f};
     var changed = false;
+    final next = <ScheduledFixture>[];
+    final seedIds = <String>{};
     for (final f in seed) {
-      if (ids.contains(f.id)) continue;
-      fixtures.add(f);
-      changed = true;
+      seedIds.add(f.id);
+      final prev = byId[f.id];
+      if (prev == null) {
+        next.add(f);
+        changed = true;
+        continue;
+      }
+      if (prev.teamAId != f.teamAId ||
+          prev.teamBId != f.teamBId ||
+          prev.teamAName != f.teamAName ||
+          prev.teamBName != f.teamBName ||
+          prev.slot != f.slot ||
+          prev.weekId != f.weekId) {
+        next.add(f);
+        changed = true;
+      } else {
+        next.add(prev);
+      }
+    }
+    for (final f in fixtures) {
+      if (seedIds.contains(f.id)) continue;
+      next.add(f);
     }
     if (changed) {
-      fixtures.sort((a, b) {
+      next.sort((a, b) {
         final dc = a.date.compareTo(b.date);
         if (dc != 0) return dc;
         return a.slot.compareTo(b.slot);
       });
+      fixtures = next;
     }
     return changed;
   }

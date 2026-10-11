@@ -152,7 +152,8 @@ List<ScheduledFixture> buildSeasonFixtures() {
     (2026, 9, 27, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
     // Weeks 10–20 (Oct–Dec; skip 1 Nov friendly + 8 Nov VPL)
     (2026, 10, 4, [(kTeamGb, kTeamOx), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
-    (2026, 10, 11, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
+    // Week 11 played order (Avengers open vs GB).
+    (2026, 10, 11, [(kTeamAvengers, kTeamGb), (kTeamGb, kTeamOx), (kTeamOx, kTeamAvengers)]),
     (2026, 10, 18, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
     (2026, 10, 25, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 11, 15, [(kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb)]),

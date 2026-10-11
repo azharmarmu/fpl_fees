@@ -1,55 +1,56 @@
 player_id,name,team_id,team_name,total_match,innings,total_wickets,balls,highest_wicket,economy,SR,maidens,avg,runs,bowling_style,overs,dot_balls
-23802583,M S Rusfi,14305848,Farm Avengers CC,20,20,18,237,3,4.23,13.17,2,9.28,167,Right-arm medium,39.3,140
-33116935,Mansoor Vk,14305848,Farm Avengers CC,20,20,13,184,2,5.41,14.15,0,12.77,166,Right-arm medium,30.4,96
-41754509,Afzal Afu,14305848,Farm Avengers CC,20,18,11,156,2,5.35,14.18,2,12.64,139,Right-arm medium,26.0,84
-41828992,Siraj,10521833,OX CC,20,20,11,209,2,5.43,19.00,4,17.18,189,Right-arm medium,34.5,116
-41692561,Munaf Cpm,10521995,Gully Blasters,18,17,11,120,3,5.95,10.91,0,10.82,119,Right-arm medium,20.0,58
-9072852,Ajaz,10521995,Gully Blasters,16,16,9,157,3,4.70,17.44,0,13.67,123,Right-arm medium,26.1,85
+23802583,M S Rusfi,14305848,Farm Avengers CC,22,22,18,261,3,4.34,14.50,2,10.5,189,Right-arm medium,43.3,153
+41692561,Munaf Cpm,10521995,Gully Blasters,20,19,14,144,3,5.58,10.29,0,9.57,134,Right-arm medium,24.0,71
+33116935,Mansoor Vk,14305848,Farm Avengers CC,22,22,14,202,2,5.58,14.43,0,13.43,188,Right-arm medium,33.4,102
+41754509,Afzal Afu,14305848,Farm Avengers CC,22,20,13,174,2,5.31,13.38,2,11.85,154,Right-arm medium,29.0,93
+41828992,Siraj,10521833,OX CC,22,22,12,233,2,5.48,19.42,4,17.75,213,Right-arm medium,38.5,125
+9072852,Ajaz,10521995,Gully Blasters,18,18,11,181,3,4.54,16.45,0,12.45,137,Right-arm medium,30.1,102
 42791863,Md Saif,10521995,Gully Blasters,10,10,9,114,3,4.74,12.67,0,10,90,Right-arm fast,19.0,73
-41989291,Yousuf Ka 3star,14305848,Farm Avengers CC,20,17,8,119,3,5.45,14.88,1,13.5,108,Left-arm medium,19.5,65
-33112269,Mohammed Ali Mc,10521995,Gully Blasters,18,12,7,85,2,6.28,12.14,0,12.71,89,Left-arm medium,14.1,45
-3450480,Sadam,10521833,OX CC,12,11,6,120,3,4.50,20.00,0,15,90,Right-arm fast,20.0,61
+41989291,Yousuf Ka 3star,14305848,Farm Avengers CC,22,19,9,131,3,5.36,14.56,1,13,117,Left-arm medium,21.5,71
+27519438,Anas,10521833,OX CC,22,21,7,240,2,5.55,34.29,1,31.71,222,Right-arm medium,40.0,123
+33112269,Mohammed Ali Mc,10521995,Gully Blasters,20,14,7,97,2,6.25,13.86,0,14.43,101,Left-arm medium,16.1,51
 33111878,Moniz,10521833,OX CC,16,16,6,192,2,4.53,32.00,2,24.17,145,Right-arm fast,32.0,118
-27519438,Anas,10521833,OX CC,20,19,6,216,2,5.53,36.00,1,33.17,199,Right-arm medium,36.0,110
+3450480,Sadam,10521833,OX CC,14,13,6,144,3,4.92,24.00,0,19.67,118,Right-arm fast,24.0,70
 9419207,Syed Molana,10521995,Gully Blasters,7,7,5,75,2,4.00,15.00,1,10,50,Right-arm medium,12.3,48
-13346088,Azhar Marmu,10521995,Gully Blasters,20,15,5,96,1,6.00,19.20,1,19.2,96,Right-arm medium,16.0,47
-41721476,Anas Jr,10521995,Gully Blasters,21,19,5,150,2,6.92,30.00,0,34.6,173,Right-arm medium,25.0,73
-3450482,Anju,10521995,Gully Blasters,14,13,4,114,2,5.47,28.50,2,26,104,Left-arm medium,19.0,65
-33133780,Mohammed Razee,14305848,Farm Avengers CC,19,15,3,108,1,7.39,36.00,0,44.33,133,Right-arm medium,18.0,53
-9419267,Nasir Thala,10521833,OX CC,14,9,3,51,2,8.24,17.00,0,23.33,70,Right-arm medium,8.3,19
-5538968,Immu,10521995,Gully Blasters,4,4,2,36,1,4.33,18.00,0,13,26,Right-arm medium,6.0,22
+13346088,Azhar Marmu,10521995,Gully Blasters,22,15,5,96,1,6.00,19.20,1,19.2,96,Right-arm medium,16.0,47
+41721476,Anas Jr,10521995,Gully Blasters,23,21,5,162,2,6.81,32.40,0,36.8,184,Right-arm medium,27.0,78
+9419267,Nasir Thala,10521833,OX CC,16,11,5,63,2,7.43,12.60,0,15.6,78,Right-arm medium,10.3,26
+41721387,Md Zabeer,10521995,Gully Blasters,12,12,4,108,2,3.72,27.00,1,16.75,67,Right-arm fast,18.0,61
+3450482,Anju,10521995,Gully Blasters,16,15,4,126,2,5.57,31.50,2,29.25,117,Left-arm medium,21.0,71
+33133780,Mohammed Razee,14305848,Farm Avengers CC,21,17,4,117,1,7.23,29.25,0,35.25,141,Right-arm medium,19.3,56
+3456038,Aslam Hashim,10521995,Gully Blasters,18,16,3,102,1,6.06,34.00,0,34.33,103,Right-arm medium,17.0,49
+5538968,Immu,10521995,Gully Blasters,6,6,2,60,1,4.90,30.00,0,24.5,49,Right-arm medium,10.0,34
 42947960,Praveen,14305848,Farm Avengers CC,7,6,2,42,1,5.14,21.00,0,18,36,Right-arm fast,7.0,21
 41753008,Mohammed Arif,10521995,Gully Blasters,11,3,2,18,1,5.33,9.00,0,8,16,Right-arm medium,3.0,9
-27379139,Faizal,10521833,OX CC,20,7,2,42,1,6.00,21.00,0,21,42,Right-arm medium,7.0,24
-3456038,Aslam Hashim,10521995,Gully Blasters,16,14,2,90,1,6.13,45.00,0,46,92,Right-arm medium,15.0,43
+27379139,Faizal,10521833,OX CC,22,7,2,42,1,6.00,21.00,0,21,42,Right-arm medium,7.0,24
 53138478,Mufeed,14305848,Farm Avengers CC,15,8,2,45,1,6.27,22.50,0,23.5,47,Right-arm fast,7.3,21
+41692880,Nowfal,10521833,OX CC,20,15,2,90,1,6.40,45.00,0,48,96,Left-arm fast,15.0,34
 9419259,Imthiyas,10521833,OX CC,2,2,1,12,1,2.00,12.00,0,4,4,Left-arm medium,2.0,9
-41721387,Md Zabeer,10521995,Gully Blasters,10,10,1,84,1,3.50,84.00,1,49,49,Right-arm fast,14.0,52
-41744035,Mohammad Hamza,10521833,OX CC,14,12,1,67,1,5.01,67.00,0,56,56,Right-arm fast,11.1,32
 33112173,Syed Shibli,14305848,Farm Avengers CC,6,4,1,31,1,5.03,31.00,0,26,26,Right-arm fast,5.1,19
-41692880,Nowfal,10521833,OX CC,18,13,1,78,1,6.31,78.00,0,82,82,Left-arm fast,13.0,31
-41972628,Shanu,10521833,OX CC,16,7,1,42,1,6.71,42.00,0,47,47,Right-arm medium,7.0,18
+41744035,Mohammad Hamza,10521833,OX CC,16,14,1,79,1,5.54,79.00,0,73,73,Right-arm fast,13.1,36
+41972628,Shanu,10521833,OX CC,18,7,1,42,1,6.71,42.00,0,47,47,Right-arm medium,7.0,18
 14542156,Niyaz,14305848,Farm Avengers CC,14,2,1,12,1,7.00,12.00,0,14,14,Right-arm medium,2.0,4
-33112864,Irshad Ali,10521995,Gully Blasters,14,7,1,35,1,7.71,35.00,0,45,45,Right-arm medium,5.5,15
+33112864,Irshad Ali,10521995,Gully Blasters,16,7,1,35,1,7.71,35.00,0,45,45,Right-arm medium,5.5,15
 9419293,Mubarak,10521833,OX CC,2,1,1,6,1,9.00,6.00,0,9,9,Right-arm fast,1.0,3
 41754588,Fazil Farook,10521833,OX CC,4,2,1,11,1,9.82,11.00,0,18,18,Right-arm fast,1.5,3
 41721426,Raheem,14305848,Farm Avengers CC,1,1,0,4,0,0.00,0.00,0,0,0,Right-arm fast,0.4,4
 41692707,Mashood A C,14305848,Farm Avengers CC,6,1,0,6,0,2.00,0.00,0,0,2,Right-arm Leg Break,1.0,5
-41721419,Jaseer S,10521833,OX CC,16,3,0,18,0,2.67,0.00,1,0,8,Left-arm fast,3.0,12
+41721419,Jaseer S,10521833,OX CC,18,3,0,18,0,2.67,0.00,1,0,8,Left-arm fast,3.0,12
 11456739,Gopinath,14305848,Farm Avengers CC,10,1,0,6,0,4.00,0.00,0,0,4,Right-arm Off Break,1.0,4
 41972640,Farziii,10521833,OX CC,2,2,0,12,0,5.50,0.00,0,0,11,Right-arm fast,2.0,4
 41721305,Siddique Sidu,10521995,Gully Blasters,2,2,0,18,0,5.67,0.00,0,0,17,Right-arm fast,3.0,10
-51435437,Anas,14305848,Farm Avengers CC,2,2,0,12,0,6.00,0.00,0,0,12,Right-arm medium,2.0,6
 44045808,Mulla,10521995,Gully Blasters,4,1,0,6,0,6.00,0.00,0,0,6,Right-arm fast,1.0,3
-31091273,Abishek K,10521995,Gully Blasters,4,4,0,30,0,6.80,0.00,0,0,34,Right-arm fast,5.0,14
-33116981,Bava Kvs,14305848,Farm Avengers CC,20,4,0,24,0,7.25,0.00,0,0,29,Right-arm fast,4.0,10
+51435437,Anas,14305848,Farm Avengers CC,2,2,0,12,0,6.00,0.00,0,0,12,Right-arm medium,2.0,6
+31091273,Abishek K,10521995,Gully Blasters,6,6,0,42,0,7.14,0.00,0,0,50,Right-arm fast,7.0,15
+33116981,Bava Kvs,14305848,Farm Avengers CC,22,4,0,24,0,7.25,0.00,0,0,29,Right-arm fast,4.0,10
+54349471,Yusuf ,14305848,Farm Avengers CC,2,2,0,12,0,7.50,0.00,0,0,15,-,2.0,6
 21879177,Mohammed Rafi,10521995,Gully Blasters,2,1,0,6,0,8.00,0.00,0,0,8,Right-arm Off Break,1.0,3
-53372145,Yeshwanth,10521833,OX CC,2,2,0,12,0,12.50,0.00,0,0,25,-,2.0,2
-20358416,Giftson T,10521833,OX CC,6,2,0,8,0,18.00,0.00,0,0,24,Right-arm medium,1.2,1
-54198419,Salim,10521995,Gully Blasters,3,0,,,,0.00,0.00,0,0,0,-,0.0,0
-53592152,Likith,10521995,Gully Blasters,3,0,,,,0.00,0.00,0,0,0,-,0.0,0
+53372145,Yeshwanth,10521833,OX CC,2,2,0,12,0,12.50,0.00,0,0,25,Right-arm medium,2.0,2
+20358416,Giftson T,10521833,OX CC,8,2,0,8,0,18.00,0.00,0,0,24,Right-arm medium,1.2,1
 42402540,Sabith Zakan,14305848,Farm Avengers CC,1,0,,,,0.00,0.00,0,0,0,-,0.0,0
-41920317,Arul,14305848,Farm Avengers CC,1,0,,,,0.00,0.00,0,0,0,Right-arm fast,0.0,0
+41920317,Arul,14305848,Farm Avengers CC,3,0,,,,0.00,0.00,0,0,0,Right-arm fast,0.0,0
 41803927,Mohammed Irfan,10521995,Gully Blasters,2,0,,,,0.00,0.00,0,0,0,Right-arm fast,0.0,0
 33813344,Mohammed Rahoof,14305848,Farm Avengers CC,2,0,,,,0.00,0.00,0,0,0,-,0.0,0
-30938839,Gokul,10521995,Gully Blasters,6,0,,,,0.00,0.00,0,0,0,Right-arm medium,0.0,0
+53592152,Likith,10521995,Gully Blasters,3,0,,,,0.00,0.00,0,0,0,-,0.0,0
+54198419,Salim,10521995,Gully Blasters,3,0,,,,0.00,0.00,0,0,0,-,0.0,0
+30938839,Gokul,10521995,Gully Blasters,8,0,,,,0.00,0.00,0,0,0,Right-arm medium,0.0,0

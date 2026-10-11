@@ -9,49 +9,48 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 30;
+  static const totalMatches = 33;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 }
 
-/// Points after League Week 10 (4 Oct 2026) — from CricHeroes points table.
-/// Week 10 matches reduced to 8 overs (light failure).
+/// Points after League Week 11 (11 Oct 2026) — from CricHeroes points table.
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 20,
-    won: 12,
-    lost: 8,
-    points: 24,
-    nrr: 0.436,
-    forScore: '1110/189',
-    againstScore: '1024/188.2',
-    last5: 'L-L-L-W-W',
+    played: 22,
+    won: 13,
+    lost: 9,
+    points: 26,
+    nrr: 0.428,
+    forScore: '1224/209',
+    againstScore: '1131/208.2',
+    last5: 'L-W-W-L-W',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 20,
-    won: 11,
-    lost: 9,
-    points: 22,
-    nrr: -0.182,
-    forScore: '1028/191.1',
-    againstScore: '1061/190.5',
-    last5: 'W-W-W-L-W',
+    played: 22,
+    won: 12,
+    lost: 10,
+    points: 24,
+    nrr: -0.213,
+    forScore: '1143/211.1',
+    againstScore: '1186/210.5',
+    last5: 'W-L-W-L-W',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 20,
-    won: 7,
-    lost: 13,
-    points: 14,
-    nrr: -0.252,
-    forScore: '967/188.5',
-    againstScore: '1020/189.5',
-    last5: 'W-L-W-L-L',
+    played: 22,
+    won: 8,
+    lost: 14,
+    points: 16,
+    nrr: -0.214,
+    forScore: '1076/208.5',
+    againstScore: '1126/209.5',
+    last5: 'W-L-L-W-L',
   ),
 ];
 
@@ -179,6 +178,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'Azhar Marmu',
     bestPlayerTeamName: 'Gully Blasters',
     bestPlayerSummary: 'MVP +8.7 · 32* & 28*',
+  ),
+  Season2WeekAward(
+    weekIndex: 11,
+    weekId: '2026-10-11',
+    dateLabel: '11 Oct 2026',
+    bestTeamName: 'Gully Blasters',
+    bestTeamSummary: '1–1 · best NRR',
+    bestPlayerName: 'Munaf Cpm',
+    bestPlayerTeamName: 'Farm Avengers CC',
+    bestPlayerSummary: 'MVP +6.7 · 25 & 2/3',
   ),
 ];
 
