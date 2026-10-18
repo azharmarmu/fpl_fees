@@ -1113,10 +1113,14 @@ class FplStore extends ChangeNotifier {
       fixtures = List.of(seed);
       return true;
     }
+    final seedIds = seed.map((f) => f.id).toSet();
     final byId = {for (final f in fixtures) f.id: f};
     var changed = false;
+    if (fixtures.any((f) => !seedIds.contains(f.id))) {
+      fixtures = fixtures.where((f) => seedIds.contains(f.id)).toList();
+      changed = true;
+    }
     final next = <ScheduledFixture>[];
-    final seedIds = <String>{};
     for (final f in seed) {
       seedIds.add(f.id);
       final prev = byId[f.id];

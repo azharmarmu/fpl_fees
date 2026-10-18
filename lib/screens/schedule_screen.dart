@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../data/season2.dart';
 import '../services/fpl_store.dart';
 import '../widgets/schedule_list.dart';
 
@@ -32,7 +33,7 @@ class ScheduleScreen extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Text(
-                  'League Weeks 1–20 · 40 matches/team. Skip 1 Nov (friendly) & 8 Nov (VPL).',
+                  Season2Meta.schedulePolicy,
                   style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               ),

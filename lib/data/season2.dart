@@ -12,6 +12,13 @@ class Season2Meta {
   static const totalMatches = 33;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
+
+  /// Shown on schedule / stats — rain, power, buffer weeks.
+  static const schedulePolicy =
+      'Week 12 (18 Oct) postponed to 1 Nov — VPL friendly slot used for FPL; '
+      'VPL tournament week (8 Nov) is fixed. '
+      'If a week cannot be played and there is no buffer left: each affected match '
+      'is No Result and each team gets 1 point (no reschedule).';
 }
 
 /// Points after League Week 11 (11 Oct 2026) — from CricHeroes points table.

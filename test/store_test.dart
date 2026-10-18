@@ -26,12 +26,16 @@ void main() {
       expect(players.length, 57);
       expect(weeks.first.id, '2026-08-02');
       expect(weeks.last.id, '2026-12-27');
-      expect(weeks.where((w) => w.isLeague), hasLength(20));
-      expect(weeks.where((w) => !w.isLeague), hasLength(2));
+      expect(weeks.where((w) => w.isLeague), hasLength(21));
+      expect(weeks.where((w) => !w.isLeague), hasLength(1));
       expect(weeks.where((w) => w.isVpl), hasLength(1));
       expect(
+        weeks.firstWhere((w) => w.id == '2026-10-18').label,
+        'League Week 12 (postponed · play 1 Nov)',
+      );
+      expect(
         weeks.firstWhere((w) => w.id == '2026-11-01').label,
-        'VPL Pre-season / Friendly',
+        'League Week 12 · 1 Nov (VPL friendly → FPL)',
       );
       expect(
         weeks.firstWhere((w) => w.id == '2026-11-08').label,
@@ -67,8 +71,12 @@ void main() {
       final week11Open = fixtures.firstWhere((f) => f.id == '2026-10-11_1');
       expect(week11Open.teamAId, kTeamAvengers);
       expect(week11Open.teamBId, kTeamGb);
-      expect(fixtures.any((f) => f.weekId == '2026-11-01'), isFalse);
+      expect(fixtures.any((f) => f.weekId == '2026-10-18'), isFalse);
+      expect(fixtures.any((f) => f.weekId == '2026-11-01'), isTrue);
       expect(fixtures.any((f) => f.weekId == '2026-11-08'), isFalse);
+      final week12Open = fixtures.firstWhere((f) => f.id == '2026-11-01_1');
+      expect(week12Open.teamAId, kTeamOx);
+      expect(week12Open.teamBId, kTeamAvengers);
       expect(fixtures.last.weekId, '2026-12-27');
       // Each Sunday has slots 1–3 and every team appears twice → 40 matches/team.
       final byWeek = <String, List<ScheduledFixture>>{};
