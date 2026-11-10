@@ -507,7 +507,7 @@ void main() {
       expect(bat('Fazil Farook').runs, 0);
       expect(bat('Fazil Farook').playerId, '41754588');
       expect(bowl('Fazil Farook').wickets, 1);
-      expect(bat('Fazil Farook').teamName, 'OX CC');
+      expect(bat('Fazil Farook').teamName, 'Free agent');
 
       expect(bat('Mohammed Rafi').runs, 9);
       expect(bat('Mohammed Rafi').teamName, 'Farm Avengers CC');
@@ -627,39 +627,47 @@ void main() {
       expect(store.auctionCostFor('mashood_a_c'), 0);
       // Releases then mini auction
       expect(store.playerById('arif_pvh')!.teamId, kTeamFreeAgent);
-      expect(store.playerById('farziii')!.teamId, kTeamOx);
       expect(store.auctionCostFor('arif_pvh'), 0);
-      expect(store.auctionCostFor('farziii'), 500);
       expect(store.playerById('ejaz')!.teamId, kTeamGb);
       expect(store.playerById('imran')!.teamId, kTeamGb);
       expect(store.playerById('anju')!.teamId, kTeamGb);
       expect(store.playerById('sadam')!.teamId, kTeamOx);
       expect(store.playerById('gopi')!.teamId, kTeamAvengers);
       expect(store.playerById('arif_kvh')!.teamId, kTeamGb);
-      expect(store.playerById('fazil_farook')!.teamId, kTeamOx);
+      expect(store.playerById('fazil_farook')!.teamId, kTeamFreeAgent);
       expect(store.auctionCostFor('ejaz'), 1950);
       expect(store.auctionCostFor('imran'), 1050);
       expect(store.auctionCostFor('anju'), 1050);
       expect(store.auctionCostFor('sadam'), 1950);
       expect(store.auctionCostFor('gopi'), 500);
       expect(store.auctionCostFor('arif_kvh'), 300);
-      expect(store.auctionCostFor('fazil_farook'), 750);
+      expect(store.auctionCostFor('fazil_farook'), 0);
       expect(store.playerById('mohammed_rafi')!.teamId, kTeamAvengers);
       expect(store.auctionCostFor('mohammed_rafi'), 0);
-      // OX: top-up −2000 + Farziii 500 + Fazil 750 → spent 9250, left 750
-      expect(store.auctionPurseLive(kTeamOx).spent, 9250);
-      expect(store.auctionPurseLive(kTeamOx).left, 750);
-      // GB: Trade 4 then Rafi loan fee 200 sunk on return → spent 5900
+      expect(store.playerById('farziii')!.teamId, kTeamFreeAgent);
+      expect(store.auctionCostFor('farziii'), 0);
+      expect(store.playerById('syed_shibli')!.teamId, kTeamFreeAgent);
+      // Nov 10 releases: OX +1650 pts, Avengers +1800 → purses below.
+      expect(store.auctionPurseLive(kTeamOx).spent, 7600);
+      expect(store.auctionPurseLive(kTeamOx).left, 2400);
       expect(store.auctionPurseLive(kTeamGb).spent, 5900);
       expect(store.auctionPurseLive(kTeamGb).left, 4100);
-      // AV: Trade 4 base 9700 − Rafi loan net (−200) → 9500
-      expect(store.auctionPurseLive(kTeamAvengers).spent, 9500);
-      expect(store.auctionPurseLive(kTeamAvengers).left, 500);
+      expect(store.auctionPurseLive(kTeamAvengers).spent, 7700);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 2300);
       expect(store.trades.where((t) => t.kind == TradeKind.package), hasLength(2));
-      expect(store.trades.where((t) => t.kind == TradeKind.release), hasLength(2));
+      expect(store.trades.where((t) => t.kind == TradeKind.release), hasLength(17));
       expect(store.trades.where((t) => t.kind == TradeKind.buy), hasLength(7));
       expect(store.trades.where((t) => t.kind == TradeKind.sell), hasLength(5));
       expect(store.trades.where((t) => t.kind == TradeKind.purseTopUp), hasLength(1));
+    });
+
+    test('Season 2 auction purses after 10 Nov 2026 releases', () async {
+      SharedPreferences.setMockInitialValues({});
+      final store = FplStore();
+      await store.init();
+      expect(store.auctionPurseLive(kTeamOx).left, 2400);
+      expect(store.auctionPurseLive(kTeamAvengers).left, 2300);
+      expect(store.auctionPurseLive(kTeamGb).left, 4100);
     });
 
     test('release then undo restores squad and purse', () async {

@@ -40,6 +40,26 @@ String? season2CurrentTeamName(String playerName) {
   byName[_nk('Fazil Farook')] = kTeamNames[kTeamOx]!;
   // Trade 5 Week 9 loan then return (see FplStore._ensureTrade5RafiLoanWeek9).
   byName[_nk('Mohammed Rafi')] = kTeamNames[kTeamAvengers]!;
+  // Releases 10 Nov 2026 (see FplStore._ensureReleaseNov10_2026).
+  for (final name in [
+    'Ajeez',
+    'Althaf',
+    'Aslam',
+    'Azan',
+    'Bilal',
+    'Farziii',
+    'Fazil Farook',
+    'Imthiyas',
+    'Mohammed Ishak',
+    'Mujeebh',
+    'Mohammed Rahoof',
+    'Niyaz',
+    'Sabith',
+    'Sainul Habid',
+    'Syed Shibli',
+  ]) {
+    byName[_nk(name)] = kTeamNames[kTeamFreeAgent]!;
+  }
   // CricHeroes spellings vs auction names.
   byName[_nk('Ajaz')] = kTeamNames[kTeamGb]!;
   return byName[key];
