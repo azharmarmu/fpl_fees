@@ -356,6 +356,7 @@ class FplStore extends ChangeNotifier {
     if (_ensureTrade3ArifKvhToGb()) changed = true;
     if (_ensureTrade4OxFarziiiFazil()) changed = true;
     if (_ensureTrade5RafiLoanWeek9()) changed = true;
+    if (_ensureReleaseNov10_2026()) changed = true;
     return changed;
   }
 
@@ -474,6 +475,50 @@ class FplStore extends ChangeNotifier {
     _forceTeam('munaf_cpm', kTeamAvengers);
     _forceTeam('mashood_a_c', kTeamGb);
     return true;
+  }
+
+  /// Releases 10 Nov 2026: OX + Farm Avengers roster cuts → free agents.
+  bool _ensureReleaseNov10_2026() {
+    final base = DateTime(2026, 11, 10, 17);
+    var changed = false;
+    var minute = 0;
+    void ox(String id, String playerId) {
+      changed |= _ensureSeedRelease(
+        id: id,
+        playerId: playerId,
+        fromTeamId: kTeamOx,
+        tradedAt: base.add(Duration(minutes: minute++)),
+        notes: 'Released by OX CC',
+      );
+    }
+
+    void avengers(String id, String playerId) {
+      changed |= _ensureSeedRelease(
+        id: id,
+        playerId: playerId,
+        fromTeamId: kTeamAvengers,
+        tradedAt: base.add(Duration(minutes: minute++)),
+        notes: 'Released by Farm Avengers CC',
+      );
+    }
+
+    ox('s2_release_nov10_ajeez', 'ajeez');
+    ox('s2_release_nov10_althaf', 'althaf');
+    ox('s2_release_nov10_aslam', 'aslam');
+    ox('s2_release_nov10_azan', 'azan');
+    ox('s2_release_nov10_bilal', 'bilal');
+    ox('s2_release_nov10_farziii', 'farziii');
+    ox('s2_release_nov10_fazil_farook', 'fazil_farook');
+    ox('s2_release_nov10_imthiyas', 'imthiyas');
+    ox('s2_release_nov10_mohammed_ishak', 'mohammed_ishak');
+    ox('s2_release_nov10_mujeebh', 'mujeebh');
+
+    avengers('s2_release_nov10_mohammed_rahoof', 'mohammed_rahoof');
+    avengers('s2_release_nov10_niyaz', 'niyaz');
+    avengers('s2_release_nov10_sabith', 'sabith');
+    avengers('s2_release_nov10_sainul_habid', 'sainul_habid');
+    avengers('s2_release_nov10_syed_shibli', 'syed_shibli');
+    return changed;
   }
 
   /// Releases: Arif PVH (Avengers) and Farziii (OX) → free agents.
@@ -1867,6 +1912,21 @@ class FplStore extends ChangeNotifier {
       's2_t4_fazil_to_ox',
       's2_t5_rafi_loan_to_gb',
       's2_t5_rafi_return_to_avengers',
+      's2_release_nov10_ajeez',
+      's2_release_nov10_althaf',
+      's2_release_nov10_aslam',
+      's2_release_nov10_azan',
+      's2_release_nov10_bilal',
+      's2_release_nov10_farziii',
+      's2_release_nov10_fazil_farook',
+      's2_release_nov10_imthiyas',
+      's2_release_nov10_mohammed_ishak',
+      's2_release_nov10_mujeebh',
+      's2_release_nov10_mohammed_rahoof',
+      's2_release_nov10_niyaz',
+      's2_release_nov10_sabith',
+      's2_release_nov10_sainul_habid',
+      's2_release_nov10_syed_shibli',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);
