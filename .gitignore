@@ -53,3 +53,5 @@ app.*.map.json
 # Firebase local deploy cache
 .firebase/
 .venv/
+.env
+scripts/.env
