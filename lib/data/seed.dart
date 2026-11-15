@@ -71,6 +71,12 @@ List<FplPlayer> buildSeedPlayers() {
     ('sadam', 'SADAM', kTeamFreeAgent, false, false),
     ('gopi', 'Gopi', kTeamFreeAgent, false, false),
     ('arif_kvh', 'Arif KVH', kTeamFreeAgent, false, false),
+    // Mini auction #2 entrants (15 Nov 2026).
+    ('kumar', 'Kumar', kTeamFreeAgent, false, false),
+    ('waseem', 'Waseem', kTeamFreeAgent, false, false),
+    ('ameer', 'Ameer', kTeamFreeAgent, false, false),
+    ('siddique', 'Siddique', kTeamFreeAgent, false, false),
+    ('giftson', 'Giftson', kTeamFreeAgent, false, false),
     // Lifetime guest — plays as floating player; not fee'd, not on a squad tab.
     ('mulla', 'Mulla', kTeamGuest, true, false),
   ];

@@ -40,23 +40,34 @@ String? season2CurrentTeamName(String playerName) {
   byName[_nk('Fazil Farook')] = kTeamNames[kTeamOx]!;
   // Trade 5 Week 9 loan then return (see FplStore._ensureTrade5RafiLoanWeek9).
   byName[_nk('Mohammed Rafi')] = kTeamNames[kTeamAvengers]!;
-  // Releases 10 Nov 2026 (see FplStore._ensureReleaseNov10_2026).
+  // Trade 6 (15 Nov 2026): Gopi → OX.
+  byName[_nk('Gopi')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Gopinath')] = kTeamNames[kTeamOx]!;
+  // Mini auction #2 (15 Nov 2026) (see FplStore._ensureMiniAuction2).
+  byName[_nk('Sabith')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Mohammed Rahoof')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Kumar')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Farziii')] = kTeamNames[kTeamOx]!;
+  byName[_nk('Imthiyas')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Imthiyaz')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Giftson')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Niyaz')] = kTeamNames[kTeamGb]!;
+  byName[_nk('Siddique')] = kTeamNames[kTeamAvengers]!;
+  byName[_nk('Waseem')] = kTeamNames[kTeamAvengers]!;
+  byName[_nk('Ameer')] = kTeamNames[kTeamAvengers]!;
+  byName[_nk('Syed Shibli')] = kTeamNames[kTeamAvengers]!;
+  byName[_nk('Fazil Farook')] = kTeamNames[kTeamAvengers]!;
+  // Releases 10 Nov 2026 — still free agents (see FplStore._ensureReleaseNov10_2026).
   for (final name in [
+    'Arif PVH',
     'Ajeez',
     'Althaf',
     'Aslam',
     'Azan',
     'Bilal',
-    'Farziii',
-    'Fazil Farook',
-    'Imthiyas',
     'Mohammed Ishak',
     'Mujeebh',
-    'Mohammed Rahoof',
-    'Niyaz',
-    'Sabith',
     'Sainul Habid',
-    'Syed Shibli',
   ]) {
     byName[_nk(name)] = kTeamNames[kTeamFreeAgent]!;
   }
