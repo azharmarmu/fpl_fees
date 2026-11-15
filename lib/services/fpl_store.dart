@@ -357,6 +357,8 @@ class FplStore extends ChangeNotifier {
     if (_ensureTrade4OxFarziiiFazil()) changed = true;
     if (_ensureTrade5RafiLoanWeek9()) changed = true;
     if (_ensureReleaseNov10_2026()) changed = true;
+    if (_ensureTrade6GopiToOx()) changed = true;
+    if (_ensureMiniAuction2()) changed = true;
     return changed;
   }
 
@@ -518,6 +520,127 @@ class FplStore extends ChangeNotifier {
     avengers('s2_release_nov10_sabith', 'sabith');
     avengers('s2_release_nov10_sainul_habid', 'sainul_habid');
     avengers('s2_release_nov10_syed_shibli', 'syed_shibli');
+    return changed;
+  }
+
+  /// Trade 6 (15 Nov 2026): Gopi sold Avengers → OX for 1500 pts.
+  bool _ensureTrade6GopiToOx() {
+    if (suppressedSeedTrades.contains('s2_t6_gopi_to_ox')) return false;
+    return _ensureSeedSell(
+      id: 's2_t6_gopi_to_ox',
+      playerId: 'gopi',
+      fromTeamId: kTeamAvengers,
+      toTeamId: kTeamOx,
+      auctionPoints: 1500,
+      tradedAt: DateTime(2026, 11, 15, 17),
+      notes: 'Trade 6: Gopi sold to OX for 1500',
+    );
+  }
+
+  /// Mini auction #2 (15 Nov 2026).
+  bool _ensureMiniAuction2() {
+    if (suppressedSeedTrades.contains('s2_mini_auction2')) return false;
+    var changed = false;
+    final at = DateTime(2026, 11, 15, 18);
+    var m = 0;
+    DateTime t() => at.add(Duration(minutes: m++));
+
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_sabith_ox',
+      playerId: 'sabith',
+      toTeamId: kTeamOx,
+      auctionPoints: 100,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_rahoof_ox',
+      playerId: 'mohammed_rahoof',
+      toTeamId: kTeamOx,
+      auctionPoints: 100,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_kumar_ox',
+      playerId: 'kumar',
+      toTeamId: kTeamOx,
+      auctionPoints: 300,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_farziii_ox',
+      playerId: 'farziii',
+      toTeamId: kTeamOx,
+      auctionPoints: 100,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_imthiyas_gb',
+      playerId: 'imthiyas',
+      toTeamId: kTeamGb,
+      auctionPoints: 500,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_giftson_gb',
+      playerId: 'giftson',
+      toTeamId: kTeamGb,
+      auctionPoints: 700,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_niyaz_gb',
+      playerId: 'niyaz',
+      toTeamId: kTeamGb,
+      auctionPoints: 100,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_siddique_avengers',
+      playerId: 'siddique',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 500,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_waseem_avengers',
+      playerId: 'waseem',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 1100,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_ameer_avengers',
+      playerId: 'ameer',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 1000,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_shibli_avengers',
+      playerId: 'syed_shibli',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 500,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
+    changed |= _ensureSeedBuy(
+      id: 's2_mini2_fazil_avengers',
+      playerId: 'fazil_farook',
+      toTeamId: kTeamAvengers,
+      auctionPoints: 100,
+      tradedAt: t(),
+      notes: 'Mini auction #2',
+    );
     return changed;
   }
 
@@ -1927,6 +2050,20 @@ class FplStore extends ChangeNotifier {
       's2_release_nov10_sabith',
       's2_release_nov10_sainul_habid',
       's2_release_nov10_syed_shibli',
+      's2_t6_gopi_to_ox',
+      's2_mini_auction2',
+      's2_mini2_sabith_ox',
+      's2_mini2_rahoof_ox',
+      's2_mini2_kumar_ox',
+      's2_mini2_farziii_ox',
+      's2_mini2_imthiyas_gb',
+      's2_mini2_giftson_gb',
+      's2_mini2_niyaz_gb',
+      's2_mini2_siddique_avengers',
+      's2_mini2_waseem_avengers',
+      's2_mini2_ameer_avengers',
+      's2_mini2_shibli_avengers',
+      's2_mini2_fazil_avengers',
     };
     if (seedIds.contains(trade.id)) {
       suppressedSeedTrades.add(trade.id);
