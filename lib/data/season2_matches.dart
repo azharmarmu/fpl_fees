@@ -33,7 +33,10 @@ BowlingEntry _bowl(
       wickets: wickets,
     );
 
-/// All seeded Season 2 scorecards (Week 1–11).
+/// Canonical no-result text (matches [Season2Meta.schedulePolicy]).
+const kMatchNoResultText = 'No Result — 1 point each';
+
+/// All seeded Season 2 scorecards (Weeks 1–11 + Week 13 NR).
 List<MatchScorecard> buildSeason2SeedMatches() => [
       ...buildSeason2Week1Matches(),
       ...buildSeason2Week2Matches(),
@@ -46,6 +49,7 @@ List<MatchScorecard> buildSeason2SeedMatches() => [
       ...buildSeason2Week9Matches(),
       ...buildSeason2Week10Matches(),
       ...buildSeason2Week11Matches(),
+      ...buildSeason2Week13Matches(),
     ];
 
 /// League Week 1 (2 Aug 2026) — full CricHeroes scorecards (no PDF).
@@ -2284,5 +2288,29 @@ List<MatchScorecard> buildSeason2Week11Matches() {
         ),
       ],
     ),
+  ];
+}
+
+/// League Week 13 (25 Oct 2026) — rain; all matches no result, 1 point each.
+List<MatchScorecard> buildSeason2Week13Matches() {
+  final date = DateTime(2026, 10, 25);
+  MatchScorecard nr(String fixtureId, String a, String b) => MatchScorecard(
+        id: fixtureId,
+        date: date,
+        teamAId: a,
+        teamBId: b,
+        teamAName: kTeamNames[a]!,
+        teamBName: kTeamNames[b]!,
+        teamAScore: '',
+        teamBScore: '',
+        resultText: kMatchNoResultText,
+        tossText: '',
+        isNoResult: true,
+      );
+
+  return [
+    nr('2026-10-25_1', kTeamOx, kTeamGb),
+    nr('2026-10-25_2', kTeamGb, kTeamAvengers),
+    nr('2026-10-25_3', kTeamOx, kTeamAvengers),
   ];
 }
