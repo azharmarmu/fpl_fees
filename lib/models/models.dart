@@ -424,6 +424,7 @@ class MatchScorecard {
     this.pdfLocalPath,
     this.pdfUrl,
     this.innings = const [],
+    this.isNoResult = false,
   });
 
   final String id;
@@ -442,6 +443,9 @@ class MatchScorecard {
   final String? pdfUrl;
   /// Structured batting/bowling (manual entry; optional).
   final List<MatchInnings> innings;
+
+  /// Wash-out / unplayed — [resultText] describes NR; 1 league point per team.
+  final bool isNoResult;
 
   bool get hasPdf =>
       (pdfUrl != null && pdfUrl!.isNotEmpty) ||
@@ -467,6 +471,7 @@ class MatchScorecard {
         'pdfUrl': pdfUrl,
         if (innings.isNotEmpty)
           'innings': innings.map((e) => e.toJson()).toList(),
+        if (isNoResult) 'isNoResult': true,
       };
 
   factory MatchScorecard.fromJson(Map<String, dynamic> json) => MatchScorecard(
@@ -486,6 +491,7 @@ class MatchScorecard {
         innings: (json['innings'] as List? ?? [])
             .map((e) => MatchInnings.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
+        isNoResult: json['isNoResult'] as bool? ?? false,
       );
 }
 

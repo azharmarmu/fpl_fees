@@ -5,6 +5,7 @@ import 'package:fpl_fees/config.dart';
 import 'package:fpl_fees/data/season1.dart';
 import 'package:fpl_fees/data/season2.dart';
 import 'package:fpl_fees/data/season2_matches.dart';
+import 'package:fpl_fees/data/season2_points.dart';
 import 'package:fpl_fees/data/seed.dart';
 import 'package:fpl_fees/models/models.dart';
 import 'package:fpl_fees/services/contact_import.dart';
@@ -26,20 +27,24 @@ void main() {
       expect(players.length, 62);
       expect(weeks.first.id, '2026-08-02');
       expect(weeks.last.id, '2026-12-27');
-      expect(weeks.where((w) => w.isLeague), hasLength(21));
-      expect(weeks.where((w) => !w.isLeague), hasLength(1));
-      expect(weeks.where((w) => w.isVpl), hasLength(1));
+      expect(weeks.where((w) => w.isLeague), hasLength(20));
+      expect(weeks.where((w) => !w.isLeague), hasLength(2));
+      expect(weeks.where((w) => w.isVpl), hasLength(2));
       expect(
         weeks.firstWhere((w) => w.id == '2026-10-18').label,
-        'League Week 12 (postponed · play 1 Nov)',
+        'League Week 12 (postponed · date TBD)',
+      );
+      expect(
+        weeks.firstWhere((w) => w.id == '2026-10-25').label,
+        'League Week 13',
       );
       expect(
         weeks.firstWhere((w) => w.id == '2026-11-01').label,
-        'League Week 12 · 1 Nov (VPL friendly → FPL)',
+        'VPL Season 2 · 1 Nov',
       );
       expect(
         weeks.firstWhere((w) => w.id == '2026-11-08').label,
-        'VPL Season 2 (Diwali week)',
+        'VPL Season 2 · 8 Nov (Diwali week)',
       );
       expect(players.where((p) => p.isLifetimeMember), hasLength(7));
       expect(
@@ -71,12 +76,16 @@ void main() {
       final week11Open = fixtures.firstWhere((f) => f.id == '2026-10-11_1');
       expect(week11Open.teamAId, kTeamAvengers);
       expect(week11Open.teamBId, kTeamGb);
-      expect(fixtures.any((f) => f.weekId == '2026-10-18'), isFalse);
-      expect(fixtures.any((f) => f.weekId == '2026-11-01'), isTrue);
+      expect(fixtures.any((f) => f.weekId == '2026-10-18'), isTrue);
+      expect(fixtures.any((f) => f.weekId == '2026-11-01'), isFalse);
       expect(fixtures.any((f) => f.weekId == '2026-11-08'), isFalse);
-      final week12Open = fixtures.firstWhere((f) => f.id == '2026-11-01_1');
+      final week12Open = fixtures.firstWhere((f) => f.id == '2026-10-18_1');
       expect(week12Open.teamAId, kTeamOx);
       expect(week12Open.teamBId, kTeamAvengers);
+      final week13Ids =
+          fixtures.where((f) => f.weekId == '2026-10-25').map((f) => f.id).toList()
+            ..sort();
+      expect(week13Ids, ['2026-10-25_1', '2026-10-25_2', '2026-10-25_3']);
       expect(fixtures.last.weekId, '2026-12-27');
       // Each Sunday has slots 1–3 and every team appears twice → 40 matches/team.
       final byWeek = <String, List<ScheduledFixture>>{};
@@ -101,6 +110,71 @@ void main() {
       expect(teamMatches[kTeamOx], 40);
       expect(teamMatches[kTeamGb], 40);
       expect(teamMatches[kTeamAvengers], 40);
+    });
+
+    test('Week 13 wash-out is no result; Week 12 has no seed results', () {
+      final week13 = buildSeason2Week13Matches();
+      expect(week13, hasLength(3));
+      expect(week13.every((m) => m.isNoResult), isTrue);
+      expect(week13.every((m) => m.resultText == kMatchNoResultText), isTrue);
+
+      final seed = buildSeason2SeedMatches();
+      expect(seed.any((m) => m.id.startsWith('2026-10-18_')), isFalse);
+      expect(seed.any((m) => m.date.month == 11 && m.date.day == 1), isFalse);
+
+      final pts = season2PointsFromMatches(seed);
+      expect(pts[kTeamGb]!.played, 24);
+      expect(pts[kTeamGb]!.points, 28);
+      expect(pts[kTeamOx]!.played, 24);
+      expect(pts[kTeamOx]!.points, 26);
+      expect(pts[kTeamAvengers]!.played, 24);
+      expect(pts[kTeamAvengers]!.points, 18);
+      expect(pts[kTeamGb]!.noResults, 2);
+    });
+  });
+
+  group('week 12 nov 1 purge', () {
+    test('re-init clears mistaken 1 Nov match results and seeds Week 13 NR',
+        () async {
+      final store = FplStore();
+      await store.init();
+      await store.addMatch(
+        MatchScorecard(
+          id: '2026-11-01_1',
+          date: DateTime(2026, 11, 1),
+          teamAId: kTeamOx,
+          teamBId: kTeamGb,
+          teamAName: kTeamNames[kTeamOx]!,
+          teamBName: kTeamNames[kTeamGb]!,
+          teamAScore: '50/5 (10)',
+          teamBScore: '48/8 (10)',
+          resultText: 'OX CC won by 2 runs',
+        ),
+      );
+
+      final store2 = FplStore();
+      await store2.init();
+
+      expect(
+        store2.matches.any(
+          (m) => m.date.year == 2026 && m.date.month == 11 && m.date.day == 1,
+        ),
+        isFalse,
+      );
+      expect(
+        store2.fixtures.any((f) => f.weekId == kWeek12PostponedWeekId),
+        isTrue,
+      );
+      expect(
+        store2.matchForFixture(
+          store2.fixtures.firstWhere((f) => f.id == '2026-10-18_1'),
+        ),
+        isNull,
+      );
+      final w13 =
+          store2.matches.where((m) => m.id.startsWith('2026-10-25_')).toList();
+      expect(w13, hasLength(3));
+      expect(w13.every((m) => m.isNoResult), isTrue);
     });
   });
 
@@ -442,22 +516,25 @@ void main() {
       expect(anasBowl.wickets, 7);
       expect(data.mvp.first.name, 'Azhar Marmu');
       expect(season2Standings.first.teamName, 'Gully Blasters');
-      expect(season2Standings.first.points, 26);
+      expect(season2Standings.first.points, 28);
+      expect(season2Standings.first.played, 24);
       expect(season2Standings.first.nrr, 0.428);
       expect(season2Standings.first.forScore, '1224/209');
       expect(season2Standings.first.againstScore, '1131/208.2');
       expect(season2Standings[1].teamName, 'OX CC');
-      expect(season2Standings[1].points, 24);
+      expect(season2Standings[1].points, 26);
+      expect(season2Standings[1].played, 24);
       expect(season2Standings[1].nrr, -0.213);
       expect(season2Standings[1].forScore, '1143/211.1');
       expect(season2Standings[1].againstScore, '1186/210.5');
       expect(season2Standings[2].teamName, 'Farm Avengers CC');
-      expect(season2Standings[2].points, 16);
+      expect(season2Standings[2].points, 18);
+      expect(season2Standings[2].played, 24);
       expect(season2Standings[2].nrr, -0.214);
       expect(season2Standings[2].forScore, '1076/208.5');
       expect(season2Standings[2].againstScore, '1126/209.5');
       expect(season2Standings.length, 3);
-      expect(Season2Meta.totalMatches, 33);
+      expect(Season2Meta.totalMatches, 36);
       expect(season2WeekAwards, hasLength(11));
       expect(season2WeekAwards[0].bestPlayerName, 'MONIZ');
       expect(season2WeekAwards[0].bestTeamName, 'OX CC');
@@ -532,9 +609,9 @@ void main() {
       expect(aslam.seasons['s2']?.batting?.runs ?? 0, 0);
     });
 
-    test('seeds thirty-three Sunday scorecards with innings', () {
+    test('seeds Week 1–11 scorecards plus Week 13 no-result stubs', () {
       final matches = buildSeason2SeedMatches();
-      expect(matches, hasLength(33));
+      expect(matches, hasLength(36));
       expect(
         matches.map((m) => m.id),
         containsAll([
@@ -573,10 +650,18 @@ void main() {
           'ch_27632836',
         ]),
       );
-      for (final m in matches) {
+      final played = matches.where((m) => !m.isNoResult).toList();
+      expect(played, hasLength(33));
+      for (final m in played) {
         expect(m.hasStructuredCard, isTrue);
         expect(m.hasPdf, isFalse);
         expect(m.innings, hasLength(2));
+      }
+      final nr = buildSeason2Week13Matches();
+      expect(nr, hasLength(3));
+      for (final m in nr) {
+        expect(m.isNoResult, isTrue);
+        expect(m.innings, isEmpty);
       }
     });
 

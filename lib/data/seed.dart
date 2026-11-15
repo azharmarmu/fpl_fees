@@ -96,10 +96,24 @@ List<FplPlayer> buildSeedPlayers() {
   ];
 }
 
+/// League Week 12 calendar id (18 Oct postponed again — play date TBD).
+const kWeek12PostponedWeekId = '2026-10-18';
+
+/// When Week 12 is rescheduled, set this and update [week12FixturePairings] date in code.
+/// null = still TBD (fixtures stay on [kWeek12PostponedWeekId] with no results).
+DateTime? get kWeek12RescheduledPlayDate => null;
+
+/// Week 12 pairings (slot 1 = opening). Reused when a play date is chosen.
+const week12FixturePairings = <(String, String)>[
+  (kTeamOx, kTeamAvengers),
+  (kTeamOx, kTeamGb),
+  (kTeamGb, kTeamAvengers),
+];
+
 List<LeagueWeek> buildSeasonWeeks() {
   // Sundays 2 Aug 2026 – 27 Dec 2026.
-  // Buffer weeks: 1 Nov (was VPL friendly → Week 12 makeup), 8 Nov (VPL tournament).
-  // 20 numbered league weeks · 40 matches/team. Week 12 played 1 Nov (18 Oct power out).
+  // VPL only: 1 Nov + 8 Nov (no FPL). Week 12 (18 Oct) postponed — date TBD.
+  // 20 numbered league weeks · 40 matches/team (Week 12 unplayed).
   final weeks = <LeagueWeek>[];
   var d = DateTime(2026, 8, 2);
   final end = DateTime(2026, 12, 27);
@@ -107,31 +121,31 @@ List<LeagueWeek> buildSeasonWeeks() {
   while (!d.isAfter(end)) {
     final id =
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    final isWeek12Postponed = d.year == 2026 && d.month == 10 && d.day == 18;
-    final isWeek12Makeup = d.year == 2026 && d.month == 11 && d.day == 1;
-    final isVpl = d.year == 2026 && d.month == 11 && d.day == 8;
+    final isWeek12Postponed = id == kWeek12PostponedWeekId;
+    final isVplNov1 = d.year == 2026 && d.month == 11 && d.day == 1;
+    final isVplNov8 = d.year == 2026 && d.month == 11 && d.day == 8;
     if (isWeek12Postponed) {
       leagueIndex += 1;
       weeks.add(LeagueWeek(
         id: id,
         date: d,
-        label: 'League Week $leagueIndex (postponed · play 1 Nov)',
+        label: 'League Week $leagueIndex (postponed · date TBD)',
         isVpl: false,
         isLeague: true,
       ));
-    } else if (isWeek12Makeup) {
+    } else if (isVplNov1) {
       weeks.add(LeagueWeek(
         id: id,
         date: d,
-        label: 'League Week 12 · 1 Nov (VPL friendly → FPL)',
-        isVpl: false,
-        isLeague: true,
+        label: 'VPL Season 2 · 1 Nov',
+        isVpl: true,
+        isLeague: false,
       ));
-    } else if (isVpl) {
+    } else if (isVplNov8) {
       weeks.add(LeagueWeek(
         id: id,
         date: d,
-        label: 'VPL Season 2 (Diwali week)',
+        label: 'VPL Season 2 · 8 Nov (Diwali week)',
         isVpl: true,
         isLeague: false,
       ));
@@ -151,10 +165,12 @@ List<LeagueWeek> buildSeasonWeeks() {
 }
 
 /// League Sundays Aug–Dec 2026: 20 weeks × 3 matches (each team plays 2 → 40 total).
-/// Week 12 fixtures on 1 Nov (18 Oct postponed). Skip 8 Nov (VPL tournament).
+/// Week 12 on [kWeek12PostponedWeekId] until [kWeek12RescheduledPlayDate] is set. No FPL on VPL Sundays.
 List<ScheduledFixture> buildSeasonFixtures() {
+  final week12Play = kWeek12RescheduledPlayDate ?? DateTime(2026, 10, 18);
+  final week12Id = kWeek12PostponedWeekId;
   // Each row: date, ordered pairings (slot 1 = opening).
-  const days = <(int y, int m, int d, List<(String, String)>)>[
+  final days = <(int y, int m, int d, List<(String, String)>)>[
     // Weeks 1–9 (Aug–Sep)
     (2026, 8, 2, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 8, 9, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
@@ -165,12 +181,11 @@ List<ScheduledFixture> buildSeasonFixtures() {
     (2026, 9, 13, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 9, 20, [(kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 9, 27, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
-    // Weeks 10–20 (Oct–Dec; Week 12 on 1 Nov; skip 8 Nov VPL)
+    // Weeks 10–20 (Oct–Dec; Week 12 postponed; skip 1 + 8 Nov VPL)
     (2026, 10, 4, [(kTeamGb, kTeamOx), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     // Week 11 played order (Avengers open vs GB).
     (2026, 10, 11, [(kTeamAvengers, kTeamGb), (kTeamGb, kTeamOx), (kTeamOx, kTeamAvengers)]),
-    // Week 12 — 18 Oct power failure; played 1 Nov (was VPL friendly buffer).
-    (2026, 11, 1, [(kTeamOx, kTeamAvengers), (kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers)]),
+    (week12Play.year, week12Play.month, week12Play.day, week12FixturePairings),
     (2026, 10, 25, [(kTeamOx, kTeamGb), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamAvengers)]),
     (2026, 11, 15, [(kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers), (kTeamOx, kTeamGb)]),
     (2026, 11, 22, [(kTeamOx, kTeamGb), (kTeamOx, kTeamAvengers), (kTeamGb, kTeamAvengers)]),
@@ -184,8 +199,12 @@ List<ScheduledFixture> buildSeasonFixtures() {
   final out = <ScheduledFixture>[];
   for (final day in days) {
     final date = DateTime(day.$1, day.$2, day.$3);
-    final weekId =
+    final calendarId =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final weekId = (kWeek12RescheduledPlayDate == null &&
+            identical(day.$4, week12FixturePairings))
+        ? week12Id
+        : calendarId;
     for (var i = 0; i < day.$4.length; i++) {
       final (a, b) = day.$4[i];
       final slot = i + 1;

@@ -99,6 +99,8 @@ class FplStore extends ChangeNotifier {
             _backfillMissingSeedPlayers() |
             _removeNonSquadGuests() |
             _ensureSeasonCalendar() |
+            _purgeObsoleteWeek12Nov1Data() |
+            _ensureWeek13NoResultClean() |
             _ensureSeason2Scorecards() |
             _migrateWeek4GroundFeesToWeek1() |
             _ensureTradeWindowAndReleases();
@@ -109,6 +111,8 @@ class FplStore extends ChangeNotifier {
         }
       } else if (players.isNotEmpty) {
         _ensureSeasonCalendar();
+        _purgeObsoleteWeek12Nov1Data();
+        _ensureWeek13NoResultClean();
         _ensureSeason2Scorecards();
         _ensureTradeWindowAndReleases();
         await _pushCloud();
@@ -122,6 +126,8 @@ class FplStore extends ChangeNotifier {
             _backfillMissingSeedPlayers() |
             _removeNonSquadGuests() |
             _ensureSeasonCalendar() |
+            _purgeObsoleteWeek12Nov1Data() |
+            _ensureWeek13NoResultClean() |
             _ensureSeason2Scorecards() |
             _migrateWeek4GroundFeesToWeek1() |
             _ensureTradeWindowAndReleases();
@@ -210,6 +216,8 @@ class FplStore extends ChangeNotifier {
           _backfillMissingSeedPlayers() |
           _removeNonSquadGuests() |
           _ensureSeasonCalendar() |
+          _purgeObsoleteWeek12Nov1Data() |
+          _ensureWeek13NoResultClean() |
           _ensureSeason2Scorecards() |
           _migrateWeek4GroundFeesToWeek1() |
           _ensureTradeWindowAndReleases();
@@ -1066,6 +1074,40 @@ class FplStore extends ChangeNotifier {
   List<FplPlayer> freeAgents() =>
       players.where((p) => p.teamId == kTeamFreeAgent && p.active).toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  /// Drop mistaken Week 12 on 1 Nov (VPL only) fixtures + any results on that day.
+  bool _purgeObsoleteWeek12Nov1Data() {
+    const nov1 = '2026-11-01';
+    var changed = false;
+
+    final fBefore = fixtures.length;
+    fixtures.removeWhere((f) => f.weekId == nov1 || f.id.startsWith('${nov1}_'));
+    if (fixtures.length != fBefore) changed = true;
+
+    final mBefore = matches.length;
+    matches.removeWhere((m) {
+      if (m.id.startsWith('${nov1}_')) return true;
+      return m.date.year == 2026 && m.date.month == 11 && m.date.day == 1;
+    });
+    if (matches.length != mBefore) changed = true;
+
+    return changed;
+  }
+
+  /// Remove stray scorecards on Week 13 wash-out day except canonical NR seeds.
+  bool _ensureWeek13NoResultClean() {
+    const week13 = '2026-10-25';
+    final seedIds = buildSeason2Week13Matches().map((m) => m.id).toSet();
+    final before = matches.length;
+    matches.removeWhere((m) {
+      final onDay = m.date.year == 2026 &&
+          m.date.month == 10 &&
+          m.date.day == 25;
+      if (!onDay && !m.id.startsWith('${week13}_')) return false;
+      return !seedIds.contains(m.id);
+    });
+    return matches.length != before;
+  }
+
   bool _ensureSeason2Scorecards() {
     final seed = buildSeason2SeedMatches();
     var changed = false;
@@ -1083,7 +1125,8 @@ class FplStore extends ChangeNotifier {
           existing.innings.length != m.innings.length ||
           existing.resultText != m.resultText ||
           existing.teamAScore != m.teamAScore ||
-          existing.teamBScore != m.teamBScore;
+          existing.teamBScore != m.teamBScore ||
+          existing.isNoResult != m.isNoResult;
       if (!needsUpgrade) continue;
       matches[i] = m;
       changed = true;
