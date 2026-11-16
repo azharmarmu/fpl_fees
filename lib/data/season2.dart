@@ -1,4 +1,5 @@
 import 'season1.dart';
+import 'season2_nrr.dart';
 import 'season2_stats.dart';
 
 /// Farm Premier League Season 2 (2 Aug 2026 – 27 Dec 2026).
@@ -21,45 +22,8 @@ class Season2Meta {
       'is No Result and each team gets 1 point (no reschedule).';
 }
 
-/// Points after League Week 14 (15 Nov 2026) — includes Week 13 NR.
-const season2Standings = <Season1Standing>[
-  Season1Standing(
-    rank: 1,
-    teamName: 'Gully Blasters',
-    played: 26,
-    won: 15,
-    lost: 9,
-    points: 32,
-    nrr: 0.459,
-    forScore: '1348/227.4',
-    againstScore: '1209/221.2',
-    last5: 'W-L-N-W-W',
-  ),
-  Season1Standing(
-    rank: 2,
-    teamName: 'OX CC',
-    played: 26,
-    won: 13,
-    lost: 11,
-    points: 28,
-    nrr: -0.213,
-    forScore: '1218/224.1',
-    againstScore: '1298/229.5',
-    last5: 'L-W-N-W-L',
-  ),
-  Season1Standing(
-    rank: 3,
-    teamName: 'Farm Avengers CC',
-    played: 26,
-    won: 8,
-    lost: 16,
-    points: 18,
-    nrr: -0.253,
-    forScore: '1205/228.3',
-    againstScore: '1264/228.4',
-    last5: 'L-L-N-L-L',
-  ),
-];
+/// Points after latest seeded scorecards — NRR/for/against from [buildSeason2Standings].
+List<Season1Standing> get season2Standings => buildSeason2Standings();
 
 /// Official week award — best team (W–L / week NRR) + best player (CricHeroes MVP that week).
 class Season2WeekAward {

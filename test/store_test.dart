@@ -5,6 +5,7 @@ import 'package:fpl_fees/config.dart';
 import 'package:fpl_fees/data/season1.dart';
 import 'package:fpl_fees/data/season2.dart';
 import 'package:fpl_fees/data/season2_matches.dart';
+import 'package:fpl_fees/data/season2_nrr.dart';
 import 'package:fpl_fees/data/season2_points.dart';
 import 'package:fpl_fees/data/seed.dart';
 import 'package:fpl_fees/models/models.dart';
@@ -526,25 +527,25 @@ void main() {
       expect(season2Standings.first.played, 26);
       expect(season2Standings.first.won, 15);
       expect(season2Standings.first.lost, 9);
-      expect(season2Standings.first.nrr, 0.459);
-      expect(season2Standings.first.forScore, '1348/227.4');
-      expect(season2Standings.first.againstScore, '1209/221.2');
+      expect(season2Standings.first.nrr, 0.609);
+      expect(season2Standings.first.forScore, '1348/228.2');
+      expect(season2Standings.first.againstScore, '1209/228.2');
       expect(season2Standings[1].teamName, 'OX CC');
       expect(season2Standings[1].points, 28);
       expect(season2Standings[1].played, 26);
       expect(season2Standings[1].won, 13);
       expect(season2Standings[1].lost, 11);
-      expect(season2Standings[1].nrr, -0.213);
-      expect(season2Standings[1].forScore, '1218/224.1');
-      expect(season2Standings[1].againstScore, '1298/229.5');
+      expect(season2Standings[1].nrr, -0.354);
+      expect(season2Standings[1].forScore, '1218/231.1');
+      expect(season2Standings[1].againstScore, '1298/230.5');
       expect(season2Standings[2].teamName, 'Farm Avengers CC');
       expect(season2Standings[2].points, 18);
       expect(season2Standings[2].played, 26);
       expect(season2Standings[2].won, 8);
       expect(season2Standings[2].lost, 16);
-      expect(season2Standings[2].nrr, -0.253);
-      expect(season2Standings[2].forScore, '1205/228.3');
-      expect(season2Standings[2].againstScore, '1264/228.4');
+      expect(season2Standings[2].nrr, -0.250);
+      expect(season2Standings[2].forScore, '1205/228.5');
+      expect(season2Standings[2].againstScore, '1264/229.1');
       expect(season2Standings.length, 3);
       expect(Season2Meta.totalMatches, 39);
       expect(season2WeekAwards, hasLength(12));
@@ -621,6 +622,27 @@ void main() {
       expect(aslam.seasons['s1']!.batting!.runs, 97);
       // Must not pull Hashim's S2 into OX Aslam.
       expect(aslam.seasons['s2']?.batting?.runs ?? 0, 0);
+    });
+
+    test('CricHeroes NRR and For/Against after Week 14', () {
+      final nrr = season2NrrFromMatches(buildSeason2SeedMatches());
+      expect(nrr[kTeamGb]!.forDisplay, '1348/228.2');
+      expect(nrr[kTeamGb]!.againstDisplay, '1209/228.2');
+      expect(nrr[kTeamGb]!.nrr, closeTo(0.609, 0.0005));
+      expect(nrr[kTeamOx]!.forDisplay, '1218/231.1');
+      expect(nrr[kTeamOx]!.againstDisplay, '1298/230.5');
+      expect(nrr[kTeamOx]!.nrr, closeTo(-0.354, 0.0005));
+      expect(nrr[kTeamAvengers]!.forDisplay, '1205/228.5');
+      expect(nrr[kTeamAvengers]!.againstDisplay, '1264/229.1');
+      expect(nrr[kTeamAvengers]!.nrr, closeTo(-0.250, 0.0005));
+      final week13Only = buildSeason2Week13Matches();
+      final withNr = [...buildSeason2SeedMatches()];
+      expect(
+        season2NrrFromMatches(withNr)[kTeamGb]!.ballsFor,
+        season2NrrFromMatches(
+          withNr.where((m) => !week13Only.any((w) => w.id == m.id)).toList(),
+        )[kTeamGb]!.ballsFor,
+      );
     });
 
     test('seeds Week 1–11 scorecards, Week 13 NR, and Week 14 results', () {
