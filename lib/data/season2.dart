@@ -9,7 +9,7 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 36;
+  static const totalMatches = 39;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 
@@ -21,43 +21,43 @@ class Season2Meta {
       'is No Result and each team gets 1 point (no reschedule).';
 }
 
-/// Points after League Week 13 (25 Oct 2026; all NR) — W/L from Weeks 1–11.
+/// Points after League Week 14 (15 Nov 2026) — includes Week 13 NR.
 const season2Standings = <Season1Standing>[
   Season1Standing(
     rank: 1,
     teamName: 'Gully Blasters',
-    played: 24,
-    won: 13,
+    played: 26,
+    won: 15,
     lost: 9,
-    points: 28,
-    nrr: 0.428,
-    forScore: '1224/209',
-    againstScore: '1131/208.2',
-    last5: 'L-W-W-L-W',
+    points: 32,
+    nrr: 0.459,
+    forScore: '1348/227.4',
+    againstScore: '1209/221.2',
+    last5: 'W-L-N-W-W',
   ),
   Season1Standing(
     rank: 2,
     teamName: 'OX CC',
-    played: 24,
-    won: 12,
-    lost: 10,
-    points: 26,
+    played: 26,
+    won: 13,
+    lost: 11,
+    points: 28,
     nrr: -0.213,
-    forScore: '1143/211.1',
-    againstScore: '1186/210.5',
-    last5: 'W-L-W-L-W',
+    forScore: '1218/224.1',
+    againstScore: '1298/229.5',
+    last5: 'L-W-N-W-L',
   ),
   Season1Standing(
     rank: 3,
     teamName: 'Farm Avengers CC',
-    played: 24,
+    played: 26,
     won: 8,
-    lost: 14,
+    lost: 16,
     points: 18,
-    nrr: -0.214,
-    forScore: '1076/208.5',
-    againstScore: '1126/209.5',
-    last5: 'W-L-L-W-L',
+    nrr: -0.253,
+    forScore: '1205/228.3',
+    againstScore: '1264/228.4',
+    last5: 'L-L-N-L-L',
   ),
 ];
 
@@ -195,6 +195,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'Munaf Cpm',
     bestPlayerTeamName: 'Farm Avengers CC',
     bestPlayerSummary: 'MVP +6.7 · 25 & 2/3',
+  ),
+  Season2WeekAward(
+    weekIndex: 14,
+    weekId: '2026-11-15',
+    dateLabel: '15 Nov 2026',
+    bestTeamName: 'Gully Blasters',
+    bestTeamSummary: '2–0',
+    bestPlayerName: 'Immu',
+    bestPlayerTeamName: 'Gully Blasters',
+    bestPlayerSummary: 'MVP · 5/8 (0.00 eco)',
   ),
 ];
 
