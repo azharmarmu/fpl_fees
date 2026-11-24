@@ -36,7 +36,7 @@ BowlingEntry _bowl(
 /// Canonical no-result text (matches [Season2Meta.schedulePolicy]).
 const kMatchNoResultText = 'No Result — 1 point each';
 
-/// All seeded Season 2 scorecards (Weeks 1–11 + Week 13 NR + Week 14).
+/// All seeded Season 2 scorecards (Weeks 1–11 + Week 13 NR + Weeks 14–15).
 List<MatchScorecard> buildSeason2SeedMatches() => [
       ...buildSeason2Week1Matches(),
       ...buildSeason2Week2Matches(),
@@ -51,6 +51,7 @@ List<MatchScorecard> buildSeason2SeedMatches() => [
       ...buildSeason2Week11Matches(),
       ...buildSeason2Week13Matches(),
       ...buildSeason2Week14Matches(),
+      ...buildSeason2Week15Matches(),
     ];
 
 /// League Week 1 (2 Aug 2026) — full CricHeroes scorecards (no PDF).
@@ -2498,6 +2499,231 @@ List<MatchScorecard> buildSeason2Week14Matches() {
           bowling: [
             _bowl('Ajaz', '2', 0, 8, 2),
             _bowl('Immu', '1.1', 1, 0, 5),
+          ],
+        ),
+      ],
+    ),
+  ];
+}
+
+
+/// League Week 15 (22 Nov 2026) — full CricHeroes scorecards.
+/// Super Over in OX vs Avengers is recorded in [resultText] only (not as
+/// extra innings) so NRR/For/Against match CricHeroes (SO excluded).
+List<MatchScorecard> buildSeason2Week15Matches() {
+  final date = DateTime(2026, 11, 22);
+  return [
+    MatchScorecard(
+      id: 'ch_28460640',
+      date: date,
+      teamAId: kTeamOx,
+      teamBId: kTeamGb,
+      teamAName: kTeamNames[kTeamOx]!,
+      teamBName: kTeamNames[kTeamGb]!,
+      teamAScore: '65/5 (10)',
+      teamBScore: '50/6 (10)',
+      resultText: 'OX CC won by 15 runs',
+      tossText: 'OX CC opted to bat',
+      ground: 'Farm MCK, Vellore',
+      innings: [
+        MatchInnings(
+          battingTeamId: kTeamOx,
+          battingTeamName: kTeamNames[kTeamOx]!,
+          runs: 65,
+          wickets: 5,
+          overs: '10.0',
+          batting: [
+            _bat('Shanu', 'c Irshad Ali b MD Saif', 0, 2),
+            _bat('Jaseer S', 'c Mulla b Irshad Ali', 2, 2),
+            _bat('Aslam Hashim', 'not out', 29, 30, fours: 2),
+            _bat('Sadam', 'c Ajaz b Anju', 19, 19, fours: 1),
+            _bat('Nowfal', 'retired out', 5, 5),
+            _bat('Anas', 'run out (Mohammed Ali MC)', 7, 2, sixes: 1),
+          ],
+          bowling: [
+            _bowl('MD Saif', '2', 0, 8, 1),
+            _bowl('Irshad Ali', '1', 0, 4, 1),
+            _bowl('Faizal', '1', 0, 6, 0),
+            _bowl('Ajaz', '2', 0, 18, 0),
+            _bowl('Anju', '2', 0, 8, 1),
+            _bowl('Gokul', '1', 0, 10, 0),
+            _bowl('Mohammed Arif', '1', 0, 10, 0),
+          ],
+        ),
+        MatchInnings(
+          battingTeamId: kTeamGb,
+          battingTeamName: kTeamNames[kTeamGb]!,
+          runs: 50,
+          wickets: 6,
+          overs: '10.0',
+          batting: [
+            _bat('Gokul', 'retired out', 10, 10),
+            _bat('Faizal', 'c Siraj b Anas', 0, 1),
+            _bat('Mohammed Ali MC', 'c Aslam Hashim b Mohammad Hamza', 5, 10),
+            _bat('Anju', 'not out', 18, 23, fours: 1),
+            _bat('Ajaz', 'retired out', 6, 11, fours: 1),
+            _bat('Mulla', 'retired out', 2, 4),
+            _bat('Irshad Ali', 'run out (Sadam)', 2, 2),
+            _bat('MD Saif', 'not out', 0, 0),
+          ],
+          bowling: [
+            _bowl('Anas', '2', 0, 6, 1),
+            _bowl('Siraj', '2', 0, 11, 0),
+            _bowl('Aslam Hashim', '1', 0, 6, 0),
+            _bowl('Mohammad Hamza', '1', 0, 5, 1),
+            _bowl('Sadam', '2', 0, 6, 0),
+            _bowl('Nowfal', '1', 0, 4, 0),
+            _bowl('Jaseer S', '1', 0, 7, 0),
+          ],
+        ),
+      ],
+    ),
+    MatchScorecard(
+      id: 'ch_28461906',
+      date: date,
+      teamAId: kTeamOx,
+      teamBId: kTeamAvengers,
+      teamAName: kTeamNames[kTeamOx]!,
+      teamBName: kTeamNames[kTeamAvengers]!,
+      teamAScore: '66/4 (10)',
+      teamBScore: '66/3 (10)',
+      resultText: 'OX CC won by Super Over',
+      tossText: 'OX CC opted to bat',
+      ground: 'Farm MCK, Vellore',
+      innings: [
+        MatchInnings(
+          battingTeamId: kTeamOx,
+          battingTeamName: kTeamNames[kTeamOx]!,
+          runs: 66,
+          wickets: 4,
+          overs: '10.0',
+          batting: [
+            _bat('Shanu', 'c Mansoor Vk b Munaf Cpm', 20, 15, fours: 1),
+            _bat('Siraj', 'c Munaf Cpm b Mansoor Vk', 6, 2, sixes: 1),
+            _bat(
+              'Aslam Hashim',
+              'st †Mohammed Razee b Afzal Afu',
+              17,
+              23,
+              fours: 2,
+            ),
+            _bat('Sadam', 'retired out', 6, 6),
+            _bat('Anas', 'not out', 9, 10, fours: 1),
+            _bat('Nowfal', 'not out', 3, 5),
+          ],
+          bowling: [
+            _bowl('Mansoor Vk', '1', 0, 10, 1),
+            _bowl('Jawad A', '2', 0, 14, 0),
+            _bowl('M S Rusfi', '2', 0, 11, 0),
+            _bowl('Afzal Afu', '2', 0, 11, 1),
+            _bowl('Munaf Cpm', '1', 0, 5, 1),
+            _bowl('Yousuf Ka 3star', '1', 0, 5, 0),
+            _bowl('Mufeed', '1', 0, 9, 0),
+          ],
+        ),
+        MatchInnings(
+          battingTeamId: kTeamAvengers,
+          battingTeamName: kTeamNames[kTeamAvengers]!,
+          runs: 66,
+          wickets: 3,
+          overs: '10.0',
+          batting: [
+            _bat('Bava Kvs', 'retired out', 11, 8, fours: 1),
+            _bat('Mohammed Razee', 'c †Shanu b Sadam', 19, 18, fours: 1),
+            _bat(
+              'Munaf Cpm',
+              'not out',
+              26,
+              27,
+              fours: 1,
+              sixes: 1,
+            ),
+            _bat('M S Rusfi', 'run out (Jaseer S / †Shanu)', 6, 8, fours: 1),
+          ],
+          bowling: [
+            _bowl('Anas', '2', 0, 16, 0),
+            _bowl('Siraj', '1', 0, 7, 0),
+            _bowl('Aslam Hashim', '2', 0, 6, 0),
+            _bowl('Mohammad Hamza', '1', 0, 6, 0),
+            _bowl('Sadam', '2', 0, 12, 1),
+            _bowl('Nowfal', '1', 0, 4, 0),
+            _bowl('Jaseer S', '1', 0, 14, 0),
+          ],
+        ),
+      ],
+    ),
+    MatchScorecard(
+      id: 'ch_28463507',
+      date: date,
+      teamAId: kTeamGb,
+      teamBId: kTeamAvengers,
+      teamAName: kTeamNames[kTeamGb]!,
+      teamBName: kTeamNames[kTeamAvengers]!,
+      teamAScore: '41/8 (6.4)',
+      teamBScore: '76/6 (10)',
+      resultText: 'Farm Avengers CC won by 35 runs',
+      tossText: 'Farm Avengers CC opted to bat',
+      ground: 'Farm MCK, Vellore',
+      innings: [
+        MatchInnings(
+          battingTeamId: kTeamAvengers,
+          battingTeamName: kTeamNames[kTeamAvengers]!,
+          runs: 76,
+          wickets: 6,
+          overs: '10.0',
+          batting: [
+            _bat('Munaf Cpm', 'not out', 23, 20, fours: 2),
+            _bat('Yousuf Ka 3star', 'b Vishnu', 10, 9),
+            _bat('Mansoor Vk', 'b Faizal', 7, 11),
+            _bat('Bava Kvs', 'retired out', 24, 16, fours: 3, sixes: 1),
+            _bat('Mohammed Razee', 'c Ajaz b Irshad Ali', 8, 3, sixes: 1),
+            _bat('Jawad A', 'retired out', 0, 1),
+            _bat(
+              'Afzal Afu',
+              'run out (Mohammed Ali MC / Irshad Ali)',
+              0,
+              1,
+            ),
+          ],
+          bowling: [
+            _bowl('Immu', '2', 0, 13, 0),
+            _bowl('MD Saif', '2', 0, 19, 0),
+            _bowl('Vishnu', '1', 0, 3, 1),
+            _bowl('Anju', '1', 0, 5, 0),
+            _bowl('Faizal', '1', 0, 4, 1),
+            _bowl('Ajaz', '2', 0, 19, 0),
+            _bowl('Irshad Ali', '1', 0, 13, 1),
+          ],
+        ),
+        MatchInnings(
+          battingTeamId: kTeamGb,
+          battingTeamName: kTeamNames[kTeamGb]!,
+          runs: 41,
+          wickets: 8,
+          overs: '6.4',
+          batting: [
+            _bat(
+              'Immu',
+              'run out (Wasim Akram / M S Rusfi)',
+              5,
+              5,
+              fours: 1,
+            ),
+            _bat('Anju', 'b Afzal Afu', 1, 2),
+            _bat('Gokul', 'c †Mohammed Razee b Afzal Afu', 0, 1),
+            _bat('Ajaz', 'retired out', 9, 11),
+            _bat('Mohammed Ali MC', 'retired out', 0, 1),
+            _bat('Faizal', 'c †Mohammed Razee b Mansoor Vk', 12, 9, fours: 2),
+            _bat('Irshad Ali', 'c †Mohammed Razee b M S Rusfi', 7, 5),
+            _bat('MD Saif', 'run out (Munaf Cpm)', 2, 6),
+            _bat('Vishnu', 'not out', 0, 0),
+          ],
+          bowling: [
+            _bowl('M S Rusfi', '2', 0, 9, 1),
+            _bowl('Afzal Afu', '1', 0, 8, 2),
+            _bowl('Jawad A', '1.4', 0, 7, 0),
+            _bowl('Mansoor Vk', '1', 0, 9, 1),
+            _bowl('Munaf Cpm', '1', 0, 8, 0),
           ],
         ),
       ],
