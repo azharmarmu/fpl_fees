@@ -22,7 +22,12 @@ class Season2TeamPoints {
   final int points;
 }
 
-/// Official league points from seed scorecards (matches on-pitch table rules).
+/// Week 13 (25 Oct 2026) washouts are kept as schedule scorecards but are no
+/// longer in the CricHeroes official table (NR = 0, no 1-point awards).
+bool season2CountsInOfficialTable(MatchScorecard m) =>
+    !m.id.startsWith('2026-10-25');
+
+/// Official league points from seed scorecards (matches CricHeroes table rules).
 Map<String, Season2TeamPoints> season2PointsFromMatches(
   List<MatchScorecard> matches,
 ) {
@@ -49,6 +54,7 @@ Map<String, Season2TeamPoints> season2PointsFromMatches(
   }
 
   for (final m in matches) {
+    if (!season2CountsInOfficialTable(m)) continue;
     if (m.isNoResult ||
         m.resultText.toLowerCase().contains('no result')) {
       played[m.teamAId] = played[m.teamAId]! + 1;

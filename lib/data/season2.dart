@@ -10,7 +10,7 @@ class Season2Meta {
   static const seasonLabel = 'Season 2';
   static const location = 'Vellore';
   static const dateRange = '2 Aug 2026 – 27 Dec 2026';
-  static const totalMatches = 39;
+  static const totalMatches = 42;
   static const totalTeams = 3;
   static const note = 'Current season · fees apply';
 
@@ -19,7 +19,9 @@ class Season2Meta {
       'Week 12 (18 Oct) postponed again — play date TBD (e.g. a holiday weekday). '
       'VPL Season 2 only on 1 Nov and 8 Nov (no FPL those Sundays). '
       'If a week cannot be played and there is no buffer left: each affected match '
-      'is No Result and each team gets 1 point (no reschedule).';
+      'is No Result and each team gets 1 point (no reschedule). '
+      'CricHeroes later dropped the Week 13 (25 Oct) washouts from the official '
+      'table (NR = 0, no points); standings follow that table.';
 }
 
 /// Points after latest seeded scorecards — NRR/for/against from [buildSeason2Standings].
@@ -169,6 +171,16 @@ const season2WeekAwards = <Season2WeekAward>[
     bestPlayerName: 'Immu',
     bestPlayerTeamName: 'Gully Blasters',
     bestPlayerSummary: 'MVP · 5/8 (0.00 eco)',
+  ),
+  Season2WeekAward(
+    weekIndex: 15,
+    weekId: '2026-11-22',
+    dateLabel: '22 Nov 2026',
+    bestTeamName: 'OX CC',
+    bestTeamSummary: '2–0',
+    bestPlayerName: 'Munaf Cpm',
+    bestPlayerTeamName: 'Farm Avengers CC',
+    bestPlayerSummary: '26* & 23* · 1/5',
   ),
 ];
 

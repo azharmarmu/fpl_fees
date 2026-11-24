@@ -132,10 +132,11 @@ Map<String, Season2NrrTotals> season2NrrFromMatches(
   };
 }
 
+/// Last 5 completed results (Week 13 washouts omitted, matching CricHeroes).
 const _season2Last5 = {
-  kTeamGb: 'W-L-N-W-W',
-  kTeamOx: 'L-W-N-W-L',
-  kTeamAvengers: 'L-L-N-L-L',
+  kTeamGb: 'W-W-W-L-L',
+  kTeamOx: 'W-W-L-W-W',
+  kTeamAvengers: 'L-L-L-L-W',
 };
 
 /// Points + NRR standing rows from seed scorecards (CricHeroes table rules).
